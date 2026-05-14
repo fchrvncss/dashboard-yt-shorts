@@ -8,107 +8,59 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
-    --bg: #09090b;       /* Fundo super escuro, quase preto */
-    --surface: #18181b;  /* Cinza escuro para os cards */
-    --border: #27272a;   /* Bordas sutis */
-    --accent: #ff4d00;   /* Laranja YouTube */
-    --accent-hover: #e04400;
-    --accent2: #10b981;  /* Verde para receita */
-    --text: #f4f4f5;
-    --muted: #a1a1aa;
-    --red: #ef4444;
+    --bg: #09090b; --surface: #18181b; --border: #27272a;
+    --accent: #ff4d00; --accent-hover: #e04400; --accent2: #10b981;
+    --text: #f4f4f5; --muted: #a1a1aa; --red: #ef4444;
   }
   
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; overflow-x: hidden; }
   
-  body { 
-    background: var(--bg); 
-    color: var(--text); 
-    font-family: 'Inter', sans-serif; 
-    padding: 24px; 
-    min-height: 100vh; 
-    overflow-x: hidden;
-  }
-  
+  /* TELA DE LOGIN */
+  .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
+  .auth-overlay.hidden { opacity: 0; pointer-events: none; }
+  .auth-card { background: var(--surface); border: 1px solid var(--border); padding: 40px; border-radius: 16px; width: 360px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+  .auth-card h2 { margin-bottom: 24px; font-weight: 700; font-size: 1.4rem; }
+  .auth-card h2 span { color: var(--accent); }
+  .auth-input { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; margin-bottom: 16px; font-size: 1rem; transition: 0.2s; }
+  .auth-input:focus { border-color: var(--accent); outline: none; }
+  .auth-btn { width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+  .auth-btn:hover { background: var(--accent-hover); }
+  .auth-error { color: var(--red); font-size: 0.85rem; margin-top: 12px; display: none; }
+
   /* HEADER */
-  header { 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    margin-bottom: 32px; 
-    padding-bottom: 24px; 
-    border-bottom: 1px solid var(--border);
-  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
   .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
   .logo span { color: var(--accent); }
-  
   .header-controls { display: flex; align-items: center; gap: 24px; }
-  
   .period-selector { display: flex; gap: 6px; align-items: center; background: var(--surface); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
-  .period-btn { 
-    background: transparent; border: none; color: var(--muted); padding: 8px 16px; 
-    border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 500; 
-    transition: all 0.2s ease; 
-  }
+  .period-btn { background: transparent; border: none; color: var(--muted); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.2s ease; }
   .period-btn:hover { color: var(--text); }
   .period-btn.active { background: var(--border); color: var(--text); }
-  
   .date-inputs { display: flex; gap: 8px; align-items: center; padding-left: 8px; }
-  .date-picker { 
-    background: transparent; border: 1px solid var(--border); color: var(--text); 
-    padding: 6px 10px; border-radius: 6px; color-scheme: dark; font-size: 0.8rem; 
-    font-family: 'Space Mono', monospace; cursor: pointer; transition: 0.2s;
-  }
+  .date-picker { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; color-scheme: dark; font-size: 0.8rem; font-family: 'Space Mono', monospace; cursor: pointer; transition: 0.2s; }
   .date-picker:focus { border-color: var(--accent); outline: none; }
-
-  .menu-btn {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: 0.2s; color: var(--text);
-  }
+  .menu-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: var(--text); }
   .menu-btn:hover { border-color: var(--muted); }
   .menu-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
-  /* SIDEBAR (Menu Lateral) */
-  .sidebar-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-    z-index: 99; opacity: 0; pointer-events: none; transition: 0.3s ease;
-  }
+  /* SIDEBAR */
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 99; opacity: 0; pointer-events: none; transition: 0.3s ease; }
   .sidebar-overlay.open { opacity: 1; pointer-events: all; }
-  
-  .sidebar {
-    position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
-    background: var(--surface); border-left: 1px solid var(--border);
-    z-index: 100; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-  }
+  .sidebar { position: fixed; top: 0; right: -400px; width: 380px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); z-index: 100; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
   .sidebar.open { right: 0; }
-  
-  .sidebar-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 24px; border-bottom: 1px solid var(--border);
-  }
+  .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 24px; border-bottom: 1px solid var(--border); }
   .sidebar-header h2 { font-size: 1.1rem; font-weight: 600; }
   .close-btn { background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; transition: 0.2s; }
   .close-btn:hover { color: var(--text); }
-  
   .sidebar-content { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-  .channel-link-card {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; transition: 0.2s;
-  }
+  .channel-link-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; transition: 0.2s; }
   .channel-link-card:hover { border-color: var(--muted); }
   .channel-info h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
   .channel-status { font-size: 0.7rem; font-family: 'Space Mono'; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
   .status-dot.active { background: var(--accent2); }
-  
-  .btn-link {
-    background: var(--border); color: var(--text); border: none;
-    padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
-    cursor: pointer; transition: 0.2s; text-decoration: none;
-  }
+  .btn-link { background: var(--border); color: var(--text); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: 0.2s; text-decoration: none; }
   .btn-link:hover { background: var(--accent); color: #fff; }
   .btn-link.linked { background: transparent; border: 1px solid var(--border); }
 
@@ -119,9 +71,7 @@
   .total-card .label { font-size: 0.75rem; color: var(--muted); font-weight: 500; margin-bottom: 12px; }
   .total-card .value { font-size: 2.5rem; font-weight: 700; letter-spacing: -1px; }
   .total-card.revenue .value { color: var(--accent2); }
-
   .chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 32px; height: 350px; width: 100%; }
-
   .status-msg { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
   /* TABELA */
@@ -131,11 +81,9 @@
   td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 0.9rem; transition: background 0.2s; }
   tr:hover td { background: rgba(255,255,255,0.02); }
   tr:last-child td { border-bottom: none; }
-  
   .channel-name { font-weight: 600; }
   .revenue-cell { color: var(--accent2); font-family: 'Space Mono', monospace; font-weight: 700; }
   .views-cell { color: var(--text); font-family: 'Space Mono', monospace; }
-  
   .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
   .badge.ok { background: rgba(16, 185, 129, 0.1); color: var(--accent2); }
   .badge.error { background: rgba(239, 68, 68, 0.1); color: var(--red); }
@@ -145,127 +93,142 @@
 </head>
 <body>
 
-<header>
-  <div class="logo">YT<span>.</span>Dash</div>
-  <div class="header-controls">
-    <div class="period-selector">
-      <button class="period-btn active" data-days="latest">Última Atualiz.</button>
-      <button class="period-btn" data-days="7">7d</button>
-      <button class="period-btn" data-days="30">30d</button>
-      <button class="period-btn" data-days="90">90d</button>
-      
-      <div class="date-inputs">
-        <input type="date" id="dateStart" class="date-picker">
-        <span style="color:var(--muted); font-size:0.8rem; font-family: 'Space Mono'">-</span>
-        <input type="date" id="dateEnd" class="date-picker">
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <h2>YT<span>.</span>Dash Área Restrita</h2>
+    <input type="password" id="passwordInput" class="auth-input" placeholder="Digite a Senha Mestra">
+    <button class="auth-btn" onclick="login()">Acessar Painel</button>
+    <div class="auth-error" id="authError">Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<div id="appContent" style="display: none;">
+  <header>
+    <div class="logo">YT<span>.</span>Dash</div>
+    <div class="header-controls">
+      <div class="period-selector">
+        <button class="period-btn active" data-days="latest">Última Atualiz.</button>
+        <button class="period-btn" data-days="7">7d</button>
+        <button class="period-btn" data-days="30">30d</button>
+        <button class="period-btn" data-days="90">90d</button>
+        <div class="date-inputs">
+          <input type="date" id="dateStart" class="date-picker">
+          <span style="color:var(--muted); font-size:0.8rem; font-family: 'Space Mono'">-</span>
+          <input type="date" id="dateEnd" class="date-picker">
+        </div>
       </div>
+      <button class="menu-btn" onclick="toggleSidebar()" title="Vincular Canais">
+        <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      </button>
     </div>
-    
-    <button class="menu-btn" onclick="toggleSidebar()" title="Vincular Canais">
-      <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-    </button>
-  </div>
-</header>
+  </header>
 
-<div class="totals">
-  <div class="total-card revenue">
-    <div class="label">Receita Acumulada</div>
-    <div class="value" id="totalRevenue">$0.00</div>
-  </div>
-  <div class="total-card views">
-    <div class="label">Visualizações Totais</div>
-    <div class="value" id="totalViews">0</div>
-  </div>
-</div>
-
-<div class="chart-container">
-  <canvas id="mainChart"></canvas>
-</div>
-
-<p class="status-msg" id="statusMsg">
-  <span class="status-dot active"></span> Aguardando...
-</p>
-
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Canal</th>
-        <th>Receita (USD)</th>
-        <th>Views</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody">
-      </tbody>
-  </table>
-</div>
-
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <h2>Vincular Canais</h2>
-    <button class="close-btn" onclick="toggleSidebar()">✕</button>
-  </div>
-  <div class="sidebar-content" id="sidebarContent">
+  <div class="totals">
+    <div class="total-card revenue">
+      <div class="label">Receita Acumulada</div>
+      <div class="value" id="totalRevenue">$0.00</div>
     </div>
+    <div class="total-card views">
+      <div class="label">Visualizações Totais</div>
+      <div class="value" id="totalViews">0</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="mainChart"></canvas>
+  </div>
+
+  <p class="status-msg" id="statusMsg"><span class="status-dot active"></span> Aguardando...</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Canal</th><th>Receita (USD)</th><th>Views</th><th>Status</th></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>Vincular Canais</h2>
+      <button class="close-btn" onclick="toggleSidebar()">✕</button>
+    </div>
+    <div class="sidebar-content" id="sidebarContent"></div>
+  </div>
 </div>
 
 <script>
 const CHANNELS = [
-  { id: 'UC_RatoFIT',          name: 'RatoFIT' },
-  { id: 'UC_ZeroHora',         name: 'Zero Hora' },
-  { id: 'UC_VelozCuriosos',    name: 'Velozes & Curiosos' },
-  { id: 'UC_ComptonKings',     name: 'Compton Kings' },
-  { id: 'UC_Pixelando',        name: 'Pixelando 165' },
-  { id: 'UC_McQueeeen',        name: 'McQueeeen' },
-  { id: 'UC_RatoMaromba',      name: 'Rato Maromba' },
-  { id: 'UC_GroveStreet',      name: 'Grove Street Style' },
-  { id: 'UC_BerserkMode',      name: 'Berserk Mode' },
-  { id: 'UC_OnePunchFights',   name: 'One Punch Fights' },
-  { id: 'UC_UltimoPeao',       name: 'O Último Peão' },
-  { id: 'UC_EcosDaMente',      name: 'Ecos da Mente' },
+  { id: 'UC_RatoFIT', name: 'RatoFIT' }, { id: 'UC_ZeroHora', name: 'Zero Hora' },
+  { id: 'UC_VelozCuriosos', name: 'Velozes & Curiosos' }, { id: 'UC_ComptonKings', name: 'Compton Kings' },
+  { id: 'UC_Pixelando', name: 'Pixelando 165' }, { id: 'UC_McQueeeen', name: 'McQueeeen' },
+  { id: 'UC_RatoMaromba', name: 'Rato Maromba' }, { id: 'UC_GroveStreet', name: 'Grove Street Style' },
+  { id: 'UC_BerserkMode', name: 'Berserk Mode' }, { id: 'UC_OnePunchFights', name: 'One Punch Fights' },
+  { id: 'UC_UltimoPeao', name: 'O Último Peão' }, { id: 'UC_EcosDaMente', name: 'Ecos da Mente' }
 ];
 
 const CHANNEL_IDS = {
-  'UC_RatoFIT':        'UCR61DCrMZx-g3irgqgoT5JA',
-  'UC_ZeroHora':       'UC6sh-Qiz2gj_uqUdYfYnX6w',
-  'UC_VelozCuriosos':  'UCXMwjsceXKA5dqbWSWE-_7Q',
-  'UC_ComptonKings':   'UCGqLCGdh5xUJiQW416DQWjA',
-  'UC_Pixelando':      'UCzE6ujftVmVmEvGJW0MArlw',
-  'UC_McQueeeen':      'UCMNvTCr-RwLVRW-jDIQVnBw',
-  'UC_RatoMaromba':    'UCxslmo0asWXgdWObPO8BFrQ',
-  'UC_GroveStreet':    'UChQfM3wIfo84Ab0WeW9CwCA',
-  'UC_BerserkMode':    'UCzkne80zh104CdG3kDrTQ1w',
-  'UC_OnePunchFights': 'UChdMYJwcBpizC4NLh5dRh4g',
-  'UC_UltimoPeao':     'UCkdnxxobb7NvO6EX2kLqv4A',
-  'UC_EcosDaMente':    'UCpCEVQUoScH3SNPZjEcAWpg',
+  'UC_RatoFIT': 'UCR61DCrMZx-g3irgqgoT5JA', 'UC_ZeroHora': 'UC6sh-Qiz2gj_uqUdYfYnX6w',
+  'UC_VelozCuriosos': 'UCXMwjsceXKA5dqbWSWE-_7Q', 'UC_ComptonKings': 'UCGqLCGdh5xUJiQW416DQWjA',
+  'UC_Pixelando': 'UCzE6ujftVmVmEvGJW0MArlw', 'UC_McQueeeen': 'UCMNvTCr-RwLVRW-jDIQVnBw',
+  'UC_RatoMaromba': 'UCxslmo0asWXgdWObPO8BFrQ', 'UC_GroveStreet': 'UChQfM3wIfo84Ab0WeW9CwCA',
+  'UC_BerserkMode': 'UCzkne80zh104CdG3kDrTQ1w', 'UC_OnePunchFights': 'UChdMYJwcBpizC4NLh5dRh4g',
+  'UC_UltimoPeao': 'UCkdnxxobb7NvO6EX2kLqv4A', 'UC_EcosDaMente': 'UCpCEVQUoScH3SNPZjEcAWpg',
 };
 
-let accounts = {};
-let results = {}; 
-let activeDays = 'latest'; 
-let myChart = null;
+let accounts = {}, results = {}, activeDays = 'latest', myChart = null;
 
-async function init() {
+// Sistema de Login
+async function checkAuthStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const data = await r.json();
+    if (data.authenticated) {
+      document.getElementById('authOverlay').classList.add('hidden');
+      document.getElementById('appContent').style.display = 'block';
+      initApp();
+    }
+  } catch(e) {}
+}
+
+async function login() {
+  const pwd = document.getElementById('passwordInput').value;
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    if (r.ok) {
+      document.getElementById('authError').style.display = 'none';
+      checkAuthStatus();
+    } else {
+      document.getElementById('authError').style.display = 'block';
+    }
+  } catch(e) { console.error('Login error', e); }
+}
+
+document.getElementById('passwordInput').addEventListener('keypress', function (e) {
+  if (e.key === 'Enter') login();
+});
+
+checkAuthStatus(); // Inicia verificando o login
+
+// Inicia o app apenas se logado
+async function initApp() {
   await loadAccounts();
   renderSidebar();
   initChart();
   renderTable(); 
   checkConnectedParam();
-
-  if (Object.keys(accounts).length > 0) {
-    fetchAll();
-  } else {
-    setStatus('Nenhuma conta vinculada. Abra o menu lateral (⋮) para conectar.');
-  }
+  if (Object.keys(accounts).length > 0) fetchAll();
+  else setStatus('Nenhuma conta vinculada. Abra o menu lateral (⋮) para conectar.');
 }
 
 async function loadAccounts() {
-  try {
-    const r = await fetch('/api/accounts');
-    accounts = await r.json();
-  } catch { accounts = {}; }
+  try { const r = await fetch('/api/accounts'); accounts = await r.json(); } catch { accounts = {}; }
 }
 
 function checkConnectedParam() {
@@ -284,31 +247,20 @@ function toggleSidebar() {
 function renderSidebar() {
   const content = document.getElementById('sidebarContent');
   content.innerHTML = '';
-
   CHANNELS.forEach(ch => {
-    // Verifica se o slot com o ID do canal tem token salvo
     const isConn = !!accounts[ch.id];
-    
     content.innerHTML += `
       <div class="channel-link-card">
         <div class="channel-info">
           <h4>${ch.name}</h4>
-          <div class="channel-status">
-            <div class="status-dot ${isConn ? 'active' : ''}"></div>
-            ${isConn ? 'Conectado' : 'Sem acesso'}
-          </div>
+          <div class="channel-status"><div class="status-dot ${isConn ? 'active' : ''}"></div>${isConn ? 'Conectado' : 'Sem acesso'}</div>
         </div>
-        <a href="/auth/${ch.id}" class="btn-link ${isConn ? 'linked' : ''}">
-          ${isConn ? 'Reconectar' : 'Vincular'}
-        </a>
-      </div>
-    `;
+        <a href="/auth/${ch.id}" class="btn-link ${isConn ? 'linked' : ''}">${isConn ? 'Reconectar' : 'Vincular'}</a>
+      </div>`;
   });
 }
 
-function setStatus(msg) { 
-  document.getElementById('statusMsg').innerHTML = `<span class="status-dot active" style="background:var(--accent)"></span> ${msg}`; 
-}
+function setStatus(msg) { document.getElementById('statusMsg').innerHTML = `<span class="status-dot active" style="background:var(--accent)"></span> ${msg}`; }
 
 const periodBtns = document.querySelectorAll('.period-btn');
 const dateStartInput = document.getElementById('dateStart');
@@ -319,8 +271,7 @@ periodBtns.forEach(btn => {
     periodBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeDays = btn.dataset.days === 'latest' ? 'latest' : parseInt(btn.dataset.days);
-    dateStartInput.value = '';
-    dateEndInput.value = '';
+    dateStartInput.value = ''; dateEndInput.value = '';
     fetchAll();
   };
 });
@@ -334,114 +285,68 @@ periodBtns.forEach(btn => {
 });
 
 function getYTDate(daysAgo) {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const d = new Date(); d.setDate(d.getDate() - daysAgo);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 async function fetchAll() {
   if (Object.keys(accounts).length === 0) return;
-
   let start, end;
 
   if (activeDays === 'custom') {
-    start = dateStartInput.value;
-    end = dateEndInput.value;
+    start = dateStartInput.value; end = dateEndInput.value;
   } else if (activeDays === 'latest') {
-    // Busca os últimos 6 dias para garimpar o dia mais recente preenchido
-    end = getYTDate(0);
-    start = getYTDate(6);
+    end = getYTDate(0); start = getYTDate(6);
   } else {
-    // 7d, 30d etc (com 2 dias de margem para bater com YT Studio)
-    end = getYTDate(2);
-    start = getYTDate(activeDays + 1); 
+    end = getYTDate(2); start = getYTDate(activeDays + 1); 
   }
 
-  setStatus('Sincronizando dados com o YouTube...');
-
+  setStatus('Sincronizando dados...');
   CHANNELS.forEach(ch => { results[ch.id] = { status: 'loading', rows: [] }; });
   renderTable();
 
   const promises = CHANNELS.map(ch => fetchChannel(ch, start, end));
   await Promise.all(promises);
 
-  // === A MÁGICA DA ÚLTIMA ATUALIZAÇÃO ===
   if (activeDays === 'latest') {
     let maxDate = '';
-    
-    // Descobre qual é a data mais recente que retornou receita no servidor do Google
     Object.values(results).forEach(ch => {
-      if(ch.status === 'ok' && ch.rows) {
-        ch.rows.forEach(r => { if(r[0] > maxDate) maxDate = r[0]; });
-      }
+      if(ch.status === 'ok' && ch.rows) ch.rows.forEach(r => { if(r[0] > maxDate) maxDate = r[0]; });
     });
-
-    // Se encontrou uma data válida, joga fora o resto e fica SÓ com os ganhos daquele dia exato
     if (maxDate) {
       Object.keys(results).forEach(id => {
-        if(results[id].status === 'ok' && results[id].rows) {
-          results[id].rows = results[id].rows.filter(r => r[0] === maxDate);
-        }
+        if(results[id].status === 'ok' && results[id].rows) results[id].rows = results[id].rows.filter(r => r[0] === maxDate);
       });
       setStatus(`Ganhos do último dia processado pelo Google: ${maxDate.split('-').reverse().join('/')}`);
-    } else {
-      setStatus('Nenhuma receita processada recentemente.');
-    }
-  } else {
-    setStatus(`Dados de ${start.split('-').reverse().join('/')} até ${end.split('-').reverse().join('/')}`);
-  }
+    } else setStatus('Nenhuma receita processada recentemente.');
+  } else setStatus(`Dados de ${start.split('-').reverse().join('/')} até ${end.split('-').reverse().join('/')}`);
 
-  renderTable();
-  renderTotals();
-  updateChart();
+  renderTable(); renderTotals(); updateChart();
 }
 
 async function fetchChannel(ch, start, end) {
   try {
     const r = await fetch(`/api/analytics?channelId=${CHANNEL_IDS[ch.id]}&startDate=${start}&endDate=${end}`);
     const data = await r.json();
-    if (data.ok) {
-      results[ch.id] = { status: 'ok', rows: data.rows || [] };
-    } else {
-      results[ch.id] = { status: 'error', rows: [] };
-    }
-  } catch {
-    results[ch.id] = { status: 'error', rows: [] };
-  }
+    results[ch.id] = data.ok ? { status: 'ok', rows: data.rows || [] } : { status: 'error', rows: [] };
+  } catch { results[ch.id] = { status: 'error', rows: [] }; }
 }
 
 function renderTable() {
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = '';
-
+  const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
   CHANNELS.forEach((ch) => {
     const r = results[ch.id] || { status: 'pending', rows: [] };
-    
     let rev = 0, views = 0;
     if (r.rows && r.rows.length > 0) {
       rev = r.rows.reduce((sum, row) => sum + row[1], 0);
       views = r.rows.reduce((sum, row) => sum + row[2], 0);
     }
-
     let badge = '<span class="badge pending">Aguardando</span>';
     if (r.status === 'loading') badge = '<span class="badge loading">Buscando...</span>';
     else if (r.status === 'ok') badge = '<span class="badge ok">Sincronizado</span>';
     else if (r.status === 'error') badge = '<span class="badge error">Desconectado</span>';
 
-    const revText = r.status === 'ok' ? `$${rev.toFixed(2)}` : '—';
-    const viewsText = r.status === 'ok' ? views.toLocaleString('pt-BR') : '—';
-
-    tbody.innerHTML += `
-      <tr>
-        <td class="channel-name">${ch.name}</td>
-        <td class="revenue-cell">${revText}</td>
-        <td class="views-cell">${viewsText}</td>
-        <td>${badge}</td>
-      </tr>
-    `;
+    tbody.innerHTML += `<tr><td class="channel-name">${ch.name}</td><td class="revenue-cell">${r.status === 'ok' ? '$'+rev.toFixed(2) : '—'}</td><td class="views-cell">${r.status === 'ok' ? views.toLocaleString('pt-BR') : '—'}</td><td>${badge}</td></tr>`;
   });
 }
 
@@ -460,101 +365,31 @@ function renderTotals() {
 
 function initChart() {
   const ctx = document.getElementById('mainChart').getContext('2d');
-  
-  // Customização minimalista para o Chart.js
-  Chart.defaults.color = '#a1a1aa';
-  Chart.defaults.font.family = 'Inter';
-
+  Chart.defaults.color = '#a1a1aa'; Chart.defaults.font.family = 'Inter';
   myChart = new Chart(ctx, {
     type: 'line',
-    data: { 
-      labels: [], 
-      datasets: [{ 
-        label: 'Receita Total (USD)', 
-        data: [], 
-        borderColor: '#10b981', // Verde
-        borderWidth: 3,
-        pointBackgroundColor: '#18181b',
-        pointBorderColor: '#10b981',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        tension: 0.4, 
-        fill: true, 
-        backgroundColor: 'rgba(16, 185, 129, 0.05)' 
-      }] 
-    },
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false, 
-      plugins: { 
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#18181b',
-          titleFont: { family: 'Space Mono', size: 13 },
-          bodyFont: { family: 'Space Mono', size: 14, weight: 'bold' },
-          padding: 12,
-          borderColor: '#27272a',
-          borderWidth: 1,
-          displayColors: false,
-          callbacks: {
-            label: function(context) { return '$' + context.parsed.y.toFixed(2); }
-          }
-        }
-      },
-      scales: { 
-        y: { 
-          beginAtZero: true, 
-          grid: { color: '#27272a', drawBorder: false }, 
-          border: { dash: [4, 4] },
-          ticks: { font: { family: 'Space Mono' }, callback: function(value) { return '$' + value; } } 
-        }, 
-        x: { 
-          grid: { display: false, drawBorder: false }, 
-          ticks: { font: { family: 'Space Mono' } } 
-        } 
-      } 
-    }
+    data: { labels: [], datasets: [{ label: 'Receita Total (USD)', data: [], borderColor: '#10b981', borderWidth: 3, pointBackgroundColor: '#18181b', pointBorderColor: '#10b981', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6, tension: 0.4, fill: true, backgroundColor: 'rgba(16, 185, 129, 0.05)' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#18181b', titleFont: { family: 'Space Mono', size: 13 }, bodyFont: { family: 'Space Mono', size: 14, weight: 'bold' }, padding: 12, borderColor: '#27272a', borderWidth: 1, displayColors: false, callbacks: { label: function(context) { return '$' + context.parsed.y.toFixed(2); } } } }, scales: { y: { beginAtZero: true, grid: { color: '#27272a', drawBorder: false }, border: { dash: [4, 4] }, ticks: { font: { family: 'Space Mono' }, callback: function(value) { return '$' + value; } } }, x: { grid: { display: false, drawBorder: false }, ticks: { font: { family: 'Space Mono' } } } } }
   });
 }
 
 function updateChart() {
   const dailyData = {};
-  
   CHANNELS.forEach(ch => {
     const r = results[ch.id];
-    if (r && r.status === 'ok' && r.rows) {
-      r.rows.forEach(row => {
-        const date = row[0];
-        dailyData[date] = (dailyData[date] || 0) + row[1];
-      });
-    }
+    if (r && r.status === 'ok' && r.rows) r.rows.forEach(row => dailyData[row[0]] = (dailyData[row[0]] || 0) + row[1]);
   });
-
   const sortedDates = Object.keys(dailyData).sort();
-  
-  if (sortedDates.length === 0) {
-    myChart.data.labels = [];
-    myChart.data.datasets[0].data = [];
-  } else if (sortedDates.length === 1) {
-    // Se for só 1 dia (ex: Última Atualização), transforma numa barra estilizada
-    myChart.config.type = 'bar';
-    myChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.8)';
-    myChart.data.datasets[0].borderRadius = 6;
-    myChart.data.labels = [sortedDates[0].split('-').slice(1).reverse().join('/')];
-    myChart.data.datasets[0].data = [dailyData[sortedDates[0]]];
+  if (sortedDates.length === 0) { myChart.data.labels = []; myChart.data.datasets[0].data = []; }
+  else if (sortedDates.length === 1) {
+    myChart.config.type = 'bar'; myChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.8)'; myChart.data.datasets[0].borderRadius = 6;
+    myChart.data.labels = [sortedDates[0].split('-').slice(1).reverse().join('/')]; myChart.data.datasets[0].data = [dailyData[sortedDates[0]]];
   } else {
-    // Se for + de 1 dia, volta pra linha curva
-    myChart.config.type = 'line';
-    myChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.05)';
-    myChart.data.labels = sortedDates.map(d => d.split('-').slice(1).reverse().join('/'));
-    myChart.data.datasets[0].data = sortedDates.map(d => dailyData[d]);
+    myChart.config.type = 'line'; myChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.05)';
+    myChart.data.labels = sortedDates.map(d => d.split('-').slice(1).reverse().join('/')); myChart.data.datasets[0].data = sortedDates.map(d => dailyData[d]);
   }
-  
   myChart.update();
 }
-
-init();
 </script>
 </body>
 </html>
