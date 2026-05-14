@@ -21,7 +21,7 @@
   body { color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
   body.no-scroll { overflow: hidden; }
 
-  /* ZOOM & INTERAÇÕES */
+  /* INTERAÇÕES */
   .drop-opt, .side-card, .bubble-btn, .total-card, .auth-btn, .clear-extension { transition: all 0.3s var(--ease); }
   .drop-opt:hover, .side-card:hover { transform: scale(1.02); background: var(--semi-orange) !important; color: #ff9d66 !important; }
   .total-card:hover { transform: scale(1.02); border-color: var(--accent); }
@@ -35,45 +35,32 @@
     width: 0; opacity: 0; white-space: nowrap; font-size: 1rem; font-weight: 800; pointer-events: none;
   }
   .clear-extension.active { width: 44px; opacity: 1; pointer-events: auto; }
-  .clear-extension.active:hover { width: 160px; background: var(--accent) !important; color: #000 !important; border-color: var(--accent); }
+  .clear-extension.active:hover { width: 160px; background: var(--semi-orange) !important; color: var(--accent) !important; border-color: var(--accent); }
   .clear-extension span { font-size: 0.75rem; opacity: 0; width: 0; transition: 0.3s; display: inline-block; overflow: hidden; }
   .clear-extension.active:hover span { opacity: 1; width: auto; margin-left: 10px; }
 
   .bubble-btn { background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; height: 38px; }
   .clear-extension.active + .drop-wrapper .btn-canais { border-radius: 0 50px 50px 0; border-left: 1px solid transparent; }
 
-  /* AUTH */
-  .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-  .auth-overlay.hidden { display: none; }
-  .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 320px; text-align: center; }
-  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; outline: none; font-family: 'Space Mono', monospace; }
-  .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; }
-
-  /* HEADER & CONTROLS */
-  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-  .logo-container { display: flex; align-items: center; gap: 12px; }
-  .logo-text { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; }
-  .header-controls { display: flex; gap: 10px; align-items: center; }
-
-  /* DROPDOWN MENU - MECÂNICA DE SIDEBAR */
+  /* DROPDOWN MENU */
   .drop-wrapper { position: relative; }
   .drop-menu {
     position: absolute; top: 45px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
     border-radius: 20px; width: 260px; padding: 12px; display: none; z-index: 100; flex-direction: column;
     box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-    max-height: 400px; /* Altura máxima */
-    overflow-y: auto;  /* Habilita scroll interno */
-    scrollbar-width: none;
+    max-height: 420px; overflow-y: auto; scrollbar-width: none;
   }
   .drop-menu.open { display: flex; }
   .drop-opt { display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer; border-radius: 12px; font-size: 0.85rem; color: #ccc; }
   .drop-opt.selected { color: var(--accent) !important; font-weight: 800; background: rgba(255, 77, 0, 0.1) !important; }
 
+  /* BOTÃO APLICAR REFINADO */
   .apply-filter-btn {
-    background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 12px;
+    background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 10px; border-radius: 12px;
     font-weight: 800; font-size: 0.75rem; cursor: pointer; margin-top: 10px;
-    position: sticky; bottom: 0; width: 100%; text-transform: uppercase;
+    position: sticky; bottom: 0; width: 100%; text-transform: uppercase; transition: 0.2s;
   }
+  .apply-filter-btn:hover { background: var(--semi-orange); }
 
   /* DASHBOARD GRID */
   .totals { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 25px; }
@@ -111,19 +98,7 @@
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
-
-<div class="auth-overlay" id="authOverlay">
-  <div class="auth-card">
-    <div style="display:flex; justify-content:center; margin-bottom: 20px;">
-      <svg width="50" height="50" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="4" fill="none" /><rect x="35" y="32" width="10" height="10" fill="#ff4d00" /><rect x="35" y="45" width="10" height="10" fill="#ff4d00" /><rect x="35" y="58" width="10" height="10" fill="#ff4d00" /><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00" /><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00" /><rect x="61" y="45" width="10" height="10" fill="#ff4d00" /></svg>
-    </div>
-    <input type="password" id="passwordInput" class="auth-input" placeholder="Senha" onkeypress="if(event.key==='Enter') login()">
-    <button class="auth-btn" onclick="login()">ENTRAR</button>
-  </div>
-</div>
-
-<div id="appContent" style="display:none">
+<div id="appContent">
   <header>
     <div class="logo-container">
       <svg width="30" height="30" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="6" fill="none" /><rect x="35" y="32" width="10" height="10" fill="#ff4d00" /><rect x="35" y="45" width="10" height="10" fill="#ff4d00" /><rect x="35" y="58" width="10" height="10" fill="#ff4d00" /><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00" /><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00" /><rect x="61" y="45" width="10" height="10" fill="#ff4d00" /></svg>
@@ -169,6 +144,7 @@
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px"><h3 style="font-weight:800; letter-spacing:-0.5px">CONEXÕES</h3><button class="bubble-btn" onclick="toggleSidebar(false)" style="border-color:var(--accent); color:var(--accent); padding:5px 12px">✕</button></div>
   <div id="sidebarContent"></div>
 </div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
 
 <script>
 const CHANNELS = [
@@ -176,23 +152,10 @@ const CHANNELS = [
 ];
 const CHANNEL_IDS = { 'UC_RatoFIT': 'UCR61DCrMZx-g3irgqgoT5JA', 'UC_ZeroHora': 'UC6sh-Qiz2gj_uqUdYfYnX6w', 'UC_VelozCuriosos': 'UCXMwjsceXKA5dqbWSWE-_7Q', 'UC_ComptonKings': 'UCGqLCGdh5xUJiQW416DQWjA', 'UC_Pixelando': 'UCzE6ujftVmVmEvGJW0MArlw', 'UC_McQueeeen': 'UCMNvTCr-RwLVRW-jDIQVnBw', 'UC_RatoMaromba': 'UCxslmo0asWXgdWObPO8BFrQ', 'UC_GroveStreet': 'UChQfM3wIfo84Ab0WeW9CwCA', 'UC_BerserkMode': 'UCzkne80zh104CdG3kDrTQ1w', 'UC_OnePunchFights': 'UChdMYJwcBpizC4NLh5dRh4g', 'UC_UltimoPeao': 'UCkdnxxobb7NvO6EX2kLqv4A', 'UC_EcosDaMente': 'UCpCEVQUoScH3SNPZjEcAWpg' };
 
-let accounts = {}, results = {}, thumbs = {}, activePeriod = 28, myChart = null, cache = {};
+let results = {}, thumbs = {}, activePeriod = 28, myChart = null, cache = {};
 let selectedChannels = new Set(CHANNELS.map(c => c.id));
 
-async function login() {
-  const pwd = document.getElementById('passwordInput').value;
-  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) });
-  if (r.ok) { document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('appContent').style.display='block'; initApp(); }
-}
-
-async function initApp() { await loadAccounts(); await loadThumbs(); renderCanais(); renderMeses(); renderSidebar(); initChart(); fetchAll(); }
-async function loadAccounts() { try { const r = await fetch('/api/accounts'); accounts = await r.json(); } catch(e){} }
-async function loadThumbs() {
-  const ids = Object.values(CHANNEL_IDS).join(',');
-  const r = await fetch('/api/channel-thumbs?ids=' + ids);
-  const data = await r.json();
-  if(data.ok) Object.keys(CHANNEL_IDS).forEach(key => { thumbs[key] = data.thumbs[CHANNEL_IDS[key]]; });
-}
+async function initApp() { renderCanais(); renderMeses(); initChart(); fetchAll(); }
 
 function toggleDrop(id) {
   const el = document.getElementById(id);
@@ -204,7 +167,7 @@ function toggleDrop(id) {
 
 function resetFiltersAndClose() {
   selectedChannels = new Set(CHANNELS.map(c => c.id));
-  document.getElementById('dropCanais').classList.remove('open');
+  document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open'));
   renderCanais(); updateUI();
 }
 
@@ -223,17 +186,18 @@ function renderCanais() {
         if (allActive) { selectedChannels.clear(); selectedChannels.add(ch.id); } 
         else { if(selectedChannels.has(ch.id)) { selectedChannels.delete(ch.id); if(selectedChannels.size === 0) selectedChannels = new Set(CHANNELS.map(c => c.id)); } else { selectedChannels.add(ch.id); } }
         renderCanais();
+        updateUI(); // Atualiza dashboard reativamente
     };
     drop.appendChild(div);
   });
 
   const applyBtn = document.createElement('button');
   applyBtn.className = 'apply-filter-btn';
-  applyBtn.innerText = 'Aplicar Filtro';
-  applyBtn.onclick = () => { toggleDrop('dropCanais'); updateUI(); };
+  applyBtn.innerText = 'Aplicar';
+  applyBtn.onclick = () => { document.getElementById('dropCanais').classList.remove('open'); };
   drop.appendChild(applyBtn);
 
-  document.getElementById('btnCanais').innerText = selectedChannels.size === CHANNELS.length ? 'Canais ▾' : `${selectedChannels.size} Canais ▾`;
+  document.getElementById('btnCanais').innerText = selectedChannels.size === CHANNELS.length ? 'Canais ▾' : `${selectedChannels.size} Selecionados ▾`;
 }
 
 function renderMeses() {
@@ -303,20 +267,10 @@ function toggleSidebar(open) {
   else { s.classList.remove('open'); o.classList.remove('active'); document.body.classList.remove('no-scroll'); }
 }
 
-function renderSidebar() {
-  const content = document.getElementById('sidebarContent'); content.innerHTML = '';
-  CHANNELS.forEach(ch => {
-    const isC = !!accounts[ch.id];
-    const card = document.createElement('div'); card.className = 'side-card';
-    card.onclick = () => { if(!isC) window.location.href = `/auth/${ch.id}`; };
-    card.innerHTML = `<div style="display:flex;align-items:center;gap:12px"><img src="${thumbs[ch.id]}" class="avatar"><div><b>${ch.name}</b></div></div><div class="status-ball ${isC ? 'active' : ''}"></div>`;
-    content.appendChild(card);
-  });
-}
-
 function initChart() { const ctx = document.getElementById('mainChart').getContext('2d'); myChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } }, x: { grid: { display: false } } } } }); }
 function updateChart(dailyData) { const sorted = Object.keys(dailyData).sort(); myChart.data.labels = sorted.map(d => d.split('-').reverse().slice(0,2).join('/')); myChart.data.datasets[0].data = sorted.map(d => dailyData[d]); myChart.update(); }
 document.addEventListener('click', (e) => { if(!e.target.closest('.drop-wrapper') && !e.target.closest('.filter-group') && !e.target.closest('.drop-menu')) document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open')); });
+window.onload = initApp;
 </script>
 </body>
 </html>
