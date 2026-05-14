@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Automata YT</title>
 
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='20' stroke='%23ff4d00' stroke-width='6' fill='none'/><rect x='35' y='32' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='45' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='58' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='38.5' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='51.5' width='10' height='10' fill='%23ff4d00'/><rect x='61' y='45' width='10' height='10' fill='%23ff4d00'/></svg>">
@@ -15,24 +15,22 @@
     --accent: #ff4d00; --accent-hover: #ff6a2b; --text: #ffffff; --muted: #666;
     --ease-smooth: cubic-bezier(0.165, 0.84, 0.44, 1);
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; overflow-x: hidden; }
 
   /* LOGIN */
   .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
   .auth-overlay.hidden { display: none; }
-  .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 350px; text-align: center; box-shadow: 0 0 50px rgba(255, 77, 0, 0.1); }
+  .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 350px; text-align: center; }
   .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; outline: none; font-family: 'Space Mono', monospace; font-size: 1rem; }
-  .auth-input:focus { border-color: var(--accent); }
   .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
-  .auth-btn:hover { background: var(--accent-hover); transform: scale(1.02); }
 
   /* HEADER */
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 20px; }
   .logo-container { display: flex; align-items: center; gap: 12px; }
   .logo-text { font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; }
   
-  .header-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .header-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; }
   .drop-wrapper { position: relative; }
   
   .bubble-btn {
@@ -42,10 +40,11 @@
   }
   .bubble-btn:hover { border-color: var(--accent); }
 
+  /* CORREÇÃO DO BALÃO FORA DA TELA */
   .drop-menu {
     position: absolute; top: 50px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
-    border-radius: 20px; width: 250px; padding: 12px; display: none; z-index: 100; flex-direction: column; gap: 4px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    border-radius: 20px; width: 260px; padding: 12px; display: none; z-index: 100; flex-direction: column; gap: 4px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
   }
   .drop-menu.open { display: flex; }
   .drop-opt { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 12px; font-size: 0.85rem; transition: 0.2s; }
@@ -67,12 +66,20 @@
   .row-chan { display: flex; align-items: center; gap: 12px; font-weight: 700; }
   .avatar { width: 34px; height: 34px; border-radius: 50%; background: #111; object-fit: cover; border: 1px solid var(--border); }
 
-  /* SIDEBAR & OVERLAY */
-  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 199; display: none; transition: 0.3s; }
-  .sidebar-overlay.active { display: block; }
+  /* SIDEBAR PERFORMANCE (60 FPS) */
+  .sidebar-overlay { 
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
+    backdrop-filter: blur(4px); z-index: 199; display: none; opacity: 0; transition: opacity 0.3s; 
+  }
+  .sidebar-overlay.active { display: block; opacity: 1; }
   
-  .sidebar { position: fixed; top: 0; right: -400px; width: 350px; height: 100vh; background: #000; border-left: 1px solid var(--accent); transition: 0.4s var(--ease-smooth); z-index: 200; padding: 25px; }
-  .sidebar.open { right: 0; }
+  .sidebar { 
+    position: fixed; top: 0; right: 0; width: 350px; height: 100vh; background: #000; 
+    border-left: 1px solid var(--accent); z-index: 200; padding: 25px;
+    transform: translateX(100%); transition: transform 0.4s var(--ease-smooth); will-change: transform;
+  }
+  .sidebar.open { transform: translateX(0); }
+  
   .side-card { background: var(--surface); padding: 16px; border-radius: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
 
   .custom-date-box { display: none; padding: 12px; border-top: 1px solid var(--border); flex-direction: column; gap: 8px; }
@@ -87,7 +94,8 @@
     .total-card .value { font-size: 2.2rem; }
     .chart-container { height: 300px; }
     .logo-container { width: 100%; justify-content: center; margin-bottom: 10px; }
-    .sidebar { width: 100%; right: -100%; }
+    .sidebar { width: 100%; }
+    .drop-menu { right: auto; left: 50%; transform: translateX(-50%); width: 90vw; max-width: 320px; }
   }
 </style>
 </head>
@@ -130,13 +138,13 @@
     
     <div class="header-controls">
       <div class="drop-wrapper">
-        <button class="bubble-btn" id="btnCanais" onclick="toggleCanaisDrop()">Todos os Canais ▾</button>
+        <button class="bubble-btn" id="btnCanais" onclick="toggleCanaisDrop()">Canais ▾</button>
         <div class="drop-menu" id="dropCanais"></div>
       </div>
 
       <div class="drop-wrapper">
         <button class="bubble-btn" id="btnPeriodo" onclick="toggleDrop('dropDatas')">28 Dias ▾</button>
-        <div class="drop-menu" id="dropDatas" style="right: auto; left: 0;">
+        <div class="drop-menu" id="dropDatas">
           <div class="drop-opt" id="opt1" onclick="setPreset(1)">Último Dia</div>
           <div class="drop-opt" id="opt7" onclick="setPreset(7)">Últimos 7 Dias</div>
           <div class="drop-opt selected" id="opt28" onclick="setPreset(28)">Últimos 28 Dias</div>
@@ -201,25 +209,22 @@ const CHANNEL_IDS = {
 
 let accounts = {}, results = {}, thumbs = {}, activePeriod = 28, myChart = null;
 let selectedChannels = new Set(CHANNELS.map(c => c.id));
+let tempSelected = new Set(); // Para o botão de Aplicar
 
 async function login() {
   const pwd = document.getElementById('passwordInput').value;
   try {
     const r = await fetch('/api/login', { 
         method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, // CORRIGIDO AQUI
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd }) 
     });
     if (r.ok) { 
         document.getElementById('authOverlay').classList.add('hidden'); 
         document.getElementById('appContent').style.display='block'; 
         initApp(); 
-    } else {
-        alert("Senha incorreta");
-    }
-  } catch(e) {
-    alert("Erro ao conectar ao servidor");
-  }
+    } else { alert("Senha incorreta"); }
+  } catch(e) { alert("Erro ao conectar ao servidor"); }
 }
 
 async function initApp() {
@@ -250,11 +255,13 @@ function toggleDrop(id) {
 function toggleCanaisDrop() {
   const drop = document.getElementById('dropCanais');
   if (!drop.classList.contains('open')) {
+    // Se todos estavam selecionados, inicia limpo
     if (selectedChannels.size === CHANNELS.length) {
-      selectedChannels.clear();
-      renderCanais();
-      updateUI();
+      tempSelected.clear();
+    } else {
+      tempSelected = new Set(selectedChannels);
     }
+    renderCanais();
   }
   toggleDrop('dropCanais');
 }
@@ -262,21 +269,35 @@ function toggleCanaisDrop() {
 function renderCanais() {
   const drop = document.getElementById('dropCanais'); drop.innerHTML = '';
   CHANNELS.forEach(ch => {
-    const isS = selectedChannels.has(ch.id);
+    const isS = tempSelected.has(ch.id);
     const div = document.createElement('div');
     div.className = `drop-opt ${isS ? 'selected' : ''}`;
     div.innerHTML = `<img src="${thumbs[ch.id] || ''}" class="avatar"> <span>${ch.name}</span>`;
     div.onclick = (e) => { 
         e.stopPropagation(); 
-        if(isS) selectedChannels.delete(ch.id); 
-        else selectedChannels.add(ch.id); 
-        if (selectedChannels.size === 0) { CHANNELS.forEach(c => selectedChannels.add(c.id)); }
+        if(isS) tempSelected.delete(ch.id); else tempSelected.add(ch.id); 
         renderCanais(); 
-        updateUI(); 
     };
     drop.appendChild(div);
   });
-  document.getElementById('btnCanais').innerText = selectedChannels.size === CHANNELS.length ? 'Todos os Canais ▾' : `${selectedChannels.size} Selecionados ▾`;
+  
+  // Botão Aplicar
+  const applyBtn = document.createElement('button');
+  applyBtn.className = 'auth-btn';
+  applyBtn.style.marginTop = '10px';
+  applyBtn.style.padding = '10px';
+  applyBtn.innerText = 'APLICAR FILTRO';
+  applyBtn.onclick = () => {
+    if(tempSelected.size === 0) {
+        CHANNELS.forEach(c => selectedChannels.add(c.id));
+    } else {
+        selectedChannels = new Set(tempSelected);
+    }
+    document.getElementById('btnCanais').innerText = selectedChannels.size === CHANNELS.length ? 'Todos os Canais ▾' : `${selectedChannels.size} Selecionados ▾`;
+    toggleDrop('dropCanais');
+    updateUI();
+  };
+  drop.appendChild(applyBtn);
 }
 
 function renderMeses() {
@@ -376,14 +397,12 @@ function updateUI() {
 function toggleSidebar(open) {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    if (sidebar && overlay) {
-        if (open) {
-            sidebar.classList.add('open');
-            overlay.classList.add('active');
-        } else {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        }
+    if (open) {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+    } else {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
     }
 }
 
