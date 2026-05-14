@@ -91,9 +91,10 @@
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
     <div style="display:flex; justify-content:center; margin-bottom: 20px;">
-      <svg viewBox="0 0 100 100" width="50" height="50" fill="none">
-        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
-        <polygon points="42,35 42,65 68,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
+      <svg width="60" height="60" viewBox="0 0 100 100">
+        <rect x="20" y="20" width="25" height="25" fill="#ff4d00" rx="2" />
+        <rect x="50" y="35" width="25" height="25" fill="#ff4d00" rx="2" />
+        <rect x="20" y="50" width="25" height="25" fill="#ff4d00" rx="2" />
       </svg>
     </div>
     <input type="password" id="passwordInput" class="auth-input" placeholder="Senha Mestra">
@@ -104,9 +105,10 @@
 <div id="appContent" style="display:none">
   <header>
     <div class="logo-container">
-      <svg viewBox="0 0 100 100" width="35" height="35" fill="none">
-        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
-        <polygon points="42,35 42,65 68,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
+      <svg width="40" height="40" viewBox="0 0 100 100">
+        <rect x="20" y="20" width="25" height="25" fill="#ff4d00" rx="2" />
+        <rect x="50" y="35" width="25" height="25" fill="#ff4d00" rx="2" />
+        <rect x="20" y="50" width="25" height="25" fill="#ff4d00" rx="2" />
       </svg>
       <div class="logo-text">Automata</div>
     </div>
@@ -124,7 +126,8 @@
           <div class="drop-opt selected" onclick="setPreset(28)">Últimos 28 Dias</div>
           <div class="drop-opt" onclick="setPreset(90)">Últimos 90 Dias</div>
           <div style="height:1px; background:var(--border); margin:5px 0;"></div>
-          <div id="monthOptions"></div> <div style="height:1px; background:var(--border); margin:5px 0;"></div>
+          <div id="monthOptions"></div> 
+          <div style="height:1px; background:var(--border); margin:5px 0;"></div>
           <div class="drop-opt" onclick="toggleCustomDate()">Data Específica</div>
           <div class="custom-date-box" id="customDateBox">
             <input type="date" id="dateStart" class="date-picker">
@@ -225,7 +228,7 @@ function renderCanais() {
 
 function renderMeses() {
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-  const container = document.getElementById('monthOptions');
+  const container = document.getElementById('monthOptions'); container.innerHTML = '';
   const d = new Date();
   for(let i=0; i<3; i++) {
     const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
