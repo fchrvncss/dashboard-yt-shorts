@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Automata YT</title>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='20' stroke='%23ff4d00' stroke-width='6' fill='none'/><rect x='35' y='32' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='45' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='58' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='38.5' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='51.5' width='10' height='10' fill='%23ff4d00'/><rect x='61' y='45' width='10' height='10' fill='%23ff4d00'/></svg>">
+
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -71,7 +74,6 @@
   .custom-date-box.open { display: flex; }
   .date-picker { background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.8rem; color-scheme: dark; outline: none; font-family: 'Space Mono', monospace; }
 
-  /* RESPONSIVIDADE */
   @media (max-width: 768px) {
     body { padding: 16px; }
     header { justify-content: center; }
@@ -278,19 +280,16 @@ function applyCustom(label) {
 
 async function fetchAll() {
   let start, end = new Date().toISOString().split('T')[0];
-  
   if(activePeriod === 'custom') {
     start = document.getElementById('dateStart').value;
     end = document.getElementById('dateEnd').value;
   } else if(activePeriod === 1) {
-    // MÁGICA: Se for Último Dia, pede 5 dias para garimpar qual o mais recente com dados
     const d = new Date(); d.setDate(d.getDate() - 5);
     start = d.toISOString().split('T')[0];
   } else {
     const d = new Date(); d.setDate(d.getDate() - activePeriod);
     start = d.toISOString().split('T')[0];
   }
-
   const promises = CHANNELS.map(ch => fetchChannel(ch, start, end));
   await Promise.all(promises);
   updateUI();
@@ -307,19 +306,11 @@ async function fetchChannel(ch, start, end) {
 function updateUI() {
   const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
   let tR = 0, tV = 0, dD = {};
-
-  // Descobrir a última data real com receita se for "Último Dia"
   let maxDate = null;
   if(activePeriod === 1) {
     let allDates = [];
-    Object.values(results).forEach(rows => {
-      // Pega apenas dias que tem receita > 0
-      rows.forEach(r => { if(r[1] > 0) allDates.push(r[0]); });
-    });
-    // Pega a data mais recente da lista filtrada
+    Object.values(results).forEach(rows => { rows.forEach(r => { if(r[1] > 0) allDates.push(r[0]); }); });
     maxDate = allDates.length ? allDates.sort().reverse()[0] : null;
-    
-    // Atualiza o label para mostrar a data exata
     const displayDate = maxDate ? maxDate.split('-').reverse().join('/') : 'Aguardando...';
     document.getElementById('labelRevenue').innerText = 'Receita em ' + displayDate;
     document.getElementById('labelViews').innerText = 'Views em ' + displayDate;
@@ -327,25 +318,16 @@ function updateUI() {
     document.getElementById('labelRevenue').innerText = 'Receita do Período';
     document.getElementById('labelViews').innerText = 'Views do Período';
   }
-
   CHANNELS.forEach(ch => {
     if(!selectedChannels.has(ch.id)) return;
     let rows = results[ch.id] || [];
-    
-    // Se for "Último Dia", filtra apenas pela data máxima encontrada com receita
-    if(activePeriod === 1) {
-      rows = rows.filter(r => r[0] === maxDate);
-    }
-
+    if(activePeriod === 1) rows = rows.filter(r => r[0] === maxDate);
     const rS = rows.reduce((a, b) => a + b[1], 0);
     const vS = rows.reduce((a, b) => a + b[2], 0);
     tR += rS; tV += vS;
-    
     rows.forEach(r => dD[r[0]] = (dD[r[0]] || 0) + r[1]);
-    
     tbody.innerHTML += `<tr><td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar">${ch.name}</div></td><td style="color:var(--accent);font-weight:800">$${rS.toFixed(2)}</td><td style="font-weight:600">${vS.toLocaleString()}</td></tr>`;
   });
-
   document.getElementById('totalRevenue').innerText = `$${tR.toFixed(2)}`;
   document.getElementById('totalViews').innerText = tV.toLocaleString();
   updateChart(dD);
@@ -372,7 +354,7 @@ function initChart() {
     data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 3, pointBackgroundColor: '#ff4d00' }] },
     options: { 
       responsive: true, maintainAspectRatio: false, 
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0a0a0a', borderColor: '#ff4d00', borderWidth: 1, titleFont: { size: 14 }, bodyFont: { size: 14 }, padding: 12 } }, 
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0a0a0a', borderColor: '#ff4d00', borderWidth: 1, padding: 12 } }, 
       scales: { y: { grid: { color: '#111' }, ticks: { color: '#666', font: { family: 'Space Mono' } } }, x: { grid: { display: false }, ticks: { color: '#666', font: { family: 'Space Mono' } } } } 
     }
   });
