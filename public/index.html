@@ -14,31 +14,43 @@
     --bg: #000000; --surface: #0a0a0a; --border: #1a1a1a;
     --accent: #ff4d00; --accent-hover: #ff6a2b; --text: #ffffff; --muted: #666;
     --semi-orange: rgba(255, 77, 0, 0.15);
+    --ease: cubic-bezier(0.165, 0.84, 0.44, 1);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; overflow-x: hidden; }
   body.no-scroll { overflow: hidden; }
 
-  /* ZOOM & SEMI-SELEÇÃO */
+  /* ZOOM & HOVER */
   .drop-opt, .side-card, .bubble-btn, .total-card, .auth-btn, .clear-extension {
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, color 0.2s, width 0.3s var(--ease-smooth), opacity 0.2s;
+    transition: transform 0.2s var(--ease), background 0.2s, color 0.2s, width 0.4s var(--ease), opacity 0.3s var(--ease), border-radius 0.3s var(--ease);
   }
   .drop-opt:hover, .side-card:hover { transform: scale(1.03); background: var(--semi-orange) !important; color: #ff9d66 !important; }
   .total-card:hover { transform: scale(1.02); border-color: var(--accent); }
 
-  /* BOTÃO EXTENSÍVEL DE FILTRO */
-  .filter-group { display: flex; align-items: center; position: relative; gap: 0; }
+  /* BOTÃO EXTENSÍVEL INTELIGENTE */
+  .filter-group { display: flex; align-items: center; position: relative; }
   
   .clear-extension {
     background: var(--surface); border: 1px solid var(--border); border-right: none;
     height: 38px; color: var(--accent); display: flex; align-items: center; justify-content: center;
     border-radius: 50px 0 0 50px; overflow: hidden; cursor: pointer;
-    width: 0; opacity: 0; white-space: nowrap; font-size: 0.75rem; font-weight: 800;
+    width: 0; opacity: 0; white-space: nowrap; font-size: 0.75rem; font-weight: 800; pointer-events: none;
   }
-  .filter-group:hover .clear-extension { width: 40px; opacity: 1; }
-  .clear-extension:hover { width: 130px; background: var(--semi-orange); }
-  .clear-extension span { display: none; margin-left: 8px; }
-  .clear-extension:hover span { display: inline; }
+  
+  /* Só aparece quando tem a classe .active */
+  .clear-extension.active { width: 40px; opacity: 1; pointer-events: auto; }
+  .clear-extension.active:hover { width: 140px; background: var(--semi-orange); }
+  
+  .clear-extension span { opacity: 0; margin-left: 8px; transition: 0.3s; }
+  .clear-extension.active:hover span { opacity: 1; }
+
+  .bubble-btn { background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; height: 38px; }
+  
+  /* Ajuste de borda quando a extensão está ativa */
+  .clear-extension.active + .drop-wrapper .btn-canais {
+    border-radius: 0 50px 50px 0;
+    border-left: 1px solid transparent;
+  }
 
   /* AUTH */
   .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
@@ -52,12 +64,8 @@
   .logo-container { display: flex; align-items: center; gap: 12px; }
   .logo-text { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; }
   .header-controls { display: flex; gap: 10px; align-items: center; }
-  
-  .bubble-btn { background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; height: 38px; }
-  .btn-canais { border-radius: 50px; transition: border-radius 0.3s; }
-  .filter-group:hover .btn-canais { border-radius: 0 50px 50px 0; border-left: none; }
 
-  /* MENUS - FIX MOBILE LEAK */
+  /* MENUS - MOBILE SAFE */
   .drop-wrapper { position: relative; }
   .drop-menu {
     position: absolute; top: 45px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
@@ -131,7 +139,7 @@
     <div class="header-controls">
       
       <div class="filter-group">
-        <div class="clear-extension" onclick="resetFilters()">✕<span>Limpar Filtros</span></div>
+        <div class="clear-extension" id="clearBtn" onclick="resetFilters()">✕<span>Limpar Filtros</span></div>
         <div class="drop-wrapper">
           <button class="bubble-btn btn-canais" id="btnCanais" onclick="toggleDrop('dropCanais')">Todos os Canais ▾</button>
           <div class="drop-menu" id="dropCanais"></div>
@@ -215,6 +223,11 @@ function resetFilters() {
 function renderCanais() {
   const drop = document.getElementById('dropCanais'); drop.innerHTML = '';
   const allActive = selectedChannels.size === CHANNELS.length;
+  
+  // Controle do botão de Limpar
+  const clearBtn = document.getElementById('clearBtn');
+  if (!allActive) clearBtn.classList.add('active');
+  else clearBtn.classList.remove('active');
 
   CHANNELS.forEach(ch => {
     const isS = allActive ? false : selectedChannels.has(ch.id);
@@ -249,44 +262,31 @@ function renderMeses() {
 }
 
 function setPreset(days) { activePeriod = days; highlightPeriod('opt-' + days); document.getElementById('btnPeriodo').innerText = (days === 1 ? 'Último Dia' : days + ' Dias') + ' ▾'; fetchAll(); }
-
-function highlightPeriod(id) {
-  document.querySelectorAll('.drop-menu .drop-opt').forEach(el => el.classList.remove('selected'));
-  const target = document.getElementById(id); if(target) target.classList.add('selected');
-}
+function highlightPeriod(id) { document.querySelectorAll('.drop-menu .drop-opt').forEach(el => el.classList.remove('selected')); const target = document.getElementById(id); if(target) target.classList.add('selected'); }
 
 async function fetchAll(customS, customE) {
   let start, end = new Date().toISOString().split('T')[0];
   if(customS) { start = customS; end = customE; }
   else { const d = new Date(); d.setDate(d.getDate() - (activePeriod === 1 ? 5 : activePeriod)); start = d.toISOString().split('T')[0]; }
-  
   const cacheKey = start + '_' + end;
   if(cache[cacheKey]) { results = cache[cacheKey]; updateUI(); return; }
-
   const promises = CHANNELS.map(ch => fetchChannel(ch, start, end));
   await Promise.all(promises);
   cache[cacheKey] = JSON.parse(JSON.stringify(results));
   updateUI();
 }
 
-async function fetchChannel(ch, start, end) {
-  try {
-    const r = await fetch(`/api/analytics?channelId=${CHANNEL_IDS[ch.id]}&startDate=${start}&endDate=${end}`);
-    const data = await r.json(); results[ch.id] = data.ok ? data.rows : [];
-  } catch(e) { results[ch.id] = []; }
-}
+async function fetchChannel(ch, start, end) { try { const r = await fetch(`/api/analytics?channelId=${CHANNEL_IDS[ch.id]}&startDate=${start}&endDate=${end}`); const data = await r.json(); results[ch.id] = data.ok ? data.rows : []; } catch(e) { results[ch.id] = []; } }
 
 function updateUI() {
   const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
   let tR = 0, tV = 0, dD = {}, maxDate = null;
-
   if(activePeriod === 1) {
     let allDates = []; Object.values(results).forEach(rows => rows.forEach(r => { if(r[1] > 0) allDates.push(r[0]); }));
     maxDate = allDates.length ? allDates.sort().reverse()[0] : null;
     const disp = maxDate ? maxDate.split('-').reverse().join('/') : '---';
     document.getElementById('labelRevenue').innerText = 'Receita ('+disp+')';
   } else { document.getElementById('labelRevenue').innerText = 'Receita Total'; }
-
   CHANNELS.forEach(ch => {
     if(!selectedChannels.has(ch.id)) return;
     let rows = results[ch.id] || [];
@@ -298,7 +298,6 @@ function updateUI() {
     rows.forEach(r => dD[r[0]] = (dD[r[0]] || 0) + r[1]);
     tbody.innerHTML += `<tr><td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar"><span>${ch.name}</span></div></td><td style="color:var(--accent);font-weight:800">$${rS.toFixed(2)}</td><td>${vS.toLocaleString()}</td><td style="color:var(--muted)">$${rpm.toFixed(2)}</td></tr>`;
   });
-  
   document.getElementById('totalRevenue').innerText = `$${tR.toFixed(2)}`;
   document.getElementById('totalViews').innerText = tV.toLocaleString();
   const avgRPM = tV > 0 ? (tR / tV) * 1000 : 0;
@@ -323,22 +322,8 @@ function renderSidebar() {
   });
 }
 
-function initChart() {
-  const ctx = document.getElementById('mainChart').getContext('2d');
-  myChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 3 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } }, x: { grid: { display: false } } } }
-  });
-}
-
-function updateChart(dailyData) {
-  const sorted = Object.keys(dailyData).sort();
-  myChart.data.labels = sorted.map(d => d.split('-').reverse().slice(0,2).join('/'));
-  myChart.data.datasets[0].data = sorted.map(d => dailyData[d]);
-  myChart.update();
-}
-
+function initChart() { const ctx = document.getElementById('mainChart').getContext('2d'); myChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } }, x: { grid: { display: false } } } } }); }
+function updateChart(dailyData) { const sorted = Object.keys(dailyData).sort(); myChart.data.labels = sorted.map(d => d.split('-').reverse().slice(0,2).join('/')); myChart.data.datasets[0].data = sorted.map(d => dailyData[d]); myChart.update(); }
 document.addEventListener('click', (e) => { if(!e.target.closest('.drop-wrapper') && !e.target.closest('.filter-group')) document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open')); });
 </script>
 </body>
