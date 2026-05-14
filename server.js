@@ -11,7 +11,6 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const BASE_URL = process.env.BASE_URL;
 const REDIRECT_URI = `${BASE_URL}/callback`;
 
-// ── AQUI ESTÁ A CHAVE DE SEGURANÇA ──
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
 
 const SCOPES = [
@@ -33,13 +32,11 @@ app.use(express.static('public'));
 
 let storedAccounts = {};
 
-// ── MIDDLEWARE DE SEGURANÇA (O GUARDA-COSTAS) ──
 function checkAuth(req, res, next) {
   if (req.session.isAuthenticated) return next();
-  res.status(401).json({ error: 'Acesso negado' });
+  res.status(401).json({ error: 'Unauthorized' });
 }
 
-// ── ROTAS DE LOGIN DO SITE ──
 app.post('/api/login', (req, res) => {
   if (req.body.password === DASHBOARD_PASSWORD) {
     req.session.isAuthenticated = true;
@@ -53,7 +50,6 @@ app.get('/api/status', (req, res) => {
   res.json({ authenticated: !!req.session.isAuthenticated });
 });
 
-// ── ROTAS PROTEGIDAS ──
 app.get('/auth/:slot', checkAuth, (req, res) => {
   const slot = req.params.slot;
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -130,6 +126,29 @@ async function getValidToken(slot) {
   } catch { return null; }
 }
 
+// NOVO: Endpoint para buscar fotos de perfil
+app.get('/api/channel-thumbs', checkAuth, async (req, res) => {
+  const { ids } = req.query; // IDs separados por vírgula
+  
+  for (const slot of Object.keys(storedAccounts)) {
+    const token = await getValidToken(slot);
+    if (!token) continue;
+
+    try {
+      const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${ids}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await r.json();
+      const thumbs = {};
+      data.items?.forEach(item => {
+        thumbs[item.id] = item.snippet.thumbnails.default.url;
+      });
+      return res.json({ ok: true, thumbs });
+    } catch { continue; }
+  }
+  res.json({ ok: false });
+});
+
 app.get('/api/analytics', checkAuth, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
   
@@ -161,4 +180,4 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`Rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Server on ${PORT}`));
