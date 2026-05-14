@@ -74,7 +74,7 @@
   .total-card .value { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; color: var(--accent); line-height: 1; }
   .total-card .label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; letter-spacing: 1px; }
 
-  .chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 25px; margin-bottom: 40px; height: 380px; }
+  .chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 25px; margin-bottom: 30px; height: 380px; }
 
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; overflow: hidden; }
   table { width: 100%; border-collapse: collapse; }
@@ -84,9 +84,6 @@
   tr:last-child td { border-bottom: none; }
   .row-chan { display: flex; align-items: center; gap: 15px; font-weight: 600; }
   .val-mono { font-family: 'Space Mono', monospace; font-weight: 700; }
-
-  .status-msg { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
   /* SIDEBAR */
   .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 199; opacity: 0; pointer-events: none; transition: 0.3s; }
@@ -103,9 +100,13 @@
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
     <div style="display:flex; justify-content:center; margin-bottom: 24px;">
-      <svg viewBox="0 0 100 100" width="60" height="60" fill="none">
-        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
-        <polygon points="40,35 40,65 65,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
+      <svg viewBox="0 0 100 100" width="64" height="64">
+        <rect x="25" y="65" width="15" height="15" fill="#ff4d00" />
+        <rect x="60" y="65" width="15" height="15" fill="#ff4d00" />
+        <rect x="25" y="45" width="15" height="15" fill="#ff4d00" />
+        <rect x="60" y="45" width="15" height="15" fill="#ff4d00" />
+        <rect x="42.5" y="25" width="15" height="15" fill="#ff4d00" />
+        <rect x="42.5" y="45" width="15" height="15" fill="#ff4d00" />
       </svg>
     </div>
     <input type="password" id="passwordInput" class="auth-input" placeholder="Senha Mestra">
@@ -116,9 +117,13 @@
 <div id="appContent" style="display:none">
   <header>
     <div class="logo-container">
-      <svg viewBox="0 0 100 100" width="40" height="40" fill="none">
-        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
-        <polygon points="40,35 40,65 65,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
+      <svg viewBox="0 0 100 100" width="36" height="36">
+        <rect x="25" y="65" width="15" height="15" fill="#ff4d00" />
+        <rect x="60" y="65" width="15" height="15" fill="#ff4d00" />
+        <rect x="25" y="45" width="15" height="15" fill="#ff4d00" />
+        <rect x="60" y="45" width="15" height="15" fill="#ff4d00" />
+        <rect x="42.5" y="25" width="15" height="15" fill="#ff4d00" />
+        <rect x="42.5" y="45" width="15" height="15" fill="#ff4d00" />
       </svg>
       <div class="logo-text">Automata</div>
     </div>
@@ -154,8 +159,6 @@
   </div>
 
   <div class="chart-container"><canvas id="mainChart"></canvas></div>
-
-  <p class="status-msg" id="statusMsg"><div class="status-dot"></div> Aguardando...</p>
 
   <div class="table-wrap">
     <table>
@@ -195,7 +198,7 @@ const CHANNEL_IDS = {
 
 let accounts = {}, results = {}, thumbs = {}, myChart = null;
 let selectedChannels = new Set(CHANNELS.map(c => c.id));
-let activePeriod = 28; // Padrão: Últimos 28 Dias
+let activePeriod = 28; 
 
 // --- DROPDOWNS ---
 function toggleDrop(id) {
@@ -295,8 +298,6 @@ function renderSidebar() {
   });
 }
 
-function setStatus(msg) { document.getElementById('statusMsg').innerHTML = `<div class="status-dot"></div> ${msg}`; }
-
 function getYTDate(daysOffset) {
   const d = new Date(); d.setDate(d.getDate() - daysOffset);
   return d.toISOString().split('T')[0];
@@ -311,14 +312,12 @@ async function fetchAll() {
     end = document.getElementById('dateEnd').value;
   } else {
     start = getYTDate(activePeriod); 
-    end = getYTDate(-1); // Ajuste invisível: Pede até "Amanhã" para forçar o Google a entregar o último processamento absoluto (Ex: Dia 12 não será cortado por fuso horário)
+    end = getYTDate(-1);
   }
 
-  setStatus('Sincronizando...');
   const promises = CHANNELS.map(ch => fetchChannel(ch, start, end));
   await Promise.all(promises);
   updateUI();
-  setStatus('Sincronização concluída.');
 }
 
 async function fetchChannel(ch, start, end) {
