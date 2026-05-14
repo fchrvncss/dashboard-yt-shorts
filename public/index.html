@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Automata YT</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
@@ -12,98 +12,150 @@
     --accent: #ff4d00; --accent-hover: #ff6a2b; --text: #ffffff; --muted: #666;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; overflow-x: hidden; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
   /* LOGIN */
-  .auth-overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-  .auth-overlay.hidden { display: none; }
-  .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 350px; text-align: center; }
-  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; }
-  .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; }
+  .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+  .auth-overlay.hidden { opacity: 0; pointer-events: none; }
+  .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 360px; text-align: center; }
+  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; font-family: 'Space Mono', monospace; font-size: 0.9rem; outline: none; transition: 0.2s; }
+  .auth-input:focus { border-color: var(--accent); }
+  .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+  .auth-btn:hover { background: var(--accent-hover); transform: scale(1.02); }
 
-  /* UI BUBBLE */
+  /* HEADER & LOGO GEOMÉTRICA */
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-  .logo { font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; }
-  .logo span { color: var(--accent); }
-
+  .logo-container { display: flex; align-items: center; gap: 12px; }
+  .logo-text { font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; }
+  
   .bubble-btn {
     background: var(--surface); border: 1px solid var(--border); color: #fff; 
-    padding: 10px 22px; border-radius: 50px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
-    transition: 0.2s;
+    padding: 12px 24px; border-radius: 50px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    transition: 0.2s; display: flex; align-items: center; gap: 8px; justify-content: center;
   }
-  .bubble-btn:hover { border-color: var(--accent); }
-  .bubble-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-
-  .date-picker { background: #000; border: 1px solid var(--border); color: #fff; padding: 10px 15px; border-radius: 50px; font-size: 0.8rem; color-scheme: dark; }
-
-  .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-  .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 30px; }
-  .total-card .value { font-size: 3rem; font-weight: 900; letter-spacing: -2px; color: var(--accent); }
-  .total-card .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
-
-  .chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 25px; margin-bottom: 40px; height: 350px; }
-
-  /* FILTRO DROP */
-  .filter-wrapper { position: relative; }
-  .filter-drop {
-    position: absolute; top: 50px; left: 0; background: #0a0a0a; border: 1px solid var(--accent);
-    border-radius: 20px; width: 280px; padding: 15px; display: none; z-index: 100; flex-direction: column; gap: 8px;
-    box-shadow: 0 10px 30px rgba(255,77,0,0.2);
-  }
-  .filter-drop.open { display: flex; }
-  .channel-opt { display: flex; align-items: center; gap: 12px; padding: 10px; cursor: pointer; border-radius: 12px; transition: 0.2s; }
-  .channel-opt:hover { background: rgba(255,77,0,0.1); }
-  .channel-opt.selected { background: rgba(255,77,0,0.2); }
+  .bubble-btn:hover { border-color: var(--accent); background: rgba(255, 77, 0, 0.05); }
   
-  .avatar { width: 35px; height: 35px; border-radius: 50%; background: #222; object-fit: cover; border: 1px solid var(--border); }
-  .channel-opt.selected .avatar { border-color: var(--accent); }
+  /* DROPDOWNS (Canais e Datas) */
+  .header-controls { display: flex; align-items: center; gap: 16px; }
+  .drop-wrapper { position: relative; }
+  .drop-menu {
+    position: absolute; top: 55px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
+    border-radius: 24px; width: 280px; padding: 16px; display: none; z-index: 100; flex-direction: column; gap: 8px;
+    box-shadow: 0 10px 40px rgba(255,77,0,0.15); max-height: 400px; overflow-y: auto;
+  }
+  .drop-menu.open { display: flex; }
+  
+  .drop-opt { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-radius: 16px; transition: 0.2s; font-size: 0.9rem; font-weight: 500; }
+  .drop-opt:hover { background: rgba(255,77,0,0.1); }
+  .drop-opt.selected { background: rgba(255,77,0,0.15); color: var(--accent); font-weight: 700; }
+  
+  /* ELEMENTOS DO DROPDOWN DE CANAIS */
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #111; object-fit: cover; border: 1px solid var(--border); }
+  .drop-opt.selected .avatar { border-color: var(--accent); }
+  .checkbox { width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-left: auto; }
+  .drop-opt.selected .checkbox { border-color: var(--accent); background: var(--accent); }
+  .drop-opt.selected .checkbox::after { content: '✓'; color: #000; font-size: 12px; font-weight: 900; }
 
-  /* TABELA */
+  /* ELEMENTOS DO DROPDOWN DE DATAS */
+  .custom-date-box { display: none; flex-direction: column; gap: 10px; padding: 10px 5px 0 5px; border-top: 1px solid var(--border); margin-top: 5px; }
+  .custom-date-box.open { display: flex; }
+  .date-picker { background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.8rem; color-scheme: dark; outline: none; font-family: 'Space Mono', monospace; }
+  .date-picker:focus { border-color: var(--accent); }
+  .apply-btn { background: var(--accent); color: #000; border: none; padding: 10px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+  /* DASHBOARD MAIN */
+  .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px; }
+  .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 32px; display: flex; flex-direction: column; justify-content: center; }
+  .total-card .value { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; color: var(--accent); line-height: 1; }
+  .total-card .label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; letter-spacing: 1px; }
+
+  .chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 25px; margin-bottom: 40px; height: 380px; }
+
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; overflow: hidden; }
   table { width: 100%; border-collapse: collapse; }
-  th { padding: 20px; text-align: left; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
-  td { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-  .row-chan { display: flex; align-items: center; gap: 15px; font-weight: 700; }
+  th { padding: 20px 24px; text-align: left; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); font-weight: 700; letter-spacing: 1px; }
+  td { padding: 20px 24px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  tr:last-child td { border-bottom: none; }
+  .row-chan { display: flex; align-items: center; gap: 15px; font-weight: 600; }
+  .val-mono { font-family: 'Space Mono', monospace; font-weight: 700; }
+
+  .status-msg { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
   /* SIDEBAR */
-  .sidebar { position: fixed; top: 0; right: -400px; width: 350px; height: 100vh; background: #000; border-left: 1px solid var(--accent); transition: 0.3s; z-index: 200; padding: 30px; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 199; opacity: 0; pointer-events: none; transition: 0.3s; }
+  .sidebar-overlay.open { opacity: 1; pointer-events: all; }
+  .sidebar { position: fixed; top: 0; right: -400px; width: 380px; height: 100vh; background: #000; border-left: 1px solid var(--accent); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1); z-index: 200; display: flex; flex-direction: column; }
   .sidebar.open { right: 0; }
-  .side-card { background: var(--surface); padding: 15px; border-radius: 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+  .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 24px; border-bottom: 1px solid var(--border); }
+  .sidebar-content { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .side-card { background: var(--surface); padding: 16px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
 </style>
 </head>
 <body>
 
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
-    <h2 style="margin-bottom:20px">Automata<span>.</span></h2>
+    <div style="display:flex; justify-content:center; margin-bottom: 24px;">
+      <svg viewBox="0 0 100 100" width="60" height="60" fill="none">
+        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
+        <polygon points="40,35 40,65 65,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <input type="password" id="passwordInput" class="auth-input" placeholder="Senha Mestra">
-    <button class="auth-btn" onclick="login()">ACESSAR</button>
+    <button class="auth-btn" onclick="login()">ACESSAR COFRE</button>
   </div>
 </div>
 
 <div id="appContent" style="display:none">
   <header>
-    <div class="logo">Automata<span>.</span></div>
-    <div style="display:flex; gap:12px; align-items:center">
-      <div class="filter-wrapper">
-        <button class="bubble-btn" onclick="document.getElementById('filterDrop').classList.toggle('open')">Filtrar Canais ▾</button>
-        <div class="filter-drop" id="filterDrop"></div>
+    <div class="logo-container">
+      <svg viewBox="0 0 100 100" width="40" height="40" fill="none">
+        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
+        <polygon points="40,35 40,65 65,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
+      </svg>
+      <div class="logo-text">Automata</div>
+    </div>
+    
+    <div class="header-controls">
+      <div class="drop-wrapper" id="wrapCanais">
+        <button class="bubble-btn" id="btnCanais" onclick="toggleDrop('dropCanais')">Canais ▾</button>
+        <div class="drop-menu" id="dropCanais"></div>
       </div>
-      <button class="bubble-btn active p-btn" data-days="1">Último Dia</button>
-      <button class="bubble-btn p-btn" data-days="7">7 Dias</button>
-      <button class="bubble-btn p-btn" data-days="30">30 Dias</button>
-      <input type="date" id="dateStart" class="date-picker">
-      <input type="date" id="dateEnd" class="date-picker">
-      <button class="bubble-btn" onclick="document.getElementById('sidebar').classList.add('open')">⋮</button>
+
+      <div class="drop-wrapper" id="wrapDatas">
+        <button class="bubble-btn" id="btnDatas" onclick="toggleDrop('dropDatas')">Últimos 28 Dias ▾</button>
+        <div class="drop-menu" id="dropDatas">
+          <div class="drop-opt" onclick="setDatePreset(7)">Últimos 7 Dias</div>
+          <div class="drop-opt selected" id="opt28" onclick="setDatePreset(28)">Últimos 28 Dias</div>
+          <div class="drop-opt" onclick="setDatePreset(90)">Últimos 90 Dias</div>
+          <div class="drop-opt" onclick="toggleCustomDate()">Data Específica</div>
+          <div class="custom-date-box" id="customDateBox">
+            <input type="date" id="dateStart" class="date-picker">
+            <input type="date" id="dateEnd" class="date-picker">
+            <button class="apply-btn" onclick="applyCustomDate()">Aplicar</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="bubble-btn" onclick="toggleSidebar()" style="padding: 12px 16px;" title="Vincular Contas">⋮</button>
     </div>
   </header>
 
   <div class="totals">
-    <div class="total-card"><div class="label">Receita</div><div class="value" id="totalRevenue">$0.00</div></div>
-    <div class="total-card"><div class="label">Views</div><div class="value" id="totalViews">0</div></div>
+    <div class="total-card"><div class="label">Receita do Período</div><div class="value" id="totalRevenue">$0.00</div></div>
+    <div class="total-card"><div class="label">Views do Período</div><div class="value" id="totalViews" style="color:var(--text)">0</div></div>
   </div>
 
   <div class="chart-container"><canvas id="mainChart"></canvas></div>
+
+  <p class="status-msg" id="statusMsg"><div class="status-dot"></div> Aguardando...</p>
 
   <div class="table-wrap">
     <table>
@@ -113,9 +165,13 @@
   </div>
 </div>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div class="sidebar" id="sidebar">
-  <button class="bubble-btn" onclick="document.getElementById('sidebar').classList.remove('open')" style="margin-bottom:20px">FECHAR ✕</button>
-  <div id="sidebarContent"></div>
+  <div class="sidebar-header">
+    <h2 style="font-size:1.2rem; font-weight:700">Contas</h2>
+    <button class="bubble-btn" onclick="toggleSidebar()" style="padding:8px 14px; border:none">✕</button>
+  </div>
+  <div class="sidebar-content" id="sidebarContent"></div>
 </div>
 
 <script>
@@ -137,66 +193,132 @@ const CHANNEL_IDS = {
   'UC_UltimoPeao': 'UCkdnxxobb7NvO6EX2kLqv4A', 'UC_EcosDaMente': 'UCpCEVQUoScH3SNPZjEcAWpg',
 };
 
-let accounts = {}, results = {}, thumbs = {}, activeDays = 1, myChart = null;
+let accounts = {}, results = {}, thumbs = {}, myChart = null;
 let selectedChannels = new Set(CHANNELS.map(c => c.id));
+let activePeriod = 28; // Padrão: Últimos 28 Dias
 
+// --- DROPDOWNS ---
+function toggleDrop(id) {
+  const drop = document.getElementById(id);
+  const isOpen = drop.classList.contains('open');
+  document.querySelectorAll('.drop-menu').forEach(m => m.classList.remove('open'));
+  if(!isOpen) drop.classList.add('open');
+}
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.drop-wrapper')) {
+    document.querySelectorAll('.drop-menu').forEach(m => m.classList.remove('open'));
+  }
+});
+
+function renderChannelDrop() {
+  const drop = document.getElementById('dropCanais'); drop.innerHTML = '';
+  CHANNELS.forEach(ch => {
+    const isSel = selectedChannels.has(ch.id);
+    const div = document.createElement('div');
+    div.className = `drop-opt ${isSel ? 'selected' : ''}`;
+    div.innerHTML = `<img src="${thumbs[ch.id] || ''}" class="avatar"> <span>${ch.name}</span> <div class="checkbox"></div>`;
+    div.onclick = (e) => { 
+      e.stopPropagation(); 
+      if(selectedChannels.has(ch.id)) { if(selectedChannels.size > 1) selectedChannels.delete(ch.id); } 
+      else selectedChannels.add(ch.id); 
+      renderChannelDrop(); updateUI(); 
+    };
+    drop.appendChild(div);
+  });
+  document.getElementById('btnCanais').innerText = selectedChannels.size === CHANNELS.length ? 'Todos os Canais ▾' : `${selectedChannels.size} Canais ▾`;
+}
+
+// --- DATAS ---
+function setDatePreset(days) {
+  activePeriod = days;
+  document.querySelectorAll('#dropDatas .drop-opt').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('customDateBox').classList.remove('open');
+  document.getElementById('btnDatas').innerText = `Últimos ${days} Dias ▾`;
+  document.getElementById('dropDatas').classList.remove('open');
+  fetchAll();
+}
+
+function toggleCustomDate() {
+  document.querySelectorAll('#dropDatas .drop-opt').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('customDateBox').classList.add('open');
+}
+
+function applyCustomDate() {
+  const start = document.getElementById('dateStart').value;
+  const end = document.getElementById('dateEnd').value;
+  if(start && end) {
+    activePeriod = 'custom';
+    document.getElementById('btnDatas').innerText = `${start.split('-').reverse().join('/')} ▾`;
+    document.getElementById('dropDatas').classList.remove('open');
+    fetchAll();
+  }
+}
+
+// --- LOGIN & INIT ---
 async function login() {
   const pwd = document.getElementById('passwordInput').value;
   const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) });
   if (r.ok) { document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('appContent').style.display='block'; initApp(); }
 }
+document.getElementById('passwordInput').addEventListener('keypress', (e) => { if(e.key==='Enter') login(); });
 
 async function initApp() {
   await loadAccounts();
   await loadThumbs();
-  renderFilters();
+  renderChannelDrop();
   renderSidebar();
   initChart();
   if (Object.keys(accounts).length > 0) fetchAll();
 }
 
 async function loadAccounts() { try { const r = await fetch('/api/accounts'); accounts = await r.json(); } catch(e){} }
-
 async function loadThumbs() {
   const ids = Object.values(CHANNEL_IDS).join(',');
   const r = await fetch('/api/channel-thumbs?ids=' + ids);
   const data = await r.json();
-  if(data.ok) {
-    Object.keys(CHANNEL_IDS).forEach(key => { thumbs[key] = data.thumbs[CHANNEL_IDS[key]]; });
-  }
+  if(data.ok) Object.keys(CHANNEL_IDS).forEach(key => { thumbs[key] = data.thumbs[CHANNEL_IDS[key]]; });
 }
 
-function renderFilters() {
-  const drop = document.getElementById('filterDrop'); drop.innerHTML = '';
-  CHANNELS.forEach(ch => {
-    const isSel = selectedChannels.has(ch.id);
-    const div = document.createElement('div');
-    div.className = `channel-opt ${isSel ? 'selected' : ''}`;
-    div.innerHTML = `<img src="${thumbs[ch.id] || ''}" class="avatar"> <span>${ch.name}</span>`;
-    div.onclick = () => { if(selectedChannels.has(ch.id)) selectedChannels.delete(ch.id); else selectedChannels.add(ch.id); renderFilters(); updateUI(); };
-    drop.appendChild(div);
-  });
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
 }
 
 function renderSidebar() {
   const content = document.getElementById('sidebarContent'); content.innerHTML = '';
   CHANNELS.forEach(ch => {
     const isConn = !!accounts[ch.id];
-    content.innerHTML += `<div class="side-card"><div><b>${ch.name}</b><br><small>${isConn ? 'Conectado' : 'Pendente'}</small></div><a href="/auth/${ch.id}" class="bubble-btn" style="text-decoration:none">${isConn ? 'Atualizar' : 'Vincular'}</a></div>`;
+    content.innerHTML += `<div class="side-card"><div><b>${ch.name}</b><br><small style="color:var(--muted)">${isConn ? 'Conectado' : 'Pendente'}</small></div><a href="/auth/${ch.id}" class="bubble-btn" style="text-decoration:none; padding:8px 16px; background:transparent; border-color:${isConn?'var(--border)':'var(--accent)'}; color:${isConn?'var(--text)':'var(--accent)'}">${isConn ? 'Atualizar' : 'Vincular'}</a></div>`;
   });
 }
 
-document.querySelectorAll('.p-btn').forEach(btn => {
-  btn.onclick = () => { document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); activeDays = parseInt(btn.dataset.days); fetchAll(); };
-});
+function setStatus(msg) { document.getElementById('statusMsg').innerHTML = `<div class="status-dot"></div> ${msg}`; }
+
+function getYTDate(daysOffset) {
+  const d = new Date(); d.setDate(d.getDate() - daysOffset);
+  return d.toISOString().split('T')[0];
+}
 
 async function fetchAll() {
-  const start = getYTDate(activeDays === 1 ? 5 : activeDays + 2); // Busca margem maior para garimpar o dia 12
-  const end = getYTDate(0);
-  
+  if (Object.keys(accounts).length === 0) return;
+  let start, end;
+
+  if (activePeriod === 'custom') {
+    start = document.getElementById('dateStart').value; 
+    end = document.getElementById('dateEnd').value;
+  } else {
+    start = getYTDate(activePeriod); 
+    end = getYTDate(-1); // Ajuste invisível: Pede até "Amanhã" para forçar o Google a entregar o último processamento absoluto (Ex: Dia 12 não será cortado por fuso horário)
+  }
+
+  setStatus('Sincronizando...');
   const promises = CHANNELS.map(ch => fetchChannel(ch, start, end));
   await Promise.all(promises);
   updateUI();
+  setStatus('Sincronização concluída.');
 }
 
 async function fetchChannel(ch, start, end) {
@@ -211,44 +333,31 @@ function updateUI() {
   const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
   let totalR = 0, totalV = 0, dailyData = {};
 
-  // MÁGICA: Encontrar o ÚLTIMO dia absoluto com dados de qualquer canal
-  let allDates = [];
-  Object.values(results).forEach(rows => rows.forEach(r => allDates.push(r[0])));
-  const maxDate = allDates.length ? allDates.sort().reverse()[0] : null;
-
   CHANNELS.forEach(ch => {
     if(!selectedChannels.has(ch.id)) return;
     let rows = results[ch.id] || [];
     
-    // Se for "Último Dia", filtra apenas pela data máxima encontrada
-    if(activeDays === 1 && maxDate) rows = rows.filter(r => r[0] === maxDate);
-
     const rSum = rows.reduce((a, b) => a + b[1], 0);
     const vSum = rows.reduce((a, b) => a + b[2], 0);
     totalR += rSum; totalV += vSum;
 
     rows.forEach(r => { dailyData[r[0]] = (dailyData[r[0]] || 0) + r[1]; });
 
-    tbody.innerHTML += `<tr><td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar">${ch.name}</div></td><td class="revenue-cell">$${rSum.toFixed(2)}</td><td>${vSum.toLocaleString()}</td></tr>`;
+    tbody.innerHTML += `<tr><td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar">${ch.name}</div></td><td class="val-mono" style="color:var(--accent)">$${rSum.toFixed(2)}</td><td class="val-mono">${vSum.toLocaleString()}</td></tr>`;
   });
 
   document.getElementById('totalRevenue').innerText = `$${totalR.toFixed(2)}`;
   document.getElementById('totalViews').innerText = totalV.toLocaleString();
-  
   updateChart(dailyData);
-}
-
-function getYTDate(daysAgo) {
-  const d = new Date(); d.setDate(d.getDate() - daysAgo);
-  return d.toISOString().split('T')[0];
 }
 
 function initChart() {
   const ctx = document.getElementById('mainChart').getContext('2d');
+  Chart.defaults.color = '#666'; Chart.defaults.font.family = 'Space Mono';
   myChart = new Chart(ctx, {
     type: 'line',
-    data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)' }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } }, x: { grid: { display: false } } } }
+    data: { labels: [], datasets: [{ label: 'Receita USD', data: [], borderColor: '#ff4d00', borderWidth: 3, pointBackgroundColor: '#000', pointBorderColor: '#ff4d00', pointRadius: 4, tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111', borderColor: '#ff4d00', borderWidth: 1, padding: 12, displayColors: false, callbacks: { label: function(c) { return '$' + c.parsed.y.toFixed(2); } } } }, scales: { y: { grid: { color: '#1a1a1a' } }, x: { grid: { display: false } } } }
   });
 }
 
