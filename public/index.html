@@ -19,9 +19,8 @@
   .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: 0.4s var(--ease-smooth); }
   .auth-overlay.hidden { opacity: 0; pointer-events: none; }
   .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 350px; text-align: center; }
-  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; outline: none; }
+  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; outline: none; font-family: 'Space Mono', monospace; }
   .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-  .auth-btn:hover { background: var(--accent-hover); }
 
   /* HEADER */
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 20px; }
@@ -33,7 +32,7 @@
   
   .bubble-btn {
     background: var(--surface); border: 1px solid var(--border); color: #fff; 
-    padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    padding: 10px 22px; border-radius: 50px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
     transition: 0.2s var(--ease-smooth); display: flex; align-items: center; gap: 8px;
   }
   .bubble-btn:hover { border-color: var(--accent); }
@@ -41,7 +40,7 @@
   .drop-menu {
     position: absolute; top: 50px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
     border-radius: 20px; width: 250px; padding: 12px; display: none; z-index: 100; flex-direction: column; gap: 4px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
   }
   .drop-menu.open { display: flex; }
   .drop-opt { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 12px; font-size: 0.85rem; transition: 0.2s; }
@@ -50,37 +49,37 @@
 
   /* DASHBOARD */
   .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px; }
-  .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 25px; padding: 25px; transition: transform 0.3s; }
-  .total-card:hover { transform: translateY(-5px); border-color: #222; }
-  .total-card .value { font-size: 2.8rem; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
-  .total-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
+  .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 25px; padding: 30px; position: relative; overflow: hidden; }
+  .total-card .value { font-size: 3rem; font-weight: 900; color: var(--accent); letter-spacing: -2px; line-height: 1; }
+  .total-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; letter-spacing: 1px; }
 
   .chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 25px; padding: 20px; margin-bottom: 30px; height: 380px; }
 
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 25px; overflow: hidden; }
   table { width: 100%; border-collapse: collapse; }
-  th { padding: 15px 20px; text-align: left; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
-  td { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-  .row-chan { display: flex; align-items: center; gap: 12px; font-weight: 600; }
-  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #111; object-fit: cover; border: 1px solid var(--border); }
+  th { padding: 18px 24px; text-align: left; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); letter-spacing: 1px; }
+  td { padding: 18px 24px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+  .row-chan { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: #111; object-fit: cover; border: 1px solid var(--border); }
 
   /* SIDEBAR */
   .sidebar { position: fixed; top: 0; right: -400px; width: 350px; height: 100vh; background: #000; border-left: 1px solid var(--accent); transition: 0.4s var(--ease-smooth); z-index: 200; padding: 25px; }
   .sidebar.open { right: 0; }
-  .side-card { background: var(--surface); padding: 16px; border-radius: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+  .side-card { background: var(--surface); padding: 16px; border-radius: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
 
   .custom-date-box { display: none; padding: 12px; border-top: 1px solid var(--border); flex-direction: column; gap: 8px; }
   .custom-date-box.open { display: flex; }
-  .date-picker { background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.8rem; color-scheme: dark; outline: none; }
+  .date-picker { background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.8rem; color-scheme: dark; outline: none; font-family: 'Space Mono', monospace; }
 
   /* RESPONSIVIDADE */
   @media (max-width: 768px) {
     body { padding: 16px; }
-    header { justify-content: center; text-align: center; }
+    header { justify-content: center; }
     .header-controls { justify-content: center; width: 100%; }
-    .totals { grid-template-columns: 1fr; }
+    .totals { grid-template-columns: 1fr; gap: 16px; }
+    .total-card .value { font-size: 2.2rem; }
     .chart-container { height: 300px; }
-    .logo-container { width: 100%; justify-content: center; }
+    .logo-container { width: 100%; justify-content: center; margin-bottom: 10px; }
     .sidebar { width: 100%; right: -100%; }
   }
 </style>
@@ -90,49 +89,49 @@
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
     <div style="display:flex; justify-content:center; margin-bottom: 24px;">
-      <svg width="64" height="64" viewBox="0 0 100 100">
-        <rect x="15" y="15" width="70" height="70" rx="15" stroke="#ff4d00" stroke-width="4" fill="none" />
+      <svg width="60" height="60" viewBox="0 0 100 100">
+        <rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="4" fill="none" />
         <rect x="35" y="32" width="10" height="10" fill="#ff4d00" rx="1" />
         <rect x="35" y="45" width="10" height="10" fill="#ff4d00" rx="1" />
         <rect x="35" y="58" width="10" height="10" fill="#ff4d00" rx="1" />
-        <rect x="47" y="38.5" width="10" height="10" fill="#ff4d00" rx="1" />
-        <rect x="47" y="51.5" width="10" height="10" fill="#ff4d00" rx="1" />
-        <rect x="59" y="45" width="10" height="10" fill="#ff4d00" rx="1" />
+        <rect x="48" y="38.5" width="10" height="10" fill="#ff4d00" rx="1" />
+        <rect x="48" y="51.5" width="10" height="10" fill="#ff4d00" rx="1" />
+        <rect x="61" y="45" width="10" height="10" fill="#ff4d00" rx="1" />
       </svg>
     </div>
     <input type="password" id="passwordInput" class="auth-input" placeholder="Senha Mestra">
-    <button class="auth-btn" onclick="login()">ENTRAR NO COFRE</button>
+    <button class="auth-btn" onclick="login()">ABRIR DASHBOARD</button>
   </div>
 </div>
 
 <div id="appContent" style="display:none">
   <header>
     <div class="logo-container">
-      <svg width="38" height="38" viewBox="0 0 100 100">
-        <rect x="15" y="15" width="70" height="70" rx="15" stroke="#ff4d00" stroke-width="5" fill="none" />
+      <svg width="36" height="36" viewBox="0 0 100 100">
+        <rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="6" fill="none" />
         <rect x="35" y="32" width="10" height="10" fill="#ff4d00" rx="1" />
         <rect x="35" y="45" width="10" height="10" fill="#ff4d00" rx="1" />
         <rect x="35" y="58" width="10" height="10" fill="#ff4d00" rx="1" />
-        <rect x="47" y="38.5" width="10" height="10" fill="#ff4d00" rx="1" />
-        <rect x="47" y="51.5" width="10" height="10" fill="#ff4d00" rx="1" />
-        <rect x="59" y="45" width="10" height="10" fill="#ff4d00" rx="1" />
+        <rect x="48" y="38.5" width="10" height="10" fill="#ff4d00" rx="1" />
+        <rect x="48" y="51.5" width="10" height="10" fill="#ff4d00" rx="1" />
+        <rect x="61" y="45" width="10" height="10" fill="#ff4d00" rx="1" />
       </svg>
       <div class="logo-text">Automata</div>
     </div>
     
     <div class="header-controls">
       <div class="drop-wrapper">
-        <button class="bubble-btn" onclick="toggleDrop('dropCanais')">Canais ▾</button>
+        <button class="bubble-btn" id="btnCanais" onclick="toggleDrop('dropCanais')">Canais ▾</button>
         <div class="drop-menu" id="dropCanais"></div>
       </div>
 
       <div class="drop-wrapper">
         <button class="bubble-btn" id="btnPeriodo" onclick="toggleDrop('dropDatas')">28 Dias ▾</button>
         <div class="drop-menu" id="dropDatas" style="right: auto; left: 0;">
-          <div class="drop-opt" onclick="setPreset(1)">Último Dia</div>
-          <div class="drop-opt" onclick="setPreset(7)">Últimos 7 Dias</div>
-          <div class="drop-opt selected" id="optDefault" onclick="setPreset(28)">Últimos 28 Dias</div>
-          <div class="drop-opt" onclick="setPreset(90)">Últimos 90 Dias</div>
+          <div class="drop-opt" id="opt1" onclick="setPreset(1)">Último Dia</div>
+          <div class="drop-opt" id="opt7" onclick="setPreset(7)">Últimos 7 Dias</div>
+          <div class="drop-opt selected" id="opt28" onclick="setPreset(28)">Últimos 28 Dias</div>
+          <div class="drop-opt" id="opt90" onclick="setPreset(90)">Últimos 90 Dias</div>
           <div style="height:1px; background:var(--border); margin:5px 0;"></div>
           <div id="monthOptions"></div> 
           <div style="height:1px; background:var(--border); margin:5px 0;"></div>
@@ -150,15 +149,15 @@
   </header>
 
   <div class="totals">
-    <div class="total-card"><div class="label">Receita</div><div class="value" id="totalRevenue">$0.00</div></div>
-    <div class="total-card"><div class="label">Views</div><div class="value" id="totalViews">0</div></div>
+    <div class="total-card"><div class="label" id="labelRevenue">Receita do Período</div><div class="value" id="totalRevenue">$0.00</div></div>
+    <div class="total-card"><div class="label" id="labelViews">Views do Período</div><div class="value" id="totalViews">0</div></div>
   </div>
 
   <div class="chart-container"><canvas id="mainChart"></canvas></div>
 
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Canal</th><th>Receita</th><th>Views</th></tr></thead>
+      <thead><tr><th>Canal</th><th>Receita (USD)</th><th>Views</th></tr></thead>
       <tbody id="tableBody"></tbody>
     </table>
   </div>
@@ -166,7 +165,7 @@
 
 <div class="sidebar" id="sidebar">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px">
-    <h2 style="font-size:1.2rem">Conexões</h2>
+    <h2 style="font-size:1.2rem; font-weight:800">Canais Conectados</h2>
     <button class="bubble-btn" onclick="document.getElementById('sidebar').classList.remove('open')" style="border:none">✕</button>
   </div>
   <div id="sidebarContent"></div>
@@ -235,6 +234,7 @@ function renderCanais() {
     div.onclick = (e) => { e.stopPropagation(); if(isS) { if(selectedChannels.size > 1) selectedChannels.delete(ch.id); } else selectedChannels.add(ch.id); renderCanais(); updateUI(); };
     drop.appendChild(div);
   });
+  document.getElementById('btnCanais').innerText = selectedChannels.size === CHANNELS.length ? 'Todos os Canais ▾' : `${selectedChannels.size} Canais ▾`;
 }
 
 function renderMeses() {
@@ -260,8 +260,10 @@ function renderMeses() {
 function setPreset(days) {
   activePeriod = days;
   document.querySelectorAll('.drop-opt').forEach(el => el.classList.remove('selected'));
+  document.getElementById('opt' + days).classList.add('selected');
   document.getElementById('btnPeriodo').innerText = (days === 1 ? 'Último Dia' : days + ' Dias') + ' ▾';
   document.getElementById('customDateBox').classList.remove('open');
+  document.getElementById('dropDatas').classList.remove('open');
   fetchAll();
 }
 
@@ -276,13 +278,19 @@ function applyCustom(label) {
 
 async function fetchAll() {
   let start, end = new Date().toISOString().split('T')[0];
+  
   if(activePeriod === 'custom') {
     start = document.getElementById('dateStart').value;
     end = document.getElementById('dateEnd').value;
+  } else if(activePeriod === 1) {
+    // MÁGICA: Se for Último Dia, pede 5 dias para garimpar qual o mais recente com dados
+    const d = new Date(); d.setDate(d.getDate() - 5);
+    start = d.toISOString().split('T')[0];
   } else {
     const d = new Date(); d.setDate(d.getDate() - activePeriod);
     start = d.toISOString().split('T')[0];
   }
+
   const promises = CHANNELS.map(ch => fetchChannel(ch, start, end));
   await Promise.all(promises);
   updateUI();
@@ -300,25 +308,44 @@ function updateUI() {
   const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
   let tR = 0, tV = 0, dD = {};
 
-  // Descobrir a última data com dados se for "Último Dia"
+  // Descobrir a última data real com receita se for "Último Dia"
   let maxDate = null;
   if(activePeriod === 1) {
     let allDates = [];
-    Object.values(results).forEach(rows => rows.forEach(r => allDates.push(r[0])));
-    maxDate = allDates.sort().reverse()[0];
+    Object.values(results).forEach(rows => {
+      // Pega apenas dias que tem receita > 0
+      rows.forEach(r => { if(r[1] > 0) allDates.push(r[0]); });
+    });
+    // Pega a data mais recente da lista filtrada
+    maxDate = allDates.length ? allDates.sort().reverse()[0] : null;
+    
+    // Atualiza o label para mostrar a data exata
+    const displayDate = maxDate ? maxDate.split('-').reverse().join('/') : 'Aguardando...';
+    document.getElementById('labelRevenue').innerText = 'Receita em ' + displayDate;
+    document.getElementById('labelViews').innerText = 'Views em ' + displayDate;
+  } else {
+    document.getElementById('labelRevenue').innerText = 'Receita do Período';
+    document.getElementById('labelViews').innerText = 'Views do Período';
   }
 
   CHANNELS.forEach(ch => {
     if(!selectedChannels.has(ch.id)) return;
     let rows = results[ch.id] || [];
-    if(activePeriod === 1 && maxDate) rows = rows.filter(r => r[0] === maxDate);
+    
+    // Se for "Último Dia", filtra apenas pela data máxima encontrada com receita
+    if(activePeriod === 1) {
+      rows = rows.filter(r => r[0] === maxDate);
+    }
 
     const rS = rows.reduce((a, b) => a + b[1], 0);
     const vS = rows.reduce((a, b) => a + b[2], 0);
     tR += rS; tV += vS;
+    
     rows.forEach(r => dD[r[0]] = (dD[r[0]] || 0) + r[1]);
-    tbody.innerHTML += `<tr><td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar">${ch.name}</div></td><td style="color:var(--accent);font-weight:700">$${rS.toFixed(2)}</td><td>${vS.toLocaleString()}</td></tr>`;
+    
+    tbody.innerHTML += `<tr><td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar">${ch.name}</div></td><td style="color:var(--accent);font-weight:800">$${rS.toFixed(2)}</td><td style="font-weight:600">${vS.toLocaleString()}</td></tr>`;
   });
+
   document.getElementById('totalRevenue').innerText = `$${tR.toFixed(2)}`;
   document.getElementById('totalViews').innerText = tV.toLocaleString();
   updateChart(dD);
@@ -329,11 +356,11 @@ function renderSidebar() {
   CHANNELS.forEach(ch => {
     const isC = !!accounts[ch.id];
     content.innerHTML += `<div class="side-card">
-      <div style="display:flex;align-items:center;gap:12px">
-        <img src="${thumbs[ch.id] || ''}" class="avatar">
-        <div><b>${ch.name}</b><br><small style="color:${isC?'#00ff00':'#666'}">${isC ? 'Conectado' : 'Pendente'}</small></div>
+      <div style="display:flex;align-items:center;gap:15px">
+        <img src="${thumbs[ch.id] || ''}" class="avatar" style="width:36px; height:36px">
+        <div><b>${ch.name}</b><br><small style="color:${isC?'#00ff00':'#666'}">${isC ? 'ONLINE' : 'PENDENTE'}</small></div>
       </div>
-      <a href="/auth/${ch.id}" class="bubble-btn" style="text-decoration:none; padding:8px 15px; background:${isC?'transparent':'var(--accent)'}; color:${isC?'#fff':'#000'}">${isC ? 'OK' : 'Link'}</a>
+      <a href="/auth/${ch.id}" class="bubble-btn" style="text-decoration:none; padding:8px 16px; background:${isC?'transparent':'var(--accent)'}; color:${isC?'#fff':'#000'}">${isC ? 'ATUALIZAR' : 'VINCULAR'}</a>
     </div>`;
   });
 }
@@ -342,11 +369,11 @@ function initChart() {
   const ctx = document.getElementById('mainChart').getContext('2d');
   myChart = new Chart(ctx, {
     type: 'line',
-    data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 2 }] },
+    data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 3, pointBackgroundColor: '#ff4d00' }] },
     options: { 
       responsive: true, maintainAspectRatio: false, 
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0a0a0a', borderColor: '#ff4d00', borderWidth: 1 } }, 
-      scales: { y: { grid: { color: '#111' }, ticks: { color: '#666' } }, x: { grid: { display: false }, ticks: { color: '#666' } } } 
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0a0a0a', borderColor: '#ff4d00', borderWidth: 1, titleFont: { size: 14 }, bodyFont: { size: 14 }, padding: 12 } }, 
+      scales: { y: { grid: { color: '#111' }, ticks: { color: '#666', font: { family: 'Space Mono' } } }, x: { grid: { display: false }, ticks: { color: '#666', font: { family: 'Space Mono' } } } } 
     }
   });
 }
@@ -358,7 +385,6 @@ function updateChart(dailyData) {
   myChart.update();
 }
 
-// Fechar drops ao clicar fora
 document.addEventListener('click', (e) => {
   if(!e.target.closest('.drop-wrapper')) document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open'));
 });
