@@ -1,7 +1,7 @@
 {
-  "name": "dashboard-yt-shorts",
+  "name": "automata-yt-dashboard",
   "version": "1.0.0",
-  "description": "Dashboard YouTube Analytics",
+  "description": "Dashboard de Analytics para YouTube Shorts",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,6 +9,10 @@
   "dependencies": {
     "express": "^4.18.2",
     "express-session": "^1.17.3",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.6.7",
+    "mongodb": "^6.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
