@@ -46,12 +46,8 @@
   .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
   .auth-overlay.hidden { display: none; }
   .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 320px; text-align: center; }
-  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 15px; text-align: center; outline: none; font-family: 'Space Mono', monospace; }
+  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; outline: none; font-family: 'Space Mono', monospace; }
   .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; }
-
-  /* MANTER CONECTADO */
-  .remember-me { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; font-size: 0.75rem; color: var(--muted); cursor: pointer; }
-  .remember-me input { accent-color: var(--accent); cursor: pointer; width: 14px; height: 14px; }
 
   /* HEADER & CONTROLS */
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
@@ -65,18 +61,30 @@
     position: absolute; top: 45px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
     border-radius: 20px; width: 260px; padding: 12px; display: none; z-index: 100; flex-direction: column;
     box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-    max-height: 400px; overflow-y: auto; scrollbar-width: none;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: none;
   }
   .drop-menu.open { display: flex; }
   .drop-opt { display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer; border-radius: 12px; font-size: 0.85rem; color: #ccc; }
   .drop-opt.selected { color: var(--accent) !important; font-weight: 800; background: rgba(255, 77, 0, 0.1) !important; }
 
-  /* BOTÃO APLICAR */
+  /* BOTÃO APLICAR (AJUSTADO: SÓLIDO E OPACO) */
   .apply-filter-btn {
-    background: #0f0f0f; color: var(--accent); border: 1px solid var(--accent); 
-    padding: 12px; border-radius: 12px; font-weight: 800; font-size: 0.75rem; 
-    cursor: pointer; margin-top: 10px; position: sticky; bottom: 0; 
-    width: 100%; text-transform: uppercase; transition: 0.2s;
+    background: #0f0f0f; /* Cinza sólido para não sobrepor */
+    color: var(--accent); 
+    border: 1px solid var(--accent); 
+    padding: 12px; 
+    border-radius: 12px;
+    font-weight: 800; 
+    font-size: 0.75rem; 
+    cursor: pointer; 
+    margin-top: 10px;
+    position: sticky; 
+    bottom: 0; 
+    width: 100%; 
+    text-transform: uppercase;
+    transition: 0.2s;
   }
   .apply-filter-btn:hover { background: var(--accent); color: #000; }
 
@@ -94,6 +102,15 @@
   .row-chan { display: flex; align-items: center; gap: 10px; font-weight: 700; }
   .avatar { width: 30px; height: 30px; border-radius: 50%; background: #111; object-fit: cover; }
 
+  /* SIDEBAR */
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; display: none; }
+  .sidebar-overlay.active { display: block; }
+  .sidebar { position: fixed; top: 0; right: -350px; width: 320px; height: 100vh; background: #000; border-left: 1px solid var(--accent); z-index: 200; padding: 25px; transition: right 0.3s var(--ease); overflow-y: auto; scrollbar-width: none; }
+  .sidebar.open { right: 0; }
+  .side-card { background: var(--surface); padding: 18px; border-radius: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); cursor: pointer; }
+  .status-ball { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
+  .status-ball.active { background: var(--accent); }
+
   @media (max-width: 900px) { .totals { grid-template-columns: 1fr; } }
   @media (max-width: 768px) {
     body { padding: 10px; padding-top: 5px; }
@@ -108,17 +125,14 @@
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
     <div style="display:flex; justify-content:center; margin-bottom: 20px;">
       <svg width="50" height="50" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="4" fill="none" /><rect x="35" y="32" width="10" height="10" fill="#ff4d00" /><rect x="35" y="45" width="10" height="10" fill="#ff4d00" /><rect x="35" y="58" width="10" height="10" fill="#ff4d00" /><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00" /><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00" /><rect x="61" y="45" width="10" height="10" fill="#ff4d00" /></svg>
     </div>
     <input type="password" id="passwordInput" class="auth-input" placeholder="Senha" onkeypress="if(event.key==='Enter') login()">
-    
-    <label class="remember-me">
-      <input type="checkbox" id="keepConnected"> Manter conectado
-    </label>
-
     <button class="auth-btn" onclick="login()">ENTRAR</button>
   </div>
 </div>
@@ -165,6 +179,11 @@
   </div>
 </div>
 
+<div class="sidebar" id="sidebar">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px"><h3 style="font-weight:800; letter-spacing:-0.5px">CONEXÕES</h3><button class="bubble-btn" onclick="toggleSidebar(false)" style="border-color:var(--accent); color:var(--accent); padding:5px 12px">✕</button></div>
+  <div id="sidebarContent"></div>
+</div>
+
 <script>
 const CHANNELS = [
   { id: 'UC_RatoFIT', name: 'RatoFIT' }, { id: 'UC_ZeroHora', name: 'Zero Hora' }, { id: 'UC_VelozCuriosos', name: 'Velozes & Curiosos' }, { id: 'UC_ComptonKings', name: 'Compton Kings' }, { id: 'UC_Pixelando', name: 'Pixelando 165' }, { id: 'UC_McQueeeen', name: 'McQueeeen' }, { id: 'UC_RatoMaromba', name: 'Rato Maromba' }, { id: 'UC_GroveStreet', name: 'Grove Street Style' }, { id: 'UC_BerserkMode', name: 'Berserk Mode' }, { id: 'UC_OnePunchFights', name: 'One Punch Fights' }, { id: 'UC_UltimoPeao', name: 'O Último Peão' }, { id: 'UC_EcosDaMente', name: 'Ecos da Mente' }
@@ -177,22 +196,10 @@ let selectedChannels = new Set(CHANNELS.map(c => c.id));
 async function login() {
   const pwd = document.getElementById('passwordInput').value;
   const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) });
-  if (r.ok) { 
-    // Se marcou a caixa, salva no navegador
-    if(document.getElementById('keepConnected').checked) {
-      localStorage.setItem('automata_logged', 'true');
-    }
-    showDashboard();
-  }
+  if (r.ok) { document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('appContent').style.display='block'; initApp(); }
 }
 
-function showDashboard() {
-  document.getElementById('authOverlay').classList.add('hidden');
-  document.getElementById('appContent').style.display='block';
-  initApp();
-}
-
-async function initApp() { await loadAccounts(); await loadThumbs(); renderCanais(); renderMeses(); initChart(); fetchAll(); }
+async function initApp() { await loadAccounts(); await loadThumbs(); renderCanais(); renderMeses(); renderSidebar(); initChart(); fetchAll(); }
 async function loadAccounts() { try { const r = await fetch('/api/accounts'); accounts = await r.json(); } catch(e){} }
 async function loadThumbs() {
   const ids = Object.values(CHANNEL_IDS).join(',');
@@ -229,7 +236,8 @@ function renderCanais() {
         e.stopPropagation(); 
         if (allActive) { selectedChannels.clear(); selectedChannels.add(ch.id); } 
         else { if(selectedChannels.has(ch.id)) { selectedChannels.delete(ch.id); if(selectedChannels.size === 0) selectedChannels = new Set(CHANNELS.map(c => c.id)); } else { selectedChannels.add(ch.id); } }
-        renderCanais(); updateUI();
+        renderCanais();
+        updateUI(); // Dashboard atualiza instantaneamente
     };
     drop.appendChild(div);
   });
@@ -304,17 +312,26 @@ function updateUI() {
   updateChart(dD);
 }
 
+function toggleSidebar(open) {
+  const s = document.getElementById('sidebar'), o = document.getElementById('sidebarOverlay');
+  if (open) { s.classList.add('open'); o.classList.add('active'); document.body.classList.add('no-scroll'); }
+  else { s.classList.remove('open'); o.classList.remove('active'); document.body.classList.remove('no-scroll'); }
+}
+
+function renderSidebar() {
+  const content = document.getElementById('sidebarContent'); content.innerHTML = '';
+  CHANNELS.forEach(ch => {
+    const isC = !!accounts[ch.id];
+    const card = document.createElement('div'); card.className = 'side-card';
+    card.onclick = () => { if(!isC) window.location.href = `/auth/${ch.id}`; };
+    card.innerHTML = `<div style="display:flex;align-items:center;gap:12px"><img src="${thumbs[ch.id]}" class="avatar"><div><b>${ch.name}</b></div></div><div class="status-ball ${isC ? 'active' : ''}"></div>`;
+    content.appendChild(card);
+  });
+}
+
 function initChart() { const ctx = document.getElementById('mainChart').getContext('2d'); myChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } }, x: { grid: { display: false } } } } }); }
 function updateChart(dailyData) { const sorted = Object.keys(dailyData).sort(); myChart.data.labels = sorted.map(d => d.split('-').reverse().slice(0,2).join('/')); myChart.data.datasets[0].data = sorted.map(d => dailyData[d]); myChart.update(); }
-
 document.addEventListener('click', (e) => { if(!e.target.closest('.drop-wrapper') && !e.target.closest('.filter-group') && !e.target.closest('.drop-menu')) document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open')); });
-
-// VERIFICA SE O USUÁRIO JÁ ESTÁ CONECTADO AO ABRIR A PÁGINA
-window.onload = () => {
-  if(localStorage.getItem('automata_logged') === 'true') {
-    showDashboard();
-  }
-};
 </script>
 </body>
 </html>
