@@ -20,15 +20,25 @@
   body.no-scroll { overflow: hidden; }
 
   /* ZOOM & SEMI-SELEÇÃO */
-  .drop-opt, .side-card, .bubble-btn, .total-card, .auth-btn {
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, color 0.2s;
+  .drop-opt, .side-card, .bubble-btn, .total-card, .auth-btn, .clear-extension {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, color 0.2s, width 0.3s var(--ease-smooth), opacity 0.2s;
   }
-  .drop-opt:hover, .side-card:hover {
-    transform: scale(1.03);
-    background: var(--semi-orange) !important;
-    color: #ff9d66 !important;
+  .drop-opt:hover, .side-card:hover { transform: scale(1.03); background: var(--semi-orange) !important; color: #ff9d66 !important; }
+  .total-card:hover { transform: scale(1.02); border-color: var(--accent); }
+
+  /* BOTÃO EXTENSÍVEL DE FILTRO */
+  .filter-group { display: flex; align-items: center; position: relative; gap: 0; }
+  
+  .clear-extension {
+    background: var(--surface); border: 1px solid var(--border); border-right: none;
+    height: 38px; color: var(--accent); display: flex; align-items: center; justify-content: center;
+    border-radius: 50px 0 0 50px; overflow: hidden; cursor: pointer;
+    width: 0; opacity: 0; white-space: nowrap; font-size: 0.75rem; font-weight: 800;
   }
-  .total-card:hover, .bubble-btn:hover { transform: scale(1.02); border-color: var(--accent); }
+  .filter-group:hover .clear-extension { width: 40px; opacity: 1; }
+  .clear-extension:hover { width: 130px; background: var(--semi-orange); }
+  .clear-extension span { display: none; margin-left: 8px; }
+  .clear-extension:hover span { display: inline; }
 
   /* AUTH */
   .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
@@ -41,22 +51,22 @@
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
   .logo-container { display: flex; align-items: center; gap: 12px; }
   .logo-text { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; }
-  .header-controls { display: flex; gap: 10px; }
+  .header-controls { display: flex; gap: 10px; align-items: center; }
   
-  .bubble-btn { background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .bubble-btn { background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; height: 38px; }
+  .btn-canais { border-radius: 50px; transition: border-radius 0.3s; }
+  .filter-group:hover .btn-canais { border-radius: 0 50px 50px 0; border-left: none; }
 
-  /* MENUS */
+  /* MENUS - FIX MOBILE LEAK */
   .drop-wrapper { position: relative; }
   .drop-menu {
     position: absolute; top: 45px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
-    border-radius: 20px; width: 240px; padding: 12px; display: none; z-index: 100; flex-direction: column;
+    border-radius: 20px; width: 250px; padding: 12px; display: none; z-index: 100; flex-direction: column;
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
   }
   .drop-menu.open { display: flex; }
   .drop-opt { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 12px; font-size: 0.8rem; color: #ccc; }
   .drop-opt.selected { color: var(--accent) !important; font-weight: 800; background: rgba(255, 77, 0, 0.1) !important; }
-
-  .all-btn-minimal { font-size: 0.65rem; color: var(--accent); font-weight: 800; text-transform: uppercase; text-align: center; padding: 10px 0; cursor: pointer; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
 
   /* DASHBOARD */
   .totals { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 25px; }
@@ -83,7 +93,11 @@
   .side-card:hover .status-ball.active::after { content: '✕'; color: #000; font-size: 9px; font-weight: 900; }
 
   @media (max-width: 900px) { .totals { grid-template-columns: 1fr; gap: 15px; } }
-  @media (max-width: 768px) { header { flex-direction: column; gap: 15px; } .drop-menu { right: auto; left: 50%; transform: translateX(-50%); width: 280px; } }
+  @media (max-width: 768px) { 
+    header { flex-direction: column; gap: 15px; } 
+    .drop-menu { right: auto; left: 50%; transform: translateX(-50%); width: 90vw; max-width: 300px; } 
+    .header-controls { width: 100%; justify-content: center; }
+  }
 </style>
 </head>
 <body>
@@ -115,10 +129,15 @@
       <div class="logo-text">Automata</div>
     </div>
     <div class="header-controls">
-      <div class="drop-wrapper">
-        <button class="bubble-btn" id="btnCanais" onclick="toggleDrop('dropCanais')">Todos os Canais ▾</button>
-        <div class="drop-menu" id="dropCanais"></div>
+      
+      <div class="filter-group">
+        <div class="clear-extension" onclick="resetFilters()">✕<span>Limpar Filtros</span></div>
+        <div class="drop-wrapper">
+          <button class="bubble-btn btn-canais" id="btnCanais" onclick="toggleDrop('dropCanais')">Todos os Canais ▾</button>
+          <div class="drop-menu" id="dropCanais"></div>
+        </div>
       </div>
+
       <div class="drop-wrapper">
         <button class="bubble-btn" id="btnPeriodo" onclick="toggleDrop('dropDatas')">28 Dias ▾</button>
         <div class="drop-menu" id="dropDatas">
@@ -187,12 +206,16 @@ function toggleDrop(id) {
   if(id === 'dropCanais') renderCanais();
 }
 
+function resetFilters() {
+  selectedChannels = new Set(CHANNELS.map(c => c.id));
+  renderCanais();
+  updateUI();
+}
+
 function renderCanais() {
   const drop = document.getElementById('dropCanais'); drop.innerHTML = '';
   const allActive = selectedChannels.size === CHANNELS.length;
-  const allBtn = document.createElement('div'); allBtn.className = 'all-btn-minimal'; allBtn.innerText = '• Selecionar Todos';
-  allBtn.onclick = (e) => { e.stopPropagation(); selectedChannels = new Set(CHANNELS.map(c => c.id)); renderCanais(); updateUI(); };
-  drop.appendChild(allBtn);
+
   CHANNELS.forEach(ch => {
     const isS = allActive ? false : selectedChannels.has(ch.id);
     const div = document.createElement('div'); div.className = `drop-opt ${isS ? 'selected' : ''}`;
@@ -316,7 +339,7 @@ function updateChart(dailyData) {
   myChart.update();
 }
 
-document.addEventListener('click', (e) => { if(!e.target.closest('.drop-wrapper')) document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open')); });
+document.addEventListener('click', (e) => { if(!e.target.closest('.drop-wrapper') && !e.target.closest('.filter-group')) document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open')); });
 </script>
 </body>
 </html>
