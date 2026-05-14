@@ -10,6 +10,8 @@
   :root {
     --bg: #000000; --surface: #0a0a0a; --border: #1a1a1a;
     --accent: #ff4d00; --accent-hover: #ff6a2b; --text: #ffffff; --muted: #666;
+    /* Nova Curva de Animação para maior suavidade (OutQuart) */
+    --ease-smooth: cubic-bezier(0.165, 0.84, 0.44, 1);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; overflow-x: hidden; }
@@ -20,13 +22,15 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
   /* LOGIN */
-  .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+  .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; transition: opacity 0.4s var(--ease-smooth); }
   .auth-overlay.hidden { opacity: 0; pointer-events: none; }
-  .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 360px; text-align: center; }
-  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; font-family: 'Space Mono', monospace; font-size: 0.9rem; outline: none; transition: 0.2s; }
+  .auth-card { background: var(--surface); border: 1px solid var(--accent); padding: 40px; border-radius: 30px; width: 360px; text-align: center; transform: scale(1); transition: transform 0.4s var(--ease-smooth); }
+  .auth-overlay.hidden .auth-card { transform: scale(0.9); }
+  .auth-input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 50px; margin-bottom: 20px; text-align: center; font-family: 'Space Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
   .auth-input:focus { border-color: var(--accent); }
-  .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-  .auth-btn:hover { background: var(--accent-hover); transform: scale(1.02); }
+  .auth-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+  .auth-btn:hover { background: var(--accent-hover); }
+  .auth-btn:active { transform: scale(0.98); }
 
   /* HEADER & LOGO GEOMÉTRICA */
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
@@ -36,9 +40,10 @@
   .bubble-btn {
     background: var(--surface); border: 1px solid var(--border); color: #fff; 
     padding: 12px 24px; border-radius: 50px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
-    transition: 0.2s; display: flex; align-items: center; gap: 8px; justify-content: center;
+    transition: background 0.2s, border-color 0.2s, transform 0.1s, color 0.2s; display: flex; align-items: center; gap: 8px; justify-content: center;
   }
   .bubble-btn:hover { border-color: var(--accent); background: rgba(255, 77, 0, 0.05); }
+  .bubble-btn:active { transform: scale(0.97); }
   
   /* DROPDOWNS (Canais e Datas) */
   .header-controls { display: flex; align-items: center; gap: 16px; }
@@ -47,30 +52,34 @@
     position: absolute; top: 55px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
     border-radius: 24px; width: 280px; padding: 16px; display: none; z-index: 100; flex-direction: column; gap: 8px;
     box-shadow: 0 10px 40px rgba(255,77,0,0.15); max-height: 400px; overflow-y: auto;
+    /* Transição suave de entrada */
+    opacity: 0; transform: translateY(-10px); transition: opacity 0.3s var(--ease-smooth), transform 0.3s var(--ease-smooth);
   }
-  .drop-menu.open { display: flex; }
+  .drop-menu.open { display: flex; opacity: 1; transform: translateY(0); }
   
-  .drop-opt { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-radius: 16px; transition: 0.2s; font-size: 0.9rem; font-weight: 500; }
+  .drop-opt { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-radius: 16px; transition: background 0.2s; font-size: 0.9rem; font-weight: 500; }
   .drop-opt:hover { background: rgba(255,77,0,0.1); }
   .drop-opt.selected { background: rgba(255,77,0,0.15); color: var(--accent); font-weight: 700; }
   
   /* ELEMENTOS DO DROPDOWN DE CANAIS */
-  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #111; object-fit: cover; border: 1px solid var(--border); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #111; object-fit: cover; border: 1px solid var(--border); transition: border-color 0.2s; }
   .drop-opt.selected .avatar { border-color: var(--accent); }
-  .checkbox { width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-left: auto; }
+  .checkbox { width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-left: auto; transition: background 0.2s, border-color 0.2s; }
   .drop-opt.selected .checkbox { border-color: var(--accent); background: var(--accent); }
   .drop-opt.selected .checkbox::after { content: '✓'; color: #000; font-size: 12px; font-weight: 900; }
 
   /* ELEMENTOS DO DROPDOWN DE DATAS */
   .custom-date-box { display: none; flex-direction: column; gap: 10px; padding: 10px 5px 0 5px; border-top: 1px solid var(--border); margin-top: 5px; }
   .custom-date-box.open { display: flex; }
-  .date-picker { background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.8rem; color-scheme: dark; outline: none; font-family: 'Space Mono', monospace; }
+  .date-picker { background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.8rem; color-scheme: dark; outline: none; font-family: 'Space Mono', monospace; transition: border-color 0.2s; }
   .date-picker:focus { border-color: var(--accent); }
-  .apply-btn { background: var(--accent); color: #000; border: none; padding: 10px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+  .apply-btn { background: var(--accent); color: #000; border: none; padding: 10px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .apply-btn:hover { background: var(--accent-hover); }
 
   /* DASHBOARD MAIN */
   .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px; }
-  .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 32px; display: flex; flex-direction: column; justify-content: center; }
+  .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; padding: 32px; display: flex; flex-direction: column; justify-content: center; transition: transform 0.3s var(--ease-smooth), border-color 0.3s; }
+  .total-card:hover { transform: translateY(-3px); border-color: #222; }
   .total-card .value { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; color: var(--accent); line-height: 1; }
   .total-card .label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; letter-spacing: 1px; }
 
@@ -79,20 +88,26 @@
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 30px; overflow: hidden; }
   table { width: 100%; border-collapse: collapse; }
   th { padding: 20px 24px; text-align: left; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); font-weight: 700; letter-spacing: 1px; }
-  td { padding: 20px 24px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+  td { padding: 20px 24px; border-bottom: 1px solid var(--border); font-size: 0.95rem; transition: background 0.2s; }
   tr:hover td { background: rgba(255,255,255,0.02); }
   tr:last-child td { border-bottom: none; }
   .row-chan { display: flex; align-items: center; gap: 15px; font-weight: 600; }
   .val-mono { font-family: 'Space Mono', monospace; font-weight: 700; }
 
+  .status-msg { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
   /* SIDEBAR */
-  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 199; opacity: 0; pointer-events: none; transition: 0.3s; }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 199; opacity: 0; pointer-events: none; transition: opacity 0.4s var(--ease-smooth); }
   .sidebar-overlay.open { opacity: 1; pointer-events: all; }
-  .sidebar { position: fixed; top: 0; right: -400px; width: 380px; height: 100vh; background: #000; border-left: 1px solid var(--accent); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1); z-index: 200; display: flex; flex-direction: column; }
-  .sidebar.open { right: 0; }
+  .sidebar { position: fixed; top: 0; right: -400px; width: 380px; height: 100vh; background: #000; border-left: 1px solid var(--accent); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); z-index: 200; display: flex; flex-direction: column; transform: translateX(0); }
+  .sidebar.open { transform: translateX(-400px); }
   .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 24px; border-bottom: 1px solid var(--border); }
   .sidebar-content { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-  .side-card { background: var(--surface); padding: 16px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+  .side-card { background: var(--surface); padding: 16px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); transition: border-color 0.2s; }
+  .side-card:hover { border-color: #222; }
+  /* Alinhamento da foto na sidebar */
+  .side-card-left { display: flex; align-items: center; gap: 12px; }
 </style>
 </head>
 <body>
@@ -100,13 +115,9 @@
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
     <div style="display:flex; justify-content:center; margin-bottom: 24px;">
-      <svg viewBox="0 0 100 100" width="64" height="64">
-        <rect x="25" y="65" width="15" height="15" fill="#ff4d00" />
-        <rect x="60" y="65" width="15" height="15" fill="#ff4d00" />
-        <rect x="25" y="45" width="15" height="15" fill="#ff4d00" />
-        <rect x="60" y="45" width="15" height="15" fill="#ff4d00" />
-        <rect x="42.5" y="25" width="15" height="15" fill="#ff4d00" />
-        <rect x="42.5" y="45" width="15" height="15" fill="#ff4d00" />
+      <svg viewBox="0 0 100 100" width="60" height="60" fill="none">
+        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
+        <polygon points="42,35 42,65 68,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
       </svg>
     </div>
     <input type="password" id="passwordInput" class="auth-input" placeholder="Senha Mestra">
@@ -117,13 +128,9 @@
 <div id="appContent" style="display:none">
   <header>
     <div class="logo-container">
-      <svg viewBox="0 0 100 100" width="36" height="36">
-        <rect x="25" y="65" width="15" height="15" fill="#ff4d00" />
-        <rect x="60" y="65" width="15" height="15" fill="#ff4d00" />
-        <rect x="25" y="45" width="15" height="15" fill="#ff4d00" />
-        <rect x="60" y="45" width="15" height="15" fill="#ff4d00" />
-        <rect x="42.5" y="25" width="15" height="15" fill="#ff4d00" />
-        <rect x="42.5" y="45" width="15" height="15" fill="#ff4d00" />
+      <svg viewBox="0 0 100 100" width="40" height="40" fill="none">
+        <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#ff4d00" stroke-width="8" stroke-linejoin="round"/>
+        <polygon points="42,35 42,65 68,50" fill="#ff4d00" stroke="#ff4d00" stroke-width="4" stroke-linejoin="round"/>
       </svg>
       <div class="logo-text">Automata</div>
     </div>
@@ -191,7 +198,7 @@ const CHANNEL_IDS = {
   'UC_RatoFIT': 'UCR61DCrMZx-g3irgqgoT5JA', 'UC_ZeroHora': 'UC6sh-Qiz2gj_uqUdYfYnX6w',
   'UC_VelozCuriosos': 'UCXMwjsceXKA5dqbWSWE-_7Q', 'UC_ComptonKings': 'UCGqLCGdh5xUJiQW416DQWjA',
   'UC_Pixelando': 'UCzE6ujftVmVmEvGJW0MArlw', 'UC_McQueeeen': 'UCMNvTCr-RwLVRW-jDIQVnBw',
-  'UC_RatoMaromba': 'UCxslmo0asWXgdWObPO8BFrQ', 'UC_GroveStreet': 'UChQfM3wIfo84Ab0WeW9CwCA',
+  'UC_RatoMaromba': 'UCxslmo0asWXgdWObPO8BFrQ', 'UC_GroveStreet': 'UChfM3wIfo84Ab0WeW9CwCA', // Corrigido ID Grove
   'UC_BerserkMode': 'UCzkne80zh104CdG3kDrTQ1w', 'UC_OnePunchFights': 'UChdMYJwcBpizC4NLh5dRh4g',
   'UC_UltimoPeao': 'UCkdnxxobb7NvO6EX2kLqv4A', 'UC_EcosDaMente': 'UCpCEVQUoScH3SNPZjEcAWpg',
 };
@@ -263,12 +270,26 @@ function applyCustomDate() {
 // --- LOGIN & INIT ---
 async function login() {
   const pwd = document.getElementById('passwordInput').value;
-  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) });
-  if (r.ok) { document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('appContent').style.display='block'; initApp(); }
+  try {
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) });
+    if (r.ok) { document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('appContent').style.display='block'; initApp(); }
+    else { alert('Senha incorreta'); }
+  } catch(e) { console.error(e); }
 }
 document.getElementById('passwordInput').addEventListener('keypress', (e) => { if(e.key==='Enter') login(); });
 
 async function initApp() {
+  // Chamada assíncrona do status para UX, mas bloqueia o carregamento de dados se falhar
+  try {
+    const statusR = await fetch('/api/status');
+    const statusData = await statusR.json();
+    if (!statusData.authenticated) {
+        document.getElementById('authOverlay').classList.remove('hidden');
+        document.getElementById('appContent').style.display='none';
+        return;
+    }
+  } catch(e) { return; }
+
   await loadAccounts();
   await loadThumbs();
   renderChannelDrop();
@@ -277,12 +298,32 @@ async function initApp() {
   if (Object.keys(accounts).length > 0) fetchAll();
 }
 
+// Verifica status ao carregar a página
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const r = await fetch('/api/status');
+        const data = await r.json();
+        if (data.authenticated) {
+            document.getElementById('authOverlay').classList.add('hidden');
+            document.getElementById('appContent').style.display = 'block';
+            initApp();
+        } else {
+            document.getElementById('authOverlay').classList.remove('hidden');
+        }
+    } catch(e) {
+        document.getElementById('authOverlay').classList.remove('hidden');
+    }
+});
+
+
 async function loadAccounts() { try { const r = await fetch('/api/accounts'); accounts = await r.json(); } catch(e){} }
 async function loadThumbs() {
   const ids = Object.values(CHANNEL_IDS).join(',');
-  const r = await fetch('/api/channel-thumbs?ids=' + ids);
-  const data = await r.json();
-  if(data.ok) Object.keys(CHANNEL_IDS).forEach(key => { thumbs[key] = data.thumbs[CHANNEL_IDS[key]]; });
+  try {
+    const r = await fetch('/api/channel-thumbs?ids=' + ids);
+    const data = await r.json();
+    if(data.ok) Object.keys(CHANNEL_IDS).forEach(key => { thumbs[key] = data.thumbs[CHANNEL_IDS[key]]; });
+  } catch(e) {}
 }
 
 function toggleSidebar() {
@@ -294,7 +335,21 @@ function renderSidebar() {
   const content = document.getElementById('sidebarContent'); content.innerHTML = '';
   CHANNELS.forEach(ch => {
     const isConn = !!accounts[ch.id];
-    content.innerHTML += `<div class="side-card"><div><b>${ch.name}</b><br><small style="color:var(--muted)">${isConn ? 'Conectado' : 'Pendente'}</small></div><a href="/auth/${ch.id}" class="bubble-btn" style="text-decoration:none; padding:8px 16px; background:transparent; border-color:${isConn?'var(--border)':'var(--accent)'}; color:${isConn?'var(--text)':'var(--accent)'}">${isConn ? 'Atualizar' : 'Vincular'}</a></div>`;
+    const thumbUrl = thumbs[ch.id] || ''; // Busca a foto
+
+    content.innerHTML += `
+      <div class="side-card">
+        <div class="side-card-left">
+          <img src="${thumbUrl}" class="avatar" style="width:30px; height:30px;">
+          <div>
+            <b>${ch.name}</b><br>
+            <small style="color:var(--muted)">${isConn ? 'Conectado' : 'Pendente'}</small>
+          </div>
+        </div>
+        <a href="/auth/${ch.id}" class="bubble-btn" style="text-decoration:none; padding:8px 16px; background:transparent; border-color:${isConn?'var(--border)':'var(--accent)'}; color:${isConn?'var(--text)':'var(--accent)'}">
+          ${isConn ? 'Atualizar' : 'Vincular'}
+        </a>
+      </div>`;
   });
 }
 
@@ -352,19 +407,42 @@ function updateUI() {
 
 function initChart() {
   const ctx = document.getElementById('mainChart').getContext('2d');
-  Chart.defaults.color = '#666'; Chart.defaults.font.family = 'Space Mono';
+  // Configurações globais do Chart.js para suavidade e estilo
+  Chart.defaults.color = '#666'; 
+  Chart.defaults.font.family = 'Space Mono';
+  // Desativa animações iniciais pesadas se necessário, mas mantém as de update suaves
+  Chart.defaults.animation.duration = 400; 
+
+  if (myChart) { myChart.destroy(); } // Previne duplicidade
+
   myChart = new Chart(ctx, {
     type: 'line',
-    data: { labels: [], datasets: [{ label: 'Receita USD', data: [], borderColor: '#ff4d00', borderWidth: 3, pointBackgroundColor: '#000', pointBorderColor: '#ff4d00', pointRadius: 4, tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)' }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111', borderColor: '#ff4d00', borderWidth: 1, padding: 12, displayColors: false, callbacks: { label: function(c) { return '$' + c.parsed.y.toFixed(2); } } } }, scales: { y: { grid: { color: '#1a1a1a' } }, x: { grid: { display: false } } } }
+    data: { labels: [], datasets: [{ label: 'Receita USD', data: [], borderColor: '#ff4d00', borderWidth: 3, pointBackgroundColor: '#000', pointBorderColor: '#ff4d00', pointRadius: 4, pointHoverRadius: 6, tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)' }] },
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      // Otimização de performance do Chart.js
+      parsing: true, 
+      normalized: true,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111', borderColor: '#ff4d00', borderWidth: 1, padding: 12, displayColors: false, callbacks: { label: function(c) { return '$' + c.parsed.y.toFixed(2); } } } }, 
+      scales: { 
+        y: { grid: { color: '#1a1a1a' }, ticks: { callback: function(value) { return '$' + value; } } }, 
+        x: { grid: { display: false } } 
+      },
+      // Garante que o gráfico use a taxa de atualização da tela
+      animation: {
+          easing: 'easeOutQuart'
+      }
+    }
   });
 }
 
 function updateChart(dailyData) {
+  if (!myChart) return;
   const sorted = Object.keys(dailyData).sort();
   myChart.data.labels = sorted.map(d => d.split('-').reverse().slice(0,2).join('/'));
   myChart.data.datasets[0].data = sorted.map(d => dailyData[d]);
-  myChart.update();
+  myChart.update(); // O Chart.js já lida com a animação suave nativamente a 60fps+
 }
 </script>
 </body>
