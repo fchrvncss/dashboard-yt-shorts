@@ -35,6 +35,8 @@
     margin-bottom: 40px;
     border-bottom: 1px solid var(--border);
     padding-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
   }
 
   .logo {
@@ -49,6 +51,7 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .period-btn {
@@ -68,29 +71,79 @@
     color: var(--accent);
   }
 
+  /* Custom Dates */
+  .date-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 8px;
+    padding-left: 16px;
+    border-left: 1px solid var(--border);
+  }
+
+  .date-inputs span {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .date-picker {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color-scheme: dark;
+    cursor: pointer;
+  }
+
+  .date-picker:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+
   /* Contas */
   .accounts-bar {
     display: flex;
-    gap: 12px;
+    gap: 16px;
     margin-bottom: 32px;
     flex-wrap: wrap;
   }
 
   .account-chip {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 10px 16px;
+    padding: 12px 16px;
     cursor: pointer;
     transition: all 0.15s;
     font-size: 0.85rem;
+    flex: 1;
+    min-width: 250px;
   }
 
   .account-chip:hover { border-color: var(--accent); }
   .account-chip.connected { border-color: var(--green); }
+
+  .account-chip-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+  }
+
+  .account-chip-channels {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.4;
+    font-family: 'Space Mono', monospace;
+  }
 
   .dot {
     width: 8px; height: 8px;
@@ -112,6 +165,8 @@
     font-size: 0.9rem;
     cursor: pointer;
     transition: opacity 0.15s;
+    height: 100%;
+    align-self: center;
   }
 
   .btn-fetch:hover { opacity: 0.85; }
@@ -156,11 +211,13 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
+    overflow-x: auto;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 600px;
   }
 
   thead th {
@@ -283,14 +340,20 @@
 <header>
   <div class="logo">YT<span>.</span>Dashboard</div>
   <div class="period-selector">
-    <button class="period-btn active" data-days="7">7d</button>
+    <button class="period-btn active" data-days="0">Hoje</button>
+    <button class="period-btn" data-days="7">7d</button>
     <button class="period-btn" data-days="30">30d</button>
     <button class="period-btn" data-days="90">90d</button>
+    
+    <div class="date-inputs">
+      <input type="date" id="dateStart" class="date-picker">
+      <span>até</span>
+      <input type="date" id="dateEnd" class="date-picker">
+    </div>
   </div>
 </header>
 
 <div class="accounts-bar" id="accountsBar">
-  <!-- gerado pelo JS -->
   <button class="btn-fetch" id="btnFetch" onclick="fetchAll()">▶ Buscar Dados</button>
 </div>
 
@@ -319,16 +382,14 @@
       </tr>
     </thead>
     <tbody id="tableBody">
-      <!-- linhas geradas pelo JS -->
-    </tbody>
+      </tbody>
   </table>
 </div>
 
-<!-- Modal de login -->
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h3 id="modalTitle">Conectar Conta</h3>
-    <p id="modalDesc">Você será redirecionado para o login do Google. Selecione a conta correta e autorize o acesso.</p>
+    <p id="modalDesc">Você será redirecionado para o login do Google. Certifique-se de marcar as caixinhas de todos os canais solicitados.</p>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
       <a class="btn-primary" id="modalLink" href="#">Conectar →</a>
@@ -353,8 +414,6 @@ const CHANNELS = [
   { id: 'UC_EcosDaMente',      name: 'Ecos da Mente',       account: 3 },
 ];
 
-// IDs reais dos canais — precisam ser preenchidos
-// Formato: UC + 22 caracteres. Encontre em: YouTube Studio > Configurações > Informações do Canal
 const CHANNEL_IDS = {
   'UC_RatoFIT':        'UCR61DCrMZx-g3irgqgoT5JA',
   'UC_ZeroHora':       'UC6sh-Qiz2gj_uqUdYfYnX6w',
@@ -373,7 +432,7 @@ const CHANNEL_IDS = {
 // ── STATE ─────────────────────────────────────────────────
 let accounts = {};
 let results = {};
-let activeDays = 7;
+let activeDays = 0; // Começa por padrão no 0 (Hoje)
 
 // ── INIT ──────────────────────────────────────────────────
 async function init() {
@@ -408,18 +467,25 @@ function renderAccountsBar() {
   const btn = document.getElementById('btnFetch');
   bar.innerHTML = '';
 
+  // Textos atualizados com os canais de cada conta
   const accountLabels = {
-    1: 'vini.shortformteam',
-    2: 'apenasfischer',
-    3: 'fischerviniciuus2',
+    1: { title: 'Conta 1', channels: 'RatoFIT, Zero Hora, Velozes & Curiosos, Compton Kings' },
+    2: { title: 'Conta 2', channels: 'Pixelando 165, McQueeeen, Rato Maromba, Grove Street, Berserk Mode' },
+    3: { title: 'Conta 3', channels: 'One Punch Fights, O Último Peão, Ecos da Mente' },
   };
 
   [1, 2, 3].forEach(slot => {
     const connected = !!accounts[slot];
     const chip = document.createElement('div');
     chip.className = 'account-chip' + (connected ? ' connected' : '');
-    chip.innerHTML = `<div class="dot"></div><span>${accountLabels[slot]}</span>`;
-    chip.onclick = () => openModal(slot, accountLabels[slot], connected);
+    chip.innerHTML = `
+      <div class="account-chip-header">
+        <div class="dot"></div>
+        <span>${accountLabels[slot].title}</span>
+      </div>
+      <div class="account-chip-channels">${accountLabels[slot].channels}</div>
+    `;
+    chip.onclick = () => openModal(slot, accountLabels[slot].title, connected);
     bar.appendChild(chip);
   });
 
@@ -429,9 +495,6 @@ function renderAccountsBar() {
 // ── MODAL ─────────────────────────────────────────────────
 function openModal(slot, label, connected) {
   document.getElementById('modalTitle').textContent = connected ? `Reconectar ${label}` : `Conectar ${label}`;
-  document.getElementById('modalDesc').textContent = connected
-    ? `Esta conta já está conectada. Clique para reconectar e atualizar o acesso.`
-    : `Você será redirecionado para o login do Google. Selecione a conta ${label}@gmail.com e autorize o acesso.`;
   document.getElementById('modalLink').href = `/auth/${slot}`;
   document.getElementById('modalBg').classList.add('open');
 }
@@ -440,14 +503,39 @@ function closeModal() {
   document.getElementById('modalBg').classList.remove('open');
 }
 
-// ── PERIOD ────────────────────────────────────────────────
-document.querySelectorAll('.period-btn').forEach(btn => {
+// ── PERIODOS E CALENDÁRIO ─────────────────────────────────
+const periodBtns = document.querySelectorAll('.period-btn');
+const dateStartInput = document.getElementById('dateStart');
+const dateEndInput = document.getElementById('dateEnd');
+
+// Clique nos botões rápidos (Hoje, 7d, 30d, 90d)
+periodBtns.forEach(btn => {
   btn.onclick = () => {
-    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    periodBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeDays = parseInt(btn.dataset.days);
+    
+    // Limpa o calendário se usar os botões
+    dateStartInput.value = '';
+    dateEndInput.value = '';
   };
 });
+
+// Ao selecionar uma data manualmente no calendário
+[dateStartInput, dateEndInput].forEach(input => {
+  input.addEventListener('change', () => {
+    periodBtns.forEach(b => b.classList.remove('active'));
+    activeDays = 'custom';
+  });
+});
+
+// Formata data para YYYY-MM-DD ajustado ao fuso horário local
+function getLocalDateString(dateObj) {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 // ── FETCH ALL ─────────────────────────────────────────────
 async function fetchAll() {
@@ -457,12 +545,29 @@ async function fetchAll() {
     return;
   }
 
+  let startDate, endDate;
+
+  // Verifica se é período customizado ou botão rápido
+  if (activeDays === 'custom') {
+    startDate = dateStartInput.value;
+    endDate = dateEndInput.value;
+    if (!startDate || !endDate) {
+      setStatus('Por favor, selecione as duas datas no calendário.');
+      return;
+    }
+  } else {
+    const endD = new Date();
+    const startD = new Date();
+    startD.setDate(startD.getDate() - activeDays);
+    
+    endDate = getLocalDateString(endD);
+    startDate = getLocalDateString(startD);
+  }
+
   document.getElementById('btnFetch').disabled = true;
   results = {};
   renderTable();
 
-  const endDate = new Date().toISOString().split('T')[0];
-  const startDate = new Date(Date.now() - activeDays * 86400000).toISOString().split('T')[0];
   setStatus(`Buscando dados de ${startDate} até ${endDate}...`);
 
   const promises = CHANNELS.map(ch => fetchChannel(ch, startDate, endDate));
