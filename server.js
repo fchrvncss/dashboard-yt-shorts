@@ -11,6 +11,9 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const BASE_URL = process.env.BASE_URL;
 const REDIRECT_URI = `${BASE_URL}/callback`;
 
+// ── AQUI ESTÁ A CHAVE DE SEGURANÇA ──
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
+
 const SCOPES = [
   'https://www.googleapis.com/auth/youtube.readonly',
   'https://www.googleapis.com/auth/yt-analytics.readonly',
@@ -30,7 +33,28 @@ app.use(express.static('public'));
 
 let storedAccounts = {};
 
-app.get('/auth/:slot', (req, res) => {
+// ── MIDDLEWARE DE SEGURANÇA (O GUARDA-COSTAS) ──
+function checkAuth(req, res, next) {
+  if (req.session.isAuthenticated) return next();
+  res.status(401).json({ error: 'Acesso negado' });
+}
+
+// ── ROTAS DE LOGIN DO SITE ──
+app.post('/api/login', (req, res) => {
+  if (req.body.password === DASHBOARD_PASSWORD) {
+    req.session.isAuthenticated = true;
+    res.json({ ok: true });
+  } else {
+    res.status(401).json({ ok: false });
+  }
+});
+
+app.get('/api/status', (req, res) => {
+  res.json({ authenticated: !!req.session.isAuthenticated });
+});
+
+// ── ROTAS PROTEGIDAS ──
+app.get('/auth/:slot', checkAuth, (req, res) => {
   const slot = req.params.slot;
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', CLIENT_ID);
@@ -76,7 +100,7 @@ app.get('/callback', async (req, res) => {
   }
 });
 
-app.get('/api/accounts', (req, res) => {
+app.get('/api/accounts', checkAuth, (req, res) => {
   const accounts = {};
   for (const [slot, acc] of Object.entries(storedAccounts)) {
     accounts[slot] = { email: acc.email, connected: true };
@@ -106,7 +130,7 @@ async function getValidToken(slot) {
   } catch { return null; }
 }
 
-app.get('/api/analytics', async (req, res) => {
+app.get('/api/analytics', checkAuth, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
   
   for (const slot of Object.keys(storedAccounts)) {
@@ -119,7 +143,7 @@ app.get('/api/analytics', async (req, res) => {
       url.searchParams.set('startDate', startDate);
       url.searchParams.set('endDate', endDate);
       url.searchParams.set('metrics', 'estimatedRevenue,views');
-      url.searchParams.set('dimensions', 'day'); // Puxa dia por dia para o gráfico
+      url.searchParams.set('dimensions', 'day');
 
       const r = await fetch(url.toString(), {
         headers: { Authorization: `Bearer ${token}` }
