@@ -17,40 +17,35 @@
     --ease: cubic-bezier(0.165, 0.84, 0.44, 1);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; overflow-x: hidden; }
+  
+  /* PREVENÇÃO DE VAZAMENTO */
+  html, body { overflow-x: hidden; width: 100%; position: relative; }
+  
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; min-height: 100vh; }
   body.no-scroll { overflow: hidden; }
 
-  /* ZOOM & HOVER */
+  /* ZOOM & INTERAÇÕES */
   .drop-opt, .side-card, .bubble-btn, .total-card, .auth-btn, .clear-extension {
     transition: transform 0.2s var(--ease), background 0.2s, color 0.2s, width 0.4s var(--ease), opacity 0.3s var(--ease), border-radius 0.3s var(--ease);
   }
   .drop-opt:hover, .side-card:hover { transform: scale(1.03); background: var(--semi-orange) !important; color: #ff9d66 !important; }
   .total-card:hover { transform: scale(1.02); border-color: var(--accent); }
 
-  /* BOTÃO EXTENSÍVEL INTELIGENTE */
+  /* BOTÃO DE LIMPEZA */
   .filter-group { display: flex; align-items: center; position: relative; }
-  
   .clear-extension {
     background: var(--surface); border: 1px solid var(--border); border-right: none;
     height: 38px; color: var(--accent); display: flex; align-items: center; justify-content: center;
     border-radius: 50px 0 0 50px; overflow: hidden; cursor: pointer;
-    width: 0; opacity: 0; white-space: nowrap; font-size: 0.75rem; font-weight: 800; pointer-events: none;
+    width: 0; opacity: 0; white-space: nowrap; font-size: 1.1rem; font-weight: 800; pointer-events: none;
   }
-  
-  /* Só aparece quando tem a classe .active */
-  .clear-extension.active { width: 40px; opacity: 1; pointer-events: auto; }
-  .clear-extension.active:hover { width: 140px; background: var(--semi-orange); }
-  
-  .clear-extension span { opacity: 0; margin-left: 8px; transition: 0.3s; }
-  .clear-extension.active:hover span { opacity: 1; }
+  .clear-extension.active { width: 44px; opacity: 1; pointer-events: auto; border-color: var(--accent); }
+  .clear-extension.active:hover { width: 155px; background: var(--semi-orange); }
+  .clear-extension span { font-size: 0.75rem; opacity: 0; width: 0; transition: 0.3s; display: inline-block; overflow: hidden; vertical-align: middle; }
+  .clear-extension.active:hover span { opacity: 1; width: auto; margin-left: 8px; }
 
   .bubble-btn { background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; height: 38px; }
-  
-  /* Ajuste de borda quando a extensão está ativa */
-  .clear-extension.active + .drop-wrapper .btn-canais {
-    border-radius: 0 50px 50px 0;
-    border-left: 1px solid transparent;
-  }
+  .clear-extension.active + .drop-wrapper .btn-canais { border-radius: 0 50px 50px 0; border-left: 1px solid transparent; }
 
   /* AUTH */
   .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
@@ -65,7 +60,7 @@
   .logo-text { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; }
   .header-controls { display: flex; gap: 10px; align-items: center; }
 
-  /* MENUS - MOBILE SAFE */
+  /* MENUS */
   .drop-wrapper { position: relative; }
   .drop-menu {
     position: absolute; top: 45px; right: 0; background: #0a0a0a; border: 1px solid var(--accent);
@@ -87,7 +82,6 @@
   table { width: 100%; border-collapse: collapse; }
   th { padding: 15px; text-align: left; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
   td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-  .row-chan { display: flex; align-items: center; gap: 10px; font-weight: 700; }
   .avatar { width: 30px; height: 30px; border-radius: 50%; background: #111; object-fit: cover; }
 
   /* SIDEBAR */
@@ -100,11 +94,28 @@
   .status-ball.active { background: var(--accent); }
   .side-card:hover .status-ball.active::after { content: '✕'; color: #000; font-size: 9px; font-weight: 900; }
 
-  @media (max-width: 900px) { .totals { grid-template-columns: 1fr; gap: 15px; } }
-  @media (max-width: 768px) { 
-    header { flex-direction: column; gap: 15px; } 
-    .drop-menu { right: auto; left: 50%; transform: translateX(-50%); width: 90vw; max-width: 300px; } 
-    .header-controls { width: 100%; justify-content: center; }
+  /* RESPONSIVIDADE MOBILE REFINADA */
+  @media (max-width: 900px) { .totals { grid-template-columns: 1fr; } }
+
+  @media (max-width: 768px) {
+    body { padding: 12px; } /* Menos padding no mobile */
+    header { margin-bottom: 15px; padding-bottom: 15px; flex-direction: column; gap: 15px; }
+    
+    /* Centraliza os botões e evita que vazem */
+    .header-controls { width: 100%; justify-content: center; flex-wrap: wrap; }
+    
+    /* MENU CENTRALIZADO NO MOBILE */
+    .drop-menu { 
+      right: auto; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      width: 92vw; 
+      max-width: 320px; 
+      top: 48px;
+    }
+    
+    .total-card .value { font-size: 1.8rem; }
+    .logo-container { width: 100%; justify-content: center; }
   }
 </style>
 </head>
@@ -216,19 +227,15 @@ function toggleDrop(id) {
 
 function resetFilters() {
   selectedChannels = new Set(CHANNELS.map(c => c.id));
-  renderCanais();
-  updateUI();
+  renderCanais(); updateUI();
 }
 
 function renderCanais() {
   const drop = document.getElementById('dropCanais'); drop.innerHTML = '';
   const allActive = selectedChannels.size === CHANNELS.length;
-  
-  // Controle do botão de Limpar
   const clearBtn = document.getElementById('clearBtn');
   if (!allActive) clearBtn.classList.add('active');
   else clearBtn.classList.remove('active');
-
   CHANNELS.forEach(ch => {
     const isS = allActive ? false : selectedChannels.has(ch.id);
     const div = document.createElement('div'); div.className = `drop-opt ${isS ? 'selected' : ''}`;
