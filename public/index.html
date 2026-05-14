@@ -7,312 +7,557 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0a; --surface: #111; --border: #222;
-    --accent: #ff0033; --accent2: #ff6600;
-    --text: #f0f0f0; --muted: #555; --green: #00ff88; --card: #161616;
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #222222;
+    --accent: #ff4d00;
+    --accent2: #ffcc00;
+    --text: #f0f0f0;
+    --muted: #555;
+    --green: #00e676;
+    --red: #ff1744;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; min-height:100vh; padding:24px; }
 
-  header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; border-bottom:1px solid var(--border); padding-bottom:24px; }
-  .logo-tag { font-family:'Space Mono',monospace; font-size:10px; color:var(--accent); letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:4px; }
-  h1 { font-size:28px; font-weight:800; letter-spacing:-1px; }
-  h1 span { color:var(--accent); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  .section-label { font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
 
-  .accounts-grid { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:32px; }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+  }
 
-  .account-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px 20px; min-width:180px; flex:1; }
-  .account-card.connected { border-color:var(--green); background:rgba(0,255,136,0.04); }
+  .logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
 
-  .account-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .account-num { font-weight:800; font-size:14px; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); }
-  .dot.green { background:var(--green); }
-  .dot.orange { background:var(--accent2); animation:pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .logo span { color: var(--accent); }
 
-  .account-email { font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); margin-bottom:10px; min-height:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .period-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
 
-  .btn-connect { display:block; width:100%; background:transparent; border:1px solid var(--border); border-radius:6px; padding:7px; color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:11px; cursor:pointer; transition:all .2s; text-align:center; text-decoration:none; }
-  .btn-connect:hover { border-color:var(--accent); color:var(--accent); }
-  .btn-connect.done { border-color:var(--green); color:var(--green); }
-  .btn-disconnect { display:block; width:100%; background:transparent; border:1px solid rgba(255,0,51,0.3); border-radius:6px; padding:5px; color:var(--accent); font-family:'Space Mono',monospace; font-size:9px; cursor:pointer; margin-top:6px; }
-  .btn-disconnect:hover { border-color:var(--accent); }
+  .period-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    transition: all 0.15s;
+  }
 
-  .totals-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:32px; }
-  .total-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:20px; }
-  .total-card .label { font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
-  .total-card .value { font-size:26px; font-weight:800; letter-spacing:-1px; color:var(--accent); }
-  .total-card .value.green { color:var(--green); }
-  .total-card .value.orange { color:var(--accent2); }
+  .period-btn:hover, .period-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 
-  .channels-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
-  .controls-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .date-input { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:8px 12px; color:var(--text); font-family:'Space Mono',monospace; font-size:12px; }
-  .date-input:focus { outline:none; border-color:var(--accent); }
+  /* Contas */
+  .accounts-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
 
-  .btn { background:var(--accent); color:white; border:none; border-radius:6px; padding:10px 20px; font-family:'Syne',sans-serif; font-weight:700; font-size:13px; cursor:pointer; transition:opacity .2s; }
-  .btn:hover { opacity:.85; }
-  .btn:disabled { opacity:.3; cursor:not-allowed; }
+  .account-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.85rem;
+  }
 
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  thead tr { border-bottom:1px solid var(--border); }
-  th { font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; padding:10px 12px; text-align:left; font-weight:400; }
-  th.right { text-align:right; }
-  tbody tr { border-bottom:1px solid rgba(255,255,255,0.03); transition:background .15s; }
-  tbody tr:hover { background:rgba(255,255,255,0.02); }
-  td { padding:14px 12px; vertical-align:middle; }
-  td.right { text-align:right; font-family:'Space Mono',monospace; font-size:12px; }
+  .account-chip:hover { border-color: var(--accent); }
+  .account-chip.connected { border-color: var(--green); }
 
-  .channel-name { font-weight:700; font-size:14px; }
-  .channel-id { font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); margin-top:2px; }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
 
-  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-family:'Space Mono',monospace; font-weight:700; letter-spacing:1px; }
-  .badge-ok { background:rgba(0,255,136,0.1); color:var(--green); }
-  .badge-err { background:rgba(255,0,51,0.1); color:var(--accent); }
+  .account-chip.connected .dot { background: var(--green); }
 
-  .revenue { color:var(--green); font-weight:700; }
-  .revenue-zero { color:var(--muted); }
+  .btn-fetch {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
 
-  #loading-overlay { display:none; position:fixed; inset:0; background:rgba(10,10,10,0.85); z-index:100; justify-content:center; align-items:center; flex-direction:column; gap:16px; }
-  #loading-overlay.show { display:flex; }
-  .spinner { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .loading-text { font-family:'Space Mono',monospace; font-size:12px; color:var(--muted); }
+  .btn-fetch:hover { opacity: 0.85; }
+  .btn-fetch:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  .empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
-  .empty-state h3 { font-size:16px; margin-bottom:8px; color:var(--text); }
-  .empty-state p { font-size:13px; font-family:'Space Mono',monospace; }
+  /* Totais */
+  .totals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
 
-  .toast { position:fixed; bottom:24px; right:24px; background:var(--card); border:1px solid var(--green); border-radius:8px; padding:12px 16px; font-family:'Space Mono',monospace; font-size:12px; color:var(--green); z-index:200; display:none; }
-  .toast.show { display:block; animation:fadeIn .3s; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .total-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
 
-  footer { margin-top:40px; border-top:1px solid var(--border); padding-top:16px; font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); display:flex; justify-content:space-between; }
+  .total-card .label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 8px;
+  }
 
-  /* Slots grid — 4 por linha em telas grandes */
-  @media(min-width:900px) {
-    .accounts-grid { display:grid; grid-template-columns:repeat(4,1fr); }
+  .total-card .value {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .total-card.revenue .value { color: var(--accent2); }
+  .total-card.views .value { color: var(--text); }
+
+  /* Tabela */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    background: #161616;
+    padding: 12px 20px;
+    text-align: left;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #161616; }
+
+  td {
+    padding: 14px 20px;
+    font-size: 0.9rem;
+  }
+
+  td.channel-name { font-weight: 700; }
+
+  td.revenue {
+    font-family: 'Space Mono', monospace;
+    color: var(--accent2);
+    font-size: 0.85rem;
+  }
+
+  td.views {
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  td.status {
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+  }
+
+  .badge.ok { background: rgba(0,230,118,0.1); color: var(--green); }
+  .badge.error { background: rgba(255,23,68,0.1); color: var(--red); }
+  .badge.pending { background: rgba(255,255,255,0.05); color: var(--muted); }
+  .badge.loading { background: rgba(255,204,0,0.1); color: var(--accent2); }
+
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-bg.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px;
+    width: 440px;
+    max-width: 95vw;
+  }
+
+  .modal h3 { margin-bottom: 8px; font-size: 1.1rem; }
+  .modal p { color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.5; }
+
+  .modal-actions { display: flex; gap: 10px; }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .status-msg {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 16px;
   }
 </style>
 </head>
 <body>
 
-<div id="loading-overlay">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Buscando dados...</div>
-</div>
-
-<div class="toast" id="toast"></div>
-
 <header>
-  <div>
-    <span class="logo-tag">▶ YouTube Analytics</span>
-    <h1>Dashboard <span>YT</span> Shorts</h1>
+  <div class="logo">YT<span>.</span>Dashboard</div>
+  <div class="period-selector">
+    <button class="period-btn active" data-days="7">7d</button>
+    <button class="period-btn" data-days="30">30d</button>
+    <button class="period-btn" data-days="90">90d</button>
   </div>
 </header>
 
-<div class="section-label">Contas / Canais de Marca</div>
-<div class="accounts-grid" id="accounts-grid">
+<div class="accounts-bar" id="accountsBar">
   <!-- gerado pelo JS -->
+  <button class="btn-fetch" id="btnFetch" onclick="fetchAll()">▶ Buscar Dados</button>
 </div>
 
-<div class="totals-grid">
-  <div class="total-card"><div class="label">Receita Total</div><div class="value" id="total-receita">$0.00</div></div>
-  <div class="total-card"><div class="label">Views Totais</div><div class="value green" id="total-views">0</div></div>
-  <div class="total-card"><div class="label">RPM Médio</div><div class="value orange" id="total-rpm">$0.00</div></div>
-  <div class="total-card"><div class="label">Canais com Dados</div><div class="value" id="total-canais">0/12</div></div>
-</div>
-
-<div class="channels-header">
-  <div class="section-label" style="margin-bottom:0">Canais</div>
-  <div class="controls-row">
-    <input type="date" class="date-input" id="data-inicio" />
-    <span style="color:var(--muted);font-size:12px">até</span>
-    <input type="date" class="date-input" id="data-fim" />
-    <button class="btn" id="btn-buscar" onclick="buscarDados()">▶ Buscar Dados</button>
+<div class="totals">
+  <div class="total-card revenue">
+    <div class="label">Receita Total</div>
+    <div class="value" id="totalRevenue">—</div>
+  </div>
+  <div class="total-card views">
+    <div class="label">Views Totais</div>
+    <div class="value" id="totalViews">—</div>
   </div>
 </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Canal</th>
-      <th class="right">Receita</th>
-      <th class="right">Views</th>
-      <th class="right">RPM</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody id="tabela-canais">
-    <tr><td colspan="5"><div class="empty-state"><h3>Clique em "Buscar Dados" para começar</h3><p>Conecte as contas primeiro se ainda não conectou</p></div></td></tr>
-  </tbody>
-</table>
+<p class="status-msg" id="statusMsg">Conecte as contas e clique em Buscar Dados.</p>
 
-<footer>
-  <span>Dashboard YT Shorts — 12 canais</span>
-  <span id="ultima-atualizacao">—</span>
-</footer>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Canal</th>
+        <th>Receita (USD)</th>
+        <th>Views</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <!-- linhas geradas pelo JS -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal de login -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Conectar Conta</h3>
+    <p id="modalDesc">Você será redirecionado para o login do Google. Selecione a conta correta e autorize o acesso.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+      <a class="btn-primary" id="modalLink" href="#">Conectar →</a>
+    </div>
+  </div>
+</div>
 
 <script>
 // ── CANAIS ────────────────────────────────────────────────
-const CANAIS = [
-  { nome: 'RatoFIT',            id: 'UCR61DCrMZx-g3irgqgoT5JA' },
-  { nome: 'Zero Hora',          id: 'UC6sh-Qiz2gj_uqUdYfYnX6w' },
-  { nome: 'Velozes & Curiosos', id: 'UCXMwjsceXKA5dqbWSWE-_7Q' },
-  { nome: 'Compton Kings',      id: 'UCGqLCGdh5xUJiQW416DQWjA' },
-  { nome: 'Pixelando 165',      id: 'UCzE6ujftVmVmEvGJW0MArlw' },
-  { nome: 'McQueeeen',          id: 'UCMNvTCr-RwLVRW-jDIQVnBw' },
-  { nome: 'Rato Maromba',       id: 'UCxslmo0asWXgdWObPO8BFrQ' },
-  { nome: 'Grove Street Style', id: 'UChQfM3wIfo84Ab0WeW9CwCA' },
-  { nome: 'Berserk Mode',       id: 'UCzkne80zh104CdG3kDrTQ1w' },
-  { nome: 'One Punch Fights',   id: 'UChdMYJwcBpizC4NLh5dRh4g' },
-  { nome: 'O Último Peão',      id: 'UCkdnxxobb7NvO6EX2kLqv4A' },
-  { nome: 'Ecos da Mente',      id: 'UCpCEVQUoScH3SNPZjEcAWpg' },
+const CHANNELS = [
+  { id: 'UC_RatoFIT',          name: 'RatoFIT',             account: 1 },
+  { id: 'UC_ZeroHora',         name: 'Zero Hora',           account: 1 },
+  { id: 'UC_VelozCuriosos',    name: 'Velozes & Curiosos',  account: 1 },
+  { id: 'UC_ComptonKings',     name: 'Compton Kings',       account: 1 },
+  { id: 'UC_Pixelando',        name: 'Pixelando 165',       account: 2 },
+  { id: 'UC_McQueeeen',        name: 'McQueeeen',           account: 2 },
+  { id: 'UC_RatoMaromba',      name: 'Rato Maromba',        account: 2 },
+  { id: 'UC_GroveStreet',      name: 'Grove Street Style',  account: 2 },
+  { id: 'UC_BerserkMode',      name: 'Berserk Mode',        account: 2 },
+  { id: 'UC_OnePunchFights',   name: 'One Punch Fights',    account: 3 },
+  { id: 'UC_UltimoPeao',       name: 'O Último Peão',       account: 3 },
+  { id: 'UC_EcosDaMente',      name: 'Ecos da Mente',       account: 3 },
 ];
 
-// 12 slots — um para cada conta/canal de marca
-const SLOTS = Array.from({length: 12}, (_, i) => String(i + 1));
+// IDs reais dos canais — precisam ser preenchidos
+// Formato: UC + 22 caracteres. Encontre em: YouTube Studio > Configurações > Informações do Canal
+const CHANNEL_IDS = {
+  'UC_RatoFIT':        'COLE_ID_AQUI',
+  'UC_ZeroHora':       'COLE_ID_AQUI',
+  'UC_VelozCuriosos':  'COLE_ID_AQUI',
+  'UC_ComptonKings':   'COLE_ID_AQUI',
+  'UC_Pixelando':      'COLE_ID_AQUI',
+  'UC_McQueeeen':      'COLE_ID_AQUI',
+  'UC_RatoMaromba':    'COLE_ID_AQUI',
+  'UC_GroveStreet':    'COLE_ID_AQUI',
+  'UC_BerserkMode':    'COLE_ID_AQUI',
+  'UC_OnePunchFights': 'COLE_ID_AQUI',
+  'UC_UltimoPeao':     'COLE_ID_AQUI',
+  'UC_EcosDaMente':    'COLE_ID_AQUI',
+};
 
-let dadosCanais = {};
+// ── STATE ─────────────────────────────────────────────────
+let accounts = {};
+let results = {};
+let activeDays = 7;
 
 // ── INIT ──────────────────────────────────────────────────
-function inicializarDatas() {
-  const hoje = new Date();
-  const inicio = new Date();
-  inicio.setDate(hoje.getDate() - 7);
-  const fmt = d => d.toISOString().split('T')[0];
-  document.getElementById('data-inicio').value = fmt(inicio);
-  document.getElementById('data-fim').value = fmt(hoje);
+async function init() {
+  await loadAccounts();
+  renderAccountsBar();
+  renderTable();
+  checkConnectedParam();
 }
 
-async function carregarContas() {
-  const res = await fetch('/api/accounts');
-  const accounts = await res.json();
-  renderSlots(accounts);
+async function loadAccounts() {
+  try {
+    const r = await fetch('/api/accounts');
+    accounts = await r.json();
+  } catch { accounts = {}; }
+}
 
-  // Verifica se veio de um callback de conexão
-  const params = new URLSearchParams(window.location.search);
+function checkConnectedParam() {
+  const params = new URLSearchParams(location.search);
   if (params.get('connected')) {
-    mostrarToast(`Conta conectada com sucesso!`);
-    window.history.replaceState({}, '', '/');
+    history.replaceState({}, '', '/');
+    setStatus('Conta conectada com sucesso!');
   }
   if (params.get('error')) {
-    mostrarToast(`Erro: ${params.get('error')}`, true);
-    window.history.replaceState({}, '', '/');
+    history.replaceState({}, '', '/');
+    setStatus('Erro ao conectar: ' + params.get('error'));
   }
 }
 
-// ── RENDER SLOTS ──────────────────────────────────────────
-function renderSlots(accounts) {
-  const grid = document.getElementById('accounts-grid');
-  grid.innerHTML = SLOTS.map(slot => {
-    const acc = accounts[slot];
-    const connected = !!acc;
-    return `
-      <div class="account-card ${connected ? 'connected' : ''}" id="card-${slot}">
-        <div class="account-top">
-          <div class="account-num">Slot ${slot}</div>
-          <div class="dot ${connected ? 'green' : ''}" id="dot-${slot}"></div>
-        </div>
-        <div class="account-email">${connected ? acc.email : 'Não conectado'}</div>
-        <a class="btn-connect ${connected ? 'done' : ''}" href="/auth/${slot}">
-          ${connected ? '✓ Conectado' : 'Conectar'}
-        </a>
-        ${connected ? `<button class="btn-disconnect" onclick="desconectar('${slot}')">Desconectar</button>` : ''}
-      </div>
-    `;
-  }).join('');
+// ── RENDER ACCOUNTS ───────────────────────────────────────
+function renderAccountsBar() {
+  const bar = document.getElementById('accountsBar');
+  const btn = document.getElementById('btnFetch');
+  bar.innerHTML = '';
+
+  const accountLabels = {
+    1: 'vini.shortformteam',
+    2: 'apenasfischer',
+    3: 'fischerviniciuus2',
+  };
+
+  [1, 2, 3].forEach(slot => {
+    const connected = !!accounts[slot];
+    const chip = document.createElement('div');
+    chip.className = 'account-chip' + (connected ? ' connected' : '');
+    chip.innerHTML = `<div class="dot"></div><span>${accountLabels[slot]}</span>`;
+    chip.onclick = () => openModal(slot, accountLabels[slot], connected);
+    bar.appendChild(chip);
+  });
+
+  bar.appendChild(btn);
 }
 
-async function desconectar(slot) {
-  await fetch(`/api/accounts/${slot}`, { method: 'DELETE' });
-  carregarContas();
+// ── MODAL ─────────────────────────────────────────────────
+function openModal(slot, label, connected) {
+  document.getElementById('modalTitle').textContent = connected ? `Reconectar ${label}` : `Conectar ${label}`;
+  document.getElementById('modalDesc').textContent = connected
+    ? `Esta conta já está conectada. Clique para reconectar e atualizar o acesso.`
+    : `Você será redirecionado para o login do Google. Selecione a conta ${label}@gmail.com e autorize o acesso.`;
+  document.getElementById('modalLink').href = `/auth/${slot}`;
+  document.getElementById('modalBg').classList.add('open');
 }
 
-// ── BUSCAR DADOS ──────────────────────────────────────────
-async function buscarDados() {
-  const inicio = document.getElementById('data-inicio').value;
-  const fim = document.getElementById('data-fim').value;
-  if (!inicio || !fim) { alert('Selecione o período.'); return; }
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+}
 
-  mostrarLoading('Iniciando busca...');
-  document.getElementById('btn-buscar').disabled = true;
-  dadosCanais = {};
+// ── PERIOD ────────────────────────────────────────────────
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeDays = parseInt(btn.dataset.days);
+  };
+});
 
-  for (let i = 0; i < CANAIS.length; i++) {
-    const canal = CANAIS[i];
-    setLoadingText(`Buscando: ${canal.nome} (${i+1}/${CANAIS.length})`);
-
-    try {
-      const res = await fetch(`/api/analytics?channelId=${canal.id}&startDate=${inicio}&endDate=${fim}`);
-      const data = await res.json();
-      dadosCanais[canal.id] = { nome: canal.nome, ...data };
-    } catch {
-      dadosCanais[canal.id] = { nome: canal.nome, ok: false };
-    }
+// ── FETCH ALL ─────────────────────────────────────────────
+async function fetchAll() {
+  const connectedSlots = Object.keys(accounts);
+  if (!connectedSlots.length) {
+    setStatus('Conecte pelo menos uma conta primeiro.');
+    return;
   }
 
-  esconderLoading();
-  document.getElementById('btn-buscar').disabled = false;
-  renderTabela();
-  atualizarTotais();
-  document.getElementById('ultima-atualizacao').textContent = `Atualizado: ${new Date().toLocaleString('pt-BR')}`;
+  document.getElementById('btnFetch').disabled = true;
+  results = {};
+  renderTable();
+
+  const endDate = new Date().toISOString().split('T')[0];
+  const startDate = new Date(Date.now() - activeDays * 86400000).toISOString().split('T')[0];
+  setStatus(`Buscando dados de ${startDate} até ${endDate}...`);
+
+  const promises = CHANNELS.map(ch => fetchChannel(ch, startDate, endDate));
+  await Promise.all(promises);
+
+  renderTable();
+  renderTotals();
+  setStatus(`Dados atualizados — ${new Date().toLocaleTimeString('pt-BR')}`);
+  document.getElementById('btnFetch').disabled = false;
 }
 
-// ── RENDER TABELA ─────────────────────────────────────────
-function renderTabela() {
-  document.getElementById('tabela-canais').innerHTML = CANAIS.map(canal => {
-    const d = dadosCanais[canal.id];
-    if (!d) return '';
-    const rec = d.receita !== undefined ? `$${d.receita.toFixed(2)}` : '—';
-    const viw = d.views !== undefined ? d.views.toLocaleString('pt-BR') : '—';
-    const rpm = (d.receita && d.views) ? `$${((d.receita/d.views)*1000).toFixed(2)}` : '—';
-    const rc = d.receita > 0 ? 'revenue' : 'revenue-zero';
-    const badge = d.ok
-      ? '<span class="badge badge-ok">OK</span>'
-      : '<span class="badge badge-err">SEM ACESSO</span>';
-    return `<tr>
-      <td><div class="channel-name">${d.nome}</div><div class="channel-id">${canal.id}</div></td>
-      <td class="right ${rc}">${rec}</td>
-      <td class="right">${viw}</td>
-      <td class="right">${rpm}</td>
-      <td>${badge}</td>
+async function fetchChannel(ch, startDate, endDate) {
+  const realId = CHANNEL_IDS[ch.id];
+  if (!realId || realId === 'COLE_ID_AQUI') {
+    results[ch.id] = { status: 'no_id' };
+    renderRow(ch);
+    return;
+  }
+
+  results[ch.id] = { status: 'loading' };
+  renderRow(ch);
+
+  try {
+    const r = await fetch(`/api/analytics?channelId=${realId}&startDate=${startDate}&endDate=${endDate}`);
+    const data = await r.json();
+    results[ch.id] = data.ok
+      ? { status: 'ok', receita: data.receita, views: data.views }
+      : { status: 'error' };
+  } catch {
+    results[ch.id] = { status: 'error' };
+  }
+
+  renderRow(ch);
+}
+
+// ── RENDER TABLE ──────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  CHANNELS.forEach((ch, i) => renderRow(ch, i + 1));
+}
+
+function renderRow(ch, idx) {
+  const tbody = document.getElementById('tableBody');
+  const existingRow = document.getElementById('row-' + ch.id);
+  const r = results[ch.id];
+
+  let revenueCell = '<td class="revenue">—</td>';
+  let viewsCell = '<td class="views">—</td>';
+  let badge = '<span class="badge pending">aguardando</span>';
+
+  if (r) {
+    if (r.status === 'loading') badge = '<span class="badge loading">buscando...</span>';
+    else if (r.status === 'ok') {
+      badge = '<span class="badge ok">ok</span>';
+      revenueCell = `<td class="revenue">$${r.receita.toFixed(2)}</td>`;
+      viewsCell = `<td class="views">${r.views.toLocaleString('pt-BR')}</td>`;
+    } else if (r.status === 'error') badge = '<span class="badge error">sem acesso</span>';
+    else if (r.status === 'no_id') badge = '<span class="badge error">ID faltando</span>';
+  }
+
+  const rowIdx = CHANNELS.indexOf(ch) + 1;
+  const html = `
+    <tr id="row-${ch.id}">
+      <td class="views">${rowIdx}</td>
+      <td class="channel-name">${ch.name}</td>
+      ${revenueCell}
+      ${viewsCell}
+      <td class="status">${badge}</td>
     </tr>`;
-  }).join('');
-}
 
-function atualizarTotais() {
-  let rec = 0, viw = 0, ok = 0;
-  for (const c of CANAIS) {
-    const d = dadosCanais[c.id];
-    if (d?.ok) { rec += d.receita||0; viw += d.views||0; ok++; }
+  if (existingRow) {
+    existingRow.outerHTML = html;
+  } else {
+    tbody.insertAdjacentHTML('beforeend', html);
   }
-  document.getElementById('total-receita').textContent = `$${rec.toFixed(2)}`;
-  document.getElementById('total-views').textContent = viw.toLocaleString('pt-BR');
-  document.getElementById('total-rpm').textContent = viw > 0 ? `$${((rec/viw)*1000).toFixed(2)}` : '$0.00';
-  document.getElementById('total-canais').textContent = `${ok}/12`;
 }
 
-// ── HELPERS ───────────────────────────────────────────────
-function mostrarLoading(msg) { document.getElementById('loading-text').textContent = msg; document.getElementById('loading-overlay').classList.add('show'); }
-function setLoadingText(msg) { document.getElementById('loading-text').textContent = msg; }
-function esconderLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
-
-function mostrarToast(msg, erro = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.borderColor = erro ? 'var(--accent)' : 'var(--green)';
-  t.style.color = erro ? 'var(--accent)' : 'var(--green)';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 4000);
+function renderTotals() {
+  let totalRev = 0, totalViews = 0;
+  Object.values(results).forEach(r => {
+    if (r.status === 'ok') {
+      totalRev += r.receita;
+      totalViews += r.views;
+    }
+  });
+  document.getElementById('totalRevenue').textContent = '$' + totalRev.toFixed(2);
+  document.getElementById('totalViews').textContent = totalViews.toLocaleString('pt-BR');
 }
 
-// ── START ─────────────────────────────────────────────────
-inicializarDatas();
-carregarContas();
+function setStatus(msg) {
+  document.getElementById('statusMsg').textContent = msg;
+}
+
+init();
 </script>
 </body>
 </html>
