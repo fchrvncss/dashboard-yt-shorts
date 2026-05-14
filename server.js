@@ -33,7 +33,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'automata-secure-session',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 dias de sessão no navegador
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
 }));
 
 app.use(express.json());
@@ -90,7 +90,6 @@ app.get('/callback', async (req, res) => {
     });
     const userInfo = await userRes.json();
 
-    // SALVA NO MONGODB (Se já existir, atualiza. Se não, cria.)
     await db.collection('accounts').updateOne(
       { slot: slot },
       { 
@@ -111,17 +110,14 @@ app.get('/callback', async (req, res) => {
 });
 
 // --- API DATA ---
-
 async function getValidToken(slot) {
   const acc = await db.collection('accounts').findOne({ slot: slot });
   if (!acc) return null;
 
-  // Se o token ainda é válido (com margem de 5 min)
   if (acc.accessToken && acc.expiresAt > Date.now() + 300000) {
     return acc.accessToken;
   }
 
-  // Se expirou, usa o Refresh Token
   if (!acc.refreshToken) return null;
   try {
     const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -136,11 +132,58 @@ async function getValidToken(slot) {
     
     await db.collection('accounts').updateOne(
       { slot: slot },
-      { 
-        $set: { 
-          accessToken: data.access_token, 
-          expiresAt: Date.now() + (data.expires_in * 1000) 
-        } 
-      }
+      { $set: { accessToken: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) } }
     );
-    return data.access_token
+    return data.access_token;
+  } catch (e) { return null; }
+}
+
+app.get('/api/accounts', checkAuth, async (req, res) => {
+  try {
+    const docs = await db.collection('accounts').find().toArray();
+    const accounts = {};
+    docs.forEach(doc => {
+      accounts[doc.slot] = { email: doc.email, connected: true };
+    });
+    res.json(accounts);
+  } catch (e) { res.json({}); }
+});
+
+app.get('/api/channel-thumbs', checkAuth, async (req, res) => {
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (!token) continue;
+    try {
+      const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.query.ids}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await r.json();
+      if (data.items) {
+        const thumbs = {};
+        data.items.forEach(i => thumbs[i.id] = i.snippet.thumbnails.default.url);
+        return res.json({ ok: true, thumbs });
+      }
+    } catch (e) {}
+  }
+  res.json({ ok: false });
+});
+
+app.get('/api/analytics', checkAuth, async (req, res) => {
+  const { channelId, startDate, endDate } = req.query;
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (!token) continue;
+    try {
+      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=estimatedRevenue,views&dimensions=day`;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) continue;
+      const data = await r.json();
+      return res.json({ ok: true, rows: data.rows || [] });
+    } catch (e) {}
+  }
+  res.json({ ok: false });
+});
+
+app.listen(PORT, () => console.log(`Server ON: ${PORT}`));
