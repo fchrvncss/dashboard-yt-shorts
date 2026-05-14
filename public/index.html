@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Automata YT</title>
 
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='20' stroke='%23ff4d00' stroke-width='6' fill='none'/><rect x='35' y='32' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='45' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='58' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='38.5' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='51.5' width='10' height='10' fill='%23ff4d00'/><rect x='61' y='45' width='10' height='10' fill='%23ff4d00'/></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='20' stroke='%23ff4d00' stroke-width='6' fill='none'/><rect x='35' y='32' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='45' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='45' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='58' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='38.5' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='51.5' width='10' height='10' fill='%23ff4d00'/><rect x='61' y='45' width='10' height='10' fill='%23ff4d00'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -182,9 +182,7 @@
       <h3 style="font-weight:800; letter-spacing:-0.5px">CONEXÕES</h3>
       <button class="bubble-btn" onclick="toggleSidebar(false)" style="border-color:var(--accent); color:var(--accent); padding:5px 12px">✕</button>
   </div>
-  
   <div id="sidebarContent"></div>
-
   <button class="apply-filter-btn" onclick="location.reload()" style="margin-top: 30px; border-color: #333; color: #888;">RECARREGAR DASHBOARD</button>
 </div>
 
@@ -203,9 +201,7 @@ async function login() {
   if (r.ok) { 
     if(document.getElementById('keepConnected').checked) localStorage.setItem('automata_logged', 'true');
     showDashboard();
-  } else {
-    alert("Senha incorreta");
-  }
+  } else { alert("Senha incorreta"); }
 }
 
 function showDashboard() {
@@ -215,7 +211,9 @@ function showDashboard() {
 }
 
 async function initApp() { await loadAccounts(); await loadThumbs(); renderCanais(); renderMeses(); renderSidebar(); initChart(); fetchAll(); }
+
 async function loadAccounts() { try { const r = await fetch('/api/accounts'); accounts = await r.json(); } catch(e){} }
+
 async function loadThumbs() {
   const ids = Object.values(CHANNEL_IDS).join(',');
   const r = await fetch('/api/channel-thumbs?ids=' + ids);
@@ -251,8 +249,7 @@ function renderCanais() {
         e.stopPropagation(); 
         if (allActive) { selectedChannels.clear(); selectedChannels.add(ch.id); } 
         else { if(selectedChannels.has(ch.id)) { selectedChannels.delete(ch.id); if(selectedChannels.size === 0) selectedChannels = new Set(CHANNELS.map(c => c.id)); } else { selectedChannels.add(ch.id); } }
-        renderCanais();
-        updateUI();
+        renderCanais(); updateUI();
     };
     drop.appendChild(div);
   });
@@ -347,14 +344,14 @@ function renderSidebar() {
 function initChart() { const ctx = document.getElementById('mainChart').getContext('2d'); myChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Receita', data: [], borderColor: '#ff4d00', tension: 0.4, fill: true, backgroundColor: 'rgba(255, 77, 0, 0.05)', borderWidth: 3, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } }, x: { grid: { display: false } } } } }); }
 function updateChart(dailyData) { const sorted = Object.keys(dailyData).sort(); myChart.data.labels = sorted.map(d => d.split('-').reverse().slice(0,2).join('/')); myChart.data.datasets[0].data = sorted.map(d => dailyData[d]); myChart.update(); }
 
-document.addEventListener('click', (e) => { if(!e.target.closest('.drop-wrapper') && !e.target.closest('.filter-group') && !e.target.closest('.drop-menu') && !e.target.closest('.sidebar') && !e.target.closest('.bubble-btn')) {
-    document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open'));
-    toggleSidebar(false);
-}});
+document.addEventListener('click', (e) => { 
+    if(!e.target.closest('.drop-wrapper') && !e.target.closest('.filter-group') && !e.target.closest('.drop-menu') && !e.target.closest('.sidebar') && !e.target.closest('.bubble-btn')) {
+        document.querySelectorAll('.drop-menu').forEach(d => d.classList.remove('open'));
+        toggleSidebar(false);
+    }
+});
 
-window.onload = () => {
-  if(localStorage.getItem('automata_logged') === 'true') showDashboard();
-};
+window.onload = () => { if(localStorage.getItem('automata_logged') === 'true') showDashboard(); };
 </script>
 </body>
 </html>
