@@ -111,6 +111,82 @@
   .status-ball { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
   .status-ball.active { background: var(--accent); }
 
+  /* LINHA DE CANAL CLICÁVEL */
+  .channel-row { cursor: pointer; }
+  .channel-row:hover td { background: rgba(255,77,0,0.08); }
+  .channel-row:hover .row-chan { transform: scale(1.02); }
+  .row-chan { transition: transform 0.25s var(--ease); }
+
+  /* ABA EXPANSÍVEL */
+  .channel-detail-row td { padding: 0 !important; border-bottom: none; }
+  .channel-detail-inner {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.45s var(--ease), opacity 0.35s ease;
+    opacity: 0;
+  }
+  .channel-detail-inner.open {
+    max-height: 1400px;
+    opacity: 1;
+  }
+  .channel-detail-content {
+    padding: 20px;
+    background: #050505;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .detail-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .detail-block.full-width { grid-column: 1 / -1; }
+  .detail-block h4 {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    font-weight: 700;
+  }
+
+  /* VÍDEO CARD */
+  .video-list { display: flex; flex-direction: column; gap: 10px; }
+  .video-card {
+    display: flex; gap: 10px; align-items: center;
+    padding: 8px; border-radius: 10px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .video-card:hover { background: rgba(255,77,0,0.08); }
+  .video-card.latest { border: 1px solid var(--accent); border-radius: 10px; background: rgba(255,77,0,0.04); }
+  .video-thumb { width: 80px; height: 45px; border-radius: 6px; object-fit: cover; background: #111; flex-shrink: 0; }
+  .video-info { flex: 1; min-width: 0; }
+  .video-title { font-size: 0.78rem; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .video-meta { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+  .video-badge { font-size: 0.58rem; background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 6px; }
+
+  /* GRÁFICO DETALHE */
+  .detail-chart-container { height: 200px; position: relative; }
+  .chart-filter-btns { display: flex; gap: 8px; margin-bottom: 14px; }
+  .chart-filter-btn {
+    padding: 5px 14px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .chart-filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,77,0,0.08); }
+
+  .detail-loading { text-align: center; padding: 40px; color: var(--muted); font-size: 0.8rem; }
+
+  @media (max-width: 768px) {
+    .channel-detail-content { grid-template-columns: 1fr; }
+    .detail-block.full-width { grid-column: 1; }
+  }
+
   @media (max-width: 900px) { .totals { grid-template-columns: 1fr; } }
   @media (max-width: 768px) {
     body { padding: 10px; padding-top: 5px; }
@@ -285,12 +361,15 @@ async function fetchAll(customS, customE) {
 
 async function fetchChannel(ch, start, end) { try { const r = await fetch(`/api/analytics?channelId=${CHANNEL_IDS[ch.id]}&startDate=${start}&endDate=${end}`); const data = await r.json(); results[ch.id] = data.ok ? data.rows : []; } catch(e) { results[ch.id] = []; } }
 
+let openDetailId = null;
+let detailCharts = {};
+
 function updateUI() {
   const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
+  openDetailId = null;
   let tR = 0, tV = 0, dD = {}, maxDate = null;
   if(activePeriod === 1) {
     let allDates = []; Object.values(results).forEach(rows => rows.forEach(r => { if(r[1] > 0) allDates.push(r[0]); }));
-    // CORREÇÃO: usa ontem como fallback se não houver dados com receita
     const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
     const fallback = ontem.toISOString().split('T')[0];
     maxDate = allDates.length ? allDates.sort().reverse()[0] : fallback;
@@ -306,13 +385,190 @@ function updateUI() {
     const rpm = vS > 0 ? (rS / vS) * 1000 : 0;
     tR += rS; tV += vS;
     rows.forEach(r => dD[r[0]] = (dD[r[0]] || 0) + r[1]);
-    tbody.innerHTML += `<tr><td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar"><span>${ch.name}</span></div></td><td style="color:var(--accent);font-weight:800">$${rS.toFixed(2)}</td><td>${vS.toLocaleString()}</td><td style="color:var(--muted)">$${rpm.toFixed(2)}</td></tr>`;
+    tbody.innerHTML += `
+      <tr class="channel-row" onclick="toggleChannelDetail('${ch.id}', this)">
+        <td><div class="row-chan"><img src="${thumbs[ch.id]}" class="avatar"><span>${ch.name}</span></div></td>
+        <td style="color:var(--accent);font-weight:800">$${rS.toFixed(2)}</td>
+        <td>${vS.toLocaleString()}</td>
+        <td style="color:var(--muted)">$${rpm.toFixed(2)}</td>
+      </tr>
+      <tr class="channel-detail-row" id="detail-row-${ch.id}">
+        <td colspan="4">
+          <div class="channel-detail-inner" id="detail-inner-${ch.id}">
+            <div class="channel-detail-content" id="detail-content-${ch.id}">
+              <div class="detail-loading">Carregando...</div>
+            </div>
+          </div>
+        </td>
+      </tr>`;
   });
   document.getElementById('totalRevenue').innerText = `$${tR.toFixed(2)}`;
   document.getElementById('totalViews').innerText = tV.toLocaleString();
   const avgRPM = tV > 0 ? (tR / tV) * 1000 : 0;
   document.getElementById('totalRPM').innerText = `$${avgRPM.toFixed(2)}`;
   updateChart(dD);
+}
+
+async function toggleChannelDetail(chId, row) {
+  const inner = document.getElementById(`detail-inner-${chId}`);
+  if (!inner) return;
+
+  // Fecha se já está aberto
+  if (openDetailId === chId) {
+    inner.classList.remove('open');
+    openDetailId = null;
+    return;
+  }
+
+  // Fecha o anterior
+  if (openDetailId) {
+    const prevInner = document.getElementById(`detail-inner-${openDetailId}`);
+    if (prevInner) prevInner.classList.remove('open');
+  }
+
+  openDetailId = chId;
+  inner.classList.add('open');
+
+  // Busca dados se ainda não carregou
+  const content = document.getElementById(`detail-content-${chId}`);
+  if (content.querySelector('.detail-loading')) {
+    await loadChannelDetail(chId, content);
+  }
+}
+
+async function loadChannelDetail(chId, content) {
+  const realId = CHANNEL_IDS[chId];
+
+  // Período atual
+  let start, end = new Date().toISOString().split('T')[0];
+  if (typeof activePeriod === 'number') {
+    const d = new Date(); d.setDate(d.getDate() - (activePeriod === 1 ? 5 : activePeriod));
+    start = d.toISOString().split('T')[0];
+  } else {
+    const d = new Date(); d.setDate(d.getDate() - 28);
+    start = d.toISOString().split('T')[0];
+  }
+
+  // Busca em paralelo
+  const [recentRes, topRes, detailRes] = await Promise.all([
+    fetch(`/api/recent-videos?channelId=${realId}`).then(r => r.json()).catch(() => ({ ok: false, videos: [] })),
+    fetch(`/api/top-videos?channelId=${realId}&startDate=${start}&endDate=${end}`).then(r => r.json()).catch(() => ({ ok: false, videos: [] })),
+    fetch(`/api/analytics-detail?channelId=${realId}&startDate=${start}&endDate=${end}`).then(r => r.json()).catch(() => ({ ok: false, rows: [] }))
+  ]);
+
+  content.innerHTML = `
+    <!-- Últimos vídeos -->
+    <div class="detail-block">
+      <h4>Últimos Vídeos</h4>
+      <div class="video-list" id="recent-${chId}">
+        ${renderRecentVideos(recentRes.videos || [])}
+      </div>
+    </div>
+
+    <!-- Top vídeos -->
+    <div class="detail-block">
+      <h4>Melhor Performance no Período</h4>
+      <div class="video-list" id="top-${chId}">
+        ${renderTopVideos(topRes.videos || [])}
+      </div>
+    </div>
+
+    <!-- Gráfico detalhado -->
+    <div class="detail-block full-width">
+      <h4>Desempenho do Canal</h4>
+      <div class="chart-filter-btns">
+        <button class="chart-filter-btn active" onclick="switchDetailChart('${chId}', 'views', this)">Views</button>
+        <button class="chart-filter-btn" onclick="switchDetailChart('${chId}', 'minutes', this)">Min. Assistidos</button>
+        <button class="chart-filter-btn" onclick="switchDetailChart('${chId}', 'revenue', this)">Receita</button>
+      </div>
+      <div class="detail-chart-container">
+        <canvas id="detail-chart-${chId}"></canvas>
+      </div>
+    </div>`;
+
+  // Inicializa gráfico
+  const rows = detailRes.rows || [];
+  detailCharts[chId] = { rows, currentMetric: 'views' };
+  initDetailChart(chId, rows, 'views');
+}
+
+function renderRecentVideos(videos) {
+  if (!videos.length) return '<div style="color:var(--muted);font-size:0.8rem">Nenhum vídeo encontrado</div>';
+  return videos.map((v, i) => {
+    const date = new Date(v.publishedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    const isLatest = i === 0;
+    return `<div class="video-card ${isLatest ? 'latest' : ''}" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
+      <img class="video-thumb" src="${v.thumb}" loading="lazy">
+      <div class="video-info">
+        <div class="video-title">${v.title}${isLatest ? '<span class="video-badge">NOVO</span>' : ''}</div>
+        <div class="video-meta">${date}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTopVideos(videos) {
+  if (!videos.length) return '<div style="color:var(--muted);font-size:0.8rem">Nenhum dado disponível</div>';
+  return videos.map((v, i) => `
+    <div class="video-card" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
+      <img class="video-thumb" src="${v.thumb}" loading="lazy">
+      <div class="video-info">
+        <div class="video-title">${v.title}</div>
+        <div class="video-meta">${v.views?.toLocaleString()} views · $${v.revenue?.toFixed(2)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function initDetailChart(chId, rows, metric) {
+  const ctx = document.getElementById(`detail-chart-${chId}`);
+  if (!ctx) return;
+
+  // Destrói chart anterior se existir
+  if (detailCharts[chId]?.chartInstance) {
+    detailCharts[chId].chartInstance.destroy();
+  }
+
+  const metricIndex = { views: 1, minutes: 2, revenue: 3 };
+  const metricLabel = { views: 'Views', minutes: 'Min. Assistidos', revenue: 'Receita ($)' };
+  const idx = metricIndex[metric];
+
+  const labels = rows.map(r => r[0].split('-').reverse().slice(0, 2).join('/'));
+  const data = rows.map(r => r[idx] || 0);
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: metricLabel[metric],
+        data,
+        borderColor: '#ff4d00',
+        tension: 0.4,
+        fill: true,
+        backgroundColor: 'rgba(255,77,0,0.05)',
+        borderWidth: 2,
+        pointRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: '#111' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  detailCharts[chId].chartInstance = chart;
+}
+
+function switchDetailChart(chId, metric, btn) {
+  document.querySelectorAll(`#detail-content-${chId} .chart-filter-btn`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = detailCharts[chId]?.rows || [];
+  initDetailChart(chId, rows, metric);
 }
 
 function toggleSidebar(open) {
