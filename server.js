@@ -284,6 +284,42 @@ app.get('/api/top-videos', checkAuth, async (req, res) => {
   res.json({ ok: false, videos: [] });
 });
 
+// --- MÉTRICAS DETALHADAS DE UM VÍDEO ---
+app.get('/api/video-metrics', checkAuth, async (req, res) => {
+  const { videoId, channelId, startDate, endDate } = req.query;
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (!token) continue;
+    try {
+      // Analytics do vídeo: views, minutos, receita, retenção
+      const analyticsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue,averageViewPercentage&filters=video==${videoId}`;
+      const analyticsRes = await fetch(analyticsUrl, { headers: { Authorization: `Bearer ${token}` } });
+      if (!analyticsRes.ok) continue;
+      const analyticsData = await analyticsRes.json();
+
+      // Estatísticas públicas do vídeo (likes, comentários)
+      const statsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const statsData = await statsRes.json();
+      const stats = statsData.items?.[0]?.statistics || {};
+
+      const row = analyticsData.rows?.[0] || [0, 0, 0, 0];
+      const views = parseInt(row[0]) || 0;
+      const minutes = parseInt(row[1]) || 0;
+      const revenue = parseFloat(row[2]) || 0;
+      const retention = row[3] ? row[3].toFixed(1) + '%' : '—';
+      const likes = parseInt(stats.likeCount) || 0;
+      const comments = parseInt(stats.commentCount) || 0;
+      const likeRate = views > 0 ? ((likes / views) * 1000).toFixed(1) : '—';
+
+      return res.json({ ok: true, views, minutes, revenue, retention, likes, comments, likeRate });
+    } catch (e) {}
+  }
+  res.json({ ok: false, views: 0, minutes: 0, revenue: 0, retention: '—', likes: 0, comments: 0, likeRate: '—' });
+});
+
 // --- ANALYTICS DETALHADO DO CANAL (views, minutos, receita por dia) ---
 app.get('/api/analytics-detail', checkAuth, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
