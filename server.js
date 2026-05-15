@@ -215,4 +215,91 @@ app.get('/api/analytics', checkAuth, async (req, res) => {
   res.json({ ok: false });
 });
 
+// --- ÚLTIMOS VÍDEOS DO CANAL ---
+app.get('/api/recent-videos', checkAuth, async (req, res) => {
+  const { channelId } = req.query;
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (!token) continue;
+    try {
+      const r = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&maxResults=10&type=video`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (!data.items?.length) continue;
+      const videos = data.items.map(v => ({
+        id: v.id.videoId,
+        title: v.snippet.title,
+        thumb: v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url,
+        publishedAt: v.snippet.publishedAt
+      }));
+      return res.json({ ok: true, videos });
+    } catch (e) {}
+  }
+  res.json({ ok: false, videos: [] });
+});
+
+// --- TOP VÍDEOS POR VIEWS NO PERÍODO ---
+app.get('/api/top-videos', checkAuth, async (req, res) => {
+  const { channelId, startDate, endDate } = req.query;
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (!token) continue;
+    try {
+      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue&dimensions=video&sort=-views&maxResults=10`;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (!data.rows?.length) return res.json({ ok: true, videos: [] });
+
+      // Busca títulos e thumbs dos vídeos
+      const videoIds = data.rows.map(row => row[0]).join(',');
+      const detailRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoIds}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const detailData = await detailRes.json();
+      const details = {};
+      (detailData.items || []).forEach(v => {
+        details[v.id] = {
+          title: v.snippet.title,
+          thumb: v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url
+        };
+      });
+
+      const videos = data.rows.map(row => ({
+        id: row[0],
+        views: row[1],
+        revenue: row[2],
+        title: details[row[0]]?.title || 'Sem título',
+        thumb: details[row[0]]?.thumb || ''
+      }));
+      return res.json({ ok: true, videos });
+    } catch (e) {}
+  }
+  res.json({ ok: false, videos: [] });
+});
+
+// --- ANALYTICS DETALHADO DO CANAL (views, minutos, receita por dia) ---
+app.get('/api/analytics-detail', checkAuth, async (req, res) => {
+  const { channelId, startDate, endDate } = req.query;
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (!token) continue;
+    try {
+      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue&dimensions=day`;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) continue;
+      const data = await r.json();
+      return res.json({ ok: true, rows: data.rows || [] });
+    } catch (e) {}
+  }
+  res.json({ ok: false, rows: [] });
+});
+
 app.listen(PORT, () => console.log(`Server ON: ${PORT}`));
