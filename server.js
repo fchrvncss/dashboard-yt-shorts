@@ -7,7 +7,6 @@ const { MongoClient } = require('mongodb');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Configurações do Render / Environment
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const BASE_URL = process.env.BASE_URL;
@@ -15,16 +14,26 @@ const REDIRECT_URI = `${BASE_URL}/callback`;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// --- CONEXÃO COM O BANCO DE DADOS ---
+// --- CORREÇÃO 1: MongoDB com retry automático ---
 let db;
+let mongoClient;
+
 async function connectDB() {
   try {
-    const client = new MongoClient(MONGODB_URI);
-    await client.connect();
-    db = client.db('automata_db');
+    mongoClient = new MongoClient(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    await mongoClient.connect();
+    db = mongoClient.db('automata_db');
     console.log('MongoDB Conectado!');
+
+    mongoClient.on('close', () => {
+      console.warn('MongoDB desconectado. Reconectando em 5s...');
+      setTimeout(connectDB, 5000);
+    });
   } catch (err) {
-    console.error('ERRO CRÍTICO NO MONGODB:', err.message);
+    console.error('ERRO NO MONGODB:', err.message, '— Tentando novamente em 5s...');
+    setTimeout(connectDB, 5000);
   }
 }
 connectDB();
@@ -72,8 +81,19 @@ app.get('/auth/:slot', checkAuth, (req, res) => {
   res.redirect(url);
 });
 
+// --- CORREÇÃO 2: Callback com validação do token ---
 app.get('/callback', async (req, res) => {
-  const { code, state: slot } = req.query;
+  const { code, state: slot, error } = req.query;
+
+  if (error) {
+    console.error('Erro retornado pelo Google:', error);
+    return res.redirect('/?error=' + error);
+  }
+
+  if (!code || !slot) {
+    return res.redirect('/?error=missing_params');
+  }
+
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -85,6 +105,12 @@ app.get('/callback', async (req, res) => {
     });
     const tokens = await tokenRes.json();
 
+    // Valida se o Google retornou um token válido
+    if (!tokens.access_token) {
+      console.error('Google não retornou access_token:', tokens);
+      return res.redirect('/?error=token_failed');
+    }
+
     const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${tokens.access_token}` }
     });
@@ -92,19 +118,20 @@ app.get('/callback', async (req, res) => {
 
     await db.collection('accounts').updateOne(
       { slot: slot },
-      { 
-        $set: { 
-          email: userInfo.email,
+      {
+        $set: {
+          email: userInfo.email || 'desconhecido',
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token,
           expiresAt: Date.now() + (tokens.expires_in * 1000)
-        } 
+        }
       },
       { upsert: true }
     );
 
     res.redirect('/?connected=' + slot);
   } catch (err) {
+    console.error('Erro no callback:', err.message);
     res.redirect('/?error=auth_failed');
   }
 });
@@ -129,7 +156,9 @@ async function getValidToken(slot) {
       })
     });
     const data = await res.json();
-    
+
+    if (!data.access_token) return null;
+
     await db.collection('accounts').updateOne(
       { slot: slot },
       { $set: { accessToken: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) } }
