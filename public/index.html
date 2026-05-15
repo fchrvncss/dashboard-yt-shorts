@@ -69,9 +69,9 @@
   .drop-opt { display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer; border-radius: 12px; font-size: 0.85rem; color: #ccc; }
   .drop-opt.selected { color: var(--accent) !important; font-weight: 800; background: rgba(255, 77, 0, 0.1) !important; }
 
-  /* BOTÃO APLICAR (AJUSTADO: SÓLIDO E OPACO) */
+  /* BOTÃO APLICAR */
   .apply-filter-btn {
-    background: #0f0f0f; /* Cinza sólido para não sobrepor */
+    background: #0f0f0f;
     color: var(--accent); 
     border: 1px solid var(--accent); 
     padding: 12px; 
@@ -237,7 +237,7 @@ function renderCanais() {
         if (allActive) { selectedChannels.clear(); selectedChannels.add(ch.id); } 
         else { if(selectedChannels.has(ch.id)) { selectedChannels.delete(ch.id); if(selectedChannels.size === 0) selectedChannels = new Set(CHANNELS.map(c => c.id)); } else { selectedChannels.add(ch.id); } }
         renderCanais();
-        updateUI(); // Dashboard atualiza instantaneamente
+        updateUI();
     };
     drop.appendChild(div);
   });
@@ -290,8 +290,11 @@ function updateUI() {
   let tR = 0, tV = 0, dD = {}, maxDate = null;
   if(activePeriod === 1) {
     let allDates = []; Object.values(results).forEach(rows => rows.forEach(r => { if(r[1] > 0) allDates.push(r[0]); }));
-    maxDate = allDates.length ? allDates.sort().reverse()[0] : null;
-    const disp = maxDate ? maxDate.split('-').reverse().join('/') : '---';
+    // CORREÇÃO: usa ontem como fallback se não houver dados com receita
+    const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
+    const fallback = ontem.toISOString().split('T')[0];
+    maxDate = allDates.length ? allDates.sort().reverse()[0] : fallback;
+    const disp = maxDate.split('-').reverse().join('/');
     document.getElementById('labelRevenue').innerText = 'Receita ('+disp+')';
   } else { document.getElementById('labelRevenue').innerText = 'Receita Total'; }
   CHANNELS.forEach(ch => {
