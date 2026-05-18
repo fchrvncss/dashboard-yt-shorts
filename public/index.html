@@ -558,6 +558,7 @@ function updateUI(){
         </td>
       </tr>`;
   });
+  totalRevenue=tR;
   document.getElementById('vRev').innerText=`$${tR.toFixed(2)}`;
   document.getElementById('vViews').innerText=tV.toLocaleString();
   document.getElementById('vRPM').innerText=tV>0?`$${((tR/tV)*1000).toFixed(2)}`:'$0.00';
@@ -963,15 +964,15 @@ function loadPartials(){
 }
 function savePartials(){try{localStorage.setItem('automata_partials',JSON.stringify(partials));}catch{}}
 
+let totalRevenue=0;
+
 function updatePartialCard(){
   const badge=document.getElementById('pctBadge');
   const vEl=document.getElementById('vPartial');
   const combined=document.getElementById('tcCombined');
   if(partialPct!=null){
     badge.textContent=partialPct+'%';
-    const revText=(document.getElementById('vRev').textContent||'').replace(/[$\s]/g,'').replace(/\./g,'').replace(',','.');
-    const rev=parseFloat(revText)||0;
-    vEl.textContent='$'+(rev*(partialPct/100)).toFixed(2);
+    vEl.textContent='$'+(totalRevenue*(partialPct/100)).toFixed(2);
     vEl.style.fontSize='';vEl.style.color='';
     if(combined)combined.classList.add('has-active');
   } else {
@@ -991,9 +992,17 @@ function setMainMetric(metric){
 function togglePctDrop(e){
   e.stopPropagation();
   const drop=document.getElementById('pctDrop');
+  if(!drop)return;
   const isOpen=drop.classList.contains('open');
-  document.querySelectorAll('.pct-drop,.drop-menu').forEach(d=>d.classList.remove('open'));
-  if(!isOpen){drop.classList.add('open');renderPctList();hideAddArea();}
+  // Fecha outros menus
+  document.querySelectorAll('.drop-menu,.pdrop').forEach(d=>d.classList.remove('open'));
+  if(isOpen){
+    drop.classList.remove('open');
+  } else {
+    drop.classList.add('open');
+    renderPctList();
+    hideAddArea();
+  }
 }
 function closePctPopup(){const d=document.getElementById('pctDrop');if(d)d.classList.remove('open');}
 function handlePctOverlay(){}
