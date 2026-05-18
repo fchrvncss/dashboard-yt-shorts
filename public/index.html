@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Automata YT</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='20' stroke='%23ff4d00' stroke-width='6' fill='none'/><rect x='35' y='32' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='45' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='58' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='38.5' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='51.5' width='10' height='10' fill='%23ff4d00'/><rect x='61' y='45' width='10' height='10' fill='%23ff4d00'/></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
@@ -17,11 +17,11 @@
   --r:14px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;}
+html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden;}
 body{padding:24px;}
 body.no-scroll{overflow:hidden;}
 img{display:block;}
-button{font-family:'Inter',sans-serif;}
+button{font-family:'DM Sans',sans-serif;}
 
 /* ── HEADER ── */
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
@@ -91,7 +91,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .pct-item-actions{display:flex;align-items:stretch;width:0;overflow:hidden;transition:width 0.22s var(--ease);}
 .pct-item:hover .pct-item-actions{border-left:1px solid var(--border);}
 .pct-item:not(.is-default):hover .pct-item-actions{width:120px;}
-.pct-item.is-default:hover .pct-item-actions{width:80px;}
+.pct-item.is-default:hover .pct-item-actions{width:96px;}
 .pct-action-btn{padding:0 7px;background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:0.52rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:color 0.12s,background 0.12s;white-space:nowrap;min-height:38px;}
 .pct-action-btn:hover{color:var(--accent);background:rgba(255,77,0,0.08);}
 .pct-action-btn+.pct-action-btn{border-left:1px solid var(--border);}
@@ -379,7 +379,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
           <div class="pct-list" id="pctList"></div>
           <button class="pct-add-btn" id="pctAddBtn" onclick="showAddArea()">+ Nova Parcial</button>
           <div class="pct-add-area" id="pctAddArea">
-            <input class="pct-input" id="pctInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Ex: 30">
+            <input class="pct-input" id="pctInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Ex: 30" autocomplete="off" autocorrect="off" autocapitalize="off" data-form-type="other">
             <div class="pct-input-row">
               <button class="pct-cancel-btn" onclick="hideAddArea()">Cancelar</button>
               <button class="pct-confirm-btn" onclick="confirmAddPct()">Adicionar</button>
