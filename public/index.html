@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Automata YT</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='20' stroke='%23ff4d00' stroke-width='6' fill='none'/><rect x='35' y='32' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='45' width='10' height='10' fill='%23ff4d00'/><rect x='35' y='58' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='38.5' width='10' height='10' fill='%23ff4d00'/><rect x='48' y='51.5' width='10' height='10' fill='%23ff4d00'/><rect x='61' y='45' width='10' height='10' fill='%23ff4d00'/></svg>">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
@@ -17,11 +17,11 @@
   --r:14px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden;}
+html,body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow-x:hidden;}
 body{padding:24px;}
 body.no-scroll{overflow:hidden;}
 img{display:block;}
-button{font-family:'DM Sans',sans-serif;}
+button{font-family:'Syne',sans-serif;}
 
 /* ── HEADER ── */
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
@@ -76,7 +76,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .pct-title{font-size:0.72rem;font-weight:800;color:var(--text);}
 .pct-close-btn{background:transparent;border:1px solid var(--border);color:var(--t3);width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:0.62rem;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
 .pct-close-btn:hover{border-color:var(--accent);color:var(--accent);}
-.pct-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;max-height:190px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.pct-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;max-height:160px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .pct-item{display:flex;flex-direction:column;border-radius:9px;border:1px solid var(--border);overflow:hidden;transition:border-color 0.15s;background:transparent;}
 .pct-item:hover{border-color:rgba(255,77,0,0.3);}
 .pct-item.active-pct{border-color:var(--accent);background:var(--accent-glow);}
@@ -91,7 +91,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .pct-item-actions{display:flex;align-items:stretch;width:0;overflow:hidden;transition:width 0.22s var(--ease);}
 .pct-item:hover .pct-item-actions{border-left:1px solid var(--border);}
 .pct-item:not(.is-default):hover .pct-item-actions{width:120px;}
-.pct-item.is-default:hover .pct-item-actions{width:96px;}
+.pct-item.is-default:hover .pct-item-actions{width:70px;}
 .pct-action-btn{padding:0 7px;background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:0.52rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:color 0.12s,background 0.12s;white-space:nowrap;min-height:38px;}
 .pct-action-btn:hover{color:var(--accent);background:rgba(255,77,0,0.08);}
 .pct-action-btn+.pct-action-btn{border-left:1px solid var(--border);}
@@ -102,7 +102,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .pct-edit-input::-webkit-inner-spin-button,.pct-edit-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pct-edit-ok{padding:5px 10px;border-radius:7px;background:var(--accent);color:#000;border:none;font-weight:800;font-size:0.7rem;cursor:pointer;}
 .pct-edit-cancel{padding:5px 8px;border-radius:7px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.7rem;cursor:pointer;}
-.pct-add-btn{width:100%;padding:8px;border-radius:9px;background:transparent;border:1px dashed var(--border);color:var(--t3);font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.pct-add-btn{width:100%;padding:8px;border-radius:9px;background:#0a0a0a;border:1px dashed var(--border);color:var(--t3);font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:5px;}
 .pct-add-btn:hover{border-color:var(--accent);color:var(--accent);}
 .pct-add-area{display:none;flex-direction:column;gap:6px;margin-top:8px;}
 .pct-add-area.show{display:flex;}
@@ -379,7 +379,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
           <div class="pct-list" id="pctList"></div>
           <button class="pct-add-btn" id="pctAddBtn" onclick="showAddArea()">+ Nova Parcial</button>
           <div class="pct-add-area" id="pctAddArea">
-            <input class="pct-input" id="pctInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Ex: 30" autocomplete="off" autocorrect="off" autocapitalize="off" data-form-type="other">
+            <input class="pct-input" id="pctInput" type="text" inputmode="decimal" placeholder="Ex: 30" autocomplete="off" autocorrect="off" autocapitalize="off" data-form-type="other" data-lpignore="true" data-1p-ignore name="percentage_value">
             <div class="pct-input-row">
               <button class="pct-cancel-btn" onclick="hideAddArea()">Cancelar</button>
               <button class="pct-confirm-btn" onclick="confirmAddPct()">Adicionar</button>
