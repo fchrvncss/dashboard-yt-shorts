@@ -54,50 +54,65 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#111;}
 
 /* ── TOTALS ── */
-.totals{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.totals{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:20px;align-items:stretch;}
+.tcard-combined{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:grid;grid-template-columns:1fr 1fr;overflow:hidden;transition:border-color 0.2s;grid-column:span 2;}
+.tcard-combined.has-active{border-color:var(--accent);}
+.tcard-half{padding:20px 22px;cursor:pointer;user-select:none;transition:background 0.18s;border-right:1px solid var(--border);}
+.tcard-half:last-child{border-right:none;}
+.tcard-half:hover{background:rgba(255,77,0,0.04);}
+.tcard-half.active{background:var(--accent-glow);}
 .tcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:border-color 0.2s,transform 0.2s var(--ease);cursor:pointer;user-select:none;}
 .tcard:hover{border-color:rgba(255,77,0,0.4);transform:translateY(-2px);}
 .tcard.active{border-color:var(--accent);background:var(--accent-glow);}
-.tcard-l{font-size:0.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:6px;}
+.tcard-l{font-size:0.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
 .tcard-v{font-size:2rem;font-weight:900;color:var(--accent);letter-spacing:-1px;line-height:1;}
 .tcard-sub{font-size:0.58rem;color:var(--t3);margin-top:4px;}
 
-/* PARTIAL REVENUE POPUP */
-.pct-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:600;display:flex;align-items:center;justify-content:center;visibility:hidden;pointer-events:none;transition:background 0.25s,backdrop-filter 0.25s;}
-.pct-overlay.open{visibility:visible;pointer-events:auto;}
-.pct-box{background:#0a0a0a;border:1px solid var(--accent);border-radius:18px;padding:22px;width:290px;transform:scale(0.95) translateY(10px);opacity:0;transition:transform 0.28s var(--ease),opacity 0.22s ease;}
-.pct-overlay.open .pct-box{transform:scale(1) translateY(0);opacity:1;}
-.pct-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-.pct-title{font-size:0.78rem;font-weight:800;}
-.pct-close-btn{background:transparent;border:1px solid var(--border);color:var(--t3);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:0.7rem;display:flex;align-items:center;justify-content:center;transition:all 0.18s;}
+/* PARTIAL DROPDOWN */
+.pct-wrap{position:relative;}
+.pct-drop{position:absolute;top:calc(100% + 8px);left:0;width:272px;background:#0a0a0a;border:1px solid var(--accent);border-radius:16px;padding:14px;z-index:400;flex-direction:column;gap:0;box-shadow:0 12px 40px rgba(0,0,0,0.95);display:none;}
+.pct-drop.open{display:flex;}
+.pct-drop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;}
+.pct-title{font-size:0.72rem;font-weight:800;color:var(--text);}
+.pct-close-btn{background:transparent;border:1px solid var(--border);color:var(--t3);width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:0.62rem;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
 .pct-close-btn:hover{border-color:var(--accent);color:var(--accent);}
-/* lista de parciais */
-.pct-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.pct-item{display:flex;align-items:center;border-radius:10px;border:1px solid var(--border);overflow:hidden;transition:border-color 0.18s;cursor:pointer;position:relative;}
+.pct-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;max-height:190px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.pct-item{display:flex;flex-direction:column;border-radius:9px;border:1px solid var(--border);overflow:hidden;transition:border-color 0.15s;background:transparent;}
 .pct-item:hover{border-color:rgba(255,77,0,0.3);}
 .pct-item.active-pct{border-color:var(--accent);background:var(--accent-glow);}
-.pct-item-main{flex:1;padding:10px 12px;display:flex;align-items:center;gap:8px;}
-.pct-item-pct{font-size:0.9rem;font-weight:800;color:var(--accent);}
-.pct-item-default{font-size:0.52rem;background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:auto;}
-/* botão de fixar — desliza da direita */
-.pct-item-actions{display:flex;align-items:center;width:0;overflow:hidden;transition:width 0.25s var(--ease);border-left:0px solid var(--border);}
-.pct-item:hover .pct-item-actions{width:72px;border-left:1px solid var(--border);}
-.pct-action-btn{flex:1;height:100%;padding:0 8px;background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:0.65rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:color 0.15s,background 0.15s;white-space:nowrap;}
+.pct-item.dragging{opacity:0.35;transform:scale(0.97);}
+.pct-item.drag-over{border-color:var(--accent);border-style:dashed;background:rgba(255,77,0,0.04);}
+.pct-item-row{display:flex;align-items:center;cursor:pointer;}
+.pct-item-drag{padding:0 7px;color:var(--t3);font-size:0.65rem;cursor:grab;opacity:0;transition:opacity 0.15s;user-select:none;}
+.pct-item:hover .pct-item-drag{opacity:0.6;}
+.pct-item-main{flex:1;padding:8px 10px;display:flex;align-items:center;gap:7px;}
+.pct-item-pct{font-size:0.85rem;font-weight:800;color:var(--accent);}
+.pct-item-default{font-size:0.46rem;background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:auto;}
+.pct-item-actions{display:flex;align-items:stretch;width:0;overflow:hidden;transition:width 0.22s var(--ease);}
+.pct-item:hover .pct-item-actions{border-left:1px solid var(--border);}
+.pct-item:not(.is-default):hover .pct-item-actions{width:87px;}
+.pct-item.is-default:hover .pct-item-actions{width:58px;}
+.pct-action-btn{padding:0 7px;background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:0.52rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:color 0.12s,background 0.12s;white-space:nowrap;min-height:38px;}
 .pct-action-btn:hover{color:var(--accent);background:rgba(255,77,0,0.08);}
-.pct-action-btn.pin-btn{border-right:1px solid var(--border);}
-.pct-action-btn span{font-size:0.48rem;color:var(--t3);}
-/* botão nova parcial */
-.pct-add-btn{width:100%;padding:9px;border-radius:10px;background:transparent;border:1px dashed var(--border);color:var(--t3);font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.pct-action-btn+.pct-action-btn{border-left:1px solid var(--border);}
+.pct-action-btn .ab-icon{font-size:0.68rem;}
+.pct-edit-area{display:none;padding:6px 8px;border-top:1px solid var(--border);}
+.pct-edit-area.show{display:flex;gap:5px;align-items:center;}
+.pct-edit-input{flex:1;padding:5px 8px;border-radius:7px;border:1px solid var(--accent);background:#000;color:var(--text);font-size:0.85rem;font-weight:700;outline:none;text-align:center;-moz-appearance:textfield;appearance:textfield;}
+.pct-edit-input::-webkit-inner-spin-button,.pct-edit-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.pct-edit-ok{padding:5px 10px;border-radius:7px;background:var(--accent);color:#000;border:none;font-weight:800;font-size:0.7rem;cursor:pointer;}
+.pct-edit-cancel{padding:5px 8px;border-radius:7px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.7rem;cursor:pointer;}
+.pct-add-btn{width:100%;padding:8px;border-radius:9px;background:transparent;border:1px dashed var(--border);color:var(--t3);font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:5px;}
 .pct-add-btn:hover{border-color:var(--accent);color:var(--accent);}
-/* input nova parcial */
-.pct-add-area{display:none;flex-direction:column;gap:7px;margin-top:8px;}
+.pct-add-area{display:none;flex-direction:column;gap:6px;margin-top:8px;}
 .pct-add-area.show{display:flex;}
-.pct-input{padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:#000;color:var(--text);font-size:1rem;font-weight:700;width:100%;outline:none;text-align:center;transition:border-color 0.18s;}
+.pct-input{padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:#000;color:var(--text);font-size:1rem;font-weight:700;width:100%;outline:none;text-align:center;transition:border-color 0.18s;-moz-appearance:textfield;appearance:textfield;}
+.pct-input::-webkit-inner-spin-button,.pct-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pct-input:focus{border-color:var(--accent);}
 .pct-input-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-.pct-confirm-btn{padding:9px;border-radius:9px;background:var(--accent);color:#000;border:none;font-weight:800;font-size:0.76rem;cursor:pointer;transition:opacity 0.18s;}
+.pct-confirm-btn{padding:8px;border-radius:9px;background:var(--accent);color:#000;border:none;font-weight:800;font-size:0.74rem;cursor:pointer;transition:opacity 0.15s;}
 .pct-confirm-btn:hover{opacity:0.85;}
-.pct-cancel-btn{padding:9px;border-radius:9px;background:transparent;border:1px solid var(--border);color:var(--t3);font-weight:700;font-size:0.76rem;cursor:pointer;transition:all 0.18s;}
+.pct-cancel-btn{padding:8px;border-radius:9px;background:transparent;border:1px solid var(--border);color:var(--t3);font-weight:700;font-size:0.74rem;cursor:pointer;transition:all 0.15s;}
 .pct-cancel-btn:hover{border-color:var(--accent);color:var(--accent);}
 
 /* ── MAIN CHART ── */
@@ -343,15 +358,37 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
   </header>
 
   <div class="totals">
-    <div class="tcard active" id="tc-revenue" onclick="setMainMetric('revenue')">
-      <div class="tcard-l" id="lRev">Receita Total</div>
-      <div class="tcard-v" id="vRev">$0.00</div>
+    <!-- Card combinado: Receita Total + Receita Parcial -->
+    <div class="tcard-combined" id="tcCombined">
+      <div class="tcard-half active" id="tc-revenue" onclick="setMainMetric('revenue')">
+        <div class="tcard-l" id="lRev">Receita Total</div>
+        <div class="tcard-v" id="vRev">$0.00</div>
+      </div>
+      <div class="pct-wrap">
+        <div class="tcard-half" id="tc-partial" onclick="togglePctDrop(event)">
+          <div class="tcard-l">Receita Parcial <span id="pctBadge" style="background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-size:0.5rem;font-weight:800;"></span></div>
+          <div class="tcard-v" id="vPartial" style="font-size:1.6rem;color:var(--t3)">—</div>
+          <div class="tcard-sub">Clique para gerenciar</div>
+        </div>
+        <!-- Dropdown parcial -->
+        <div class="pct-drop" id="pctDrop">
+          <div class="pct-drop-header">
+            <div class="pct-title">Receita Parcial</div>
+            <button class="pct-close-btn" onclick="closePctPopup()">✕</button>
+          </div>
+          <div class="pct-list" id="pctList"></div>
+          <button class="pct-add-btn" id="pctAddBtn" onclick="showAddArea()">+ Nova Parcial</button>
+          <div class="pct-add-area" id="pctAddArea">
+            <input class="pct-input" id="pctInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Ex: 30">
+            <div class="pct-input-row">
+              <button class="pct-cancel-btn" onclick="hideAddArea()">Cancelar</button>
+              <button class="pct-confirm-btn" onclick="confirmAddPct()">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="tcard" id="tc-partial" onclick="openPctPopup()">
-      <div class="tcard-l">Receita Parcial <span id="pctBadge" style="background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-size:0.5rem;font-weight:800;margin-left:4px"></span></div>
-      <div class="tcard-v" id="vPartial" style="font-size:1.3rem;color:var(--t3)">—</div>
-      <div class="tcard-sub">Clique para gerenciar</div>
-    </div>
+    <!-- Views e RPM -->
     <div class="tcard" id="tc-views" onclick="setMainMetric('views')">
       <div class="tcard-l">Views Totais</div>
       <div class="tcard-v" id="vViews">0</div>
@@ -359,25 +396,6 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
     <div class="tcard" id="tc-rpm" onclick="setMainMetric('rpm')">
       <div class="tcard-l">RPM Médio</div>
       <div class="tcard-v" id="vRPM">$0.00</div>
-    </div>
-  </div>
-
-  <!-- PARTIAL REVENUE POPUP -->
-  <div class="pct-overlay" id="pctOverlay" onclick="handlePctOverlay(event)">
-    <div class="pct-box">
-      <div class="pct-header">
-        <div class="pct-title">Receita Parcial</div>
-        <button class="pct-close-btn" onclick="closePctPopup()">✕</button>
-      </div>
-      <div class="pct-list" id="pctList"></div>
-      <button class="pct-add-btn" id="pctAddBtn" onclick="showAddArea()">+ Nova Parcial</button>
-      <div class="pct-add-area" id="pctAddArea">
-        <input class="pct-input" id="pctInput" type="number" min="1" max="100" placeholder="Ex: 30">
-        <div class="pct-input-row">
-          <button class="pct-cancel-btn" onclick="hideAddArea()">Cancelar</button>
-          <button class="pct-confirm-btn" onclick="confirmAddPct()">Adicionar</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -932,140 +950,126 @@ function renderSidebar(){
 }
 
 // MAIN CHART
+// MAIN CHART
 let mainMetric='revenue', partialPct=null, lastDailyData={};
-// partials: [{pct: 30, default: true}, ...]
-let partials=[];
+let partials=[], dragSrcIdx=null;
 
 function loadPartials(){
-  try{
-    const saved=localStorage.getItem('automata_partials');
-    if(saved)partials=JSON.parse(saved);
-  }catch{}
-  // Aplica o padrão como ativo
+  try{const s=localStorage.getItem('automata_partials');if(s)partials=JSON.parse(s);}catch{}
   const def=partials.find(p=>p.default);
   if(def)partialPct=def.pct;
   else if(partials.length)partialPct=partials[0].pct;
   updatePartialCard();
 }
-
-function savePartials(){
-  try{localStorage.setItem('automata_partials',JSON.stringify(partials));}catch{}
-}
+function savePartials(){try{localStorage.setItem('automata_partials',JSON.stringify(partials));}catch{}}
 
 function updatePartialCard(){
   const badge=document.getElementById('pctBadge');
   const vEl=document.getElementById('vPartial');
+  const combined=document.getElementById('tcCombined');
   if(partialPct!=null){
     badge.textContent=partialPct+'%';
-    badge.style.display='';
-    const rev=parseFloat((document.getElementById('vRev').textContent||'0').replace('$','').replace(/\./g,'').replace(',','.'))||0;
+    const revText=(document.getElementById('vRev').textContent||'').replace(/[$\s]/g,'').replace(/\./g,'').replace(',','.');
+    const rev=parseFloat(revText)||0;
     vEl.textContent='$'+(rev*(partialPct/100)).toFixed(2);
     vEl.style.fontSize='';vEl.style.color='';
+    if(combined)combined.classList.add('has-active');
   } else {
-    badge.textContent='';badge.style.display='none';
-    vEl.textContent='—';vEl.style.fontSize='1.3rem';vEl.style.color='var(--t3)';
+    badge.textContent='';
+    vEl.textContent='—';vEl.style.fontSize='1.6rem';vEl.style.color='var(--t3)';
+    if(combined)combined.classList.remove('has-active');
   }
 }
 
 function setMainMetric(metric){
   mainMetric=metric;
-  ['revenue','views','rpm'].forEach(m=>document.getElementById('tc-'+m).classList.toggle('active',m===metric));
-  document.getElementById('tc-partial').classList.remove('active');
+  ['revenue','views','rpm'].forEach(m=>{const el=document.getElementById('tc-'+m);if(el)el.classList.toggle('active',m===metric);});
   updateMainChart(lastDailyData);
 }
 
-// POPUP
-function openPctPopup(){
-  renderPctList();
-  document.getElementById('pctOverlay').classList.add('open');
-  hideAddArea();
+// DROPDOWN
+function togglePctDrop(e){
+  e.stopPropagation();
+  const drop=document.getElementById('pctDrop');
+  const isOpen=drop.classList.contains('open');
+  document.querySelectorAll('.pct-drop,.drop-menu').forEach(d=>d.classList.remove('open'));
+  if(!isOpen){drop.classList.add('open');renderPctList();hideAddArea();}
 }
-function handlePctOverlay(e){if(e.target===document.getElementById('pctOverlay'))closePctPopup();}
-function closePctPopup(){document.getElementById('pctOverlay').classList.remove('open');}
+function closePctPopup(){const d=document.getElementById('pctDrop');if(d)d.classList.remove('open');}
+function handlePctOverlay(){}
 
 function renderPctList(){
   const list=document.getElementById('pctList');
-  if(!partials.length){list.innerHTML='<div style="text-align:center;padding:12px;color:var(--t3);font-size:0.72rem">Nenhuma parcial adicionada</div>';return;}
-  list.innerHTML=partials.map((p,i)=>`
-    <div class="pct-item${partialPct===p.pct?' active-pct':''}" onclick="selectActivePct(${i})">
-      <div class="pct-item-main">
-        <span class="pct-item-pct">${p.pct}%</span>
-        ${p.default?'<span class="pct-item-default">PADRÃO</span>':''}
+  if(!partials.length){list.innerHTML='<div style="text-align:center;padding:10px;color:var(--t3);font-size:0.7rem">Nenhuma parcial adicionada</div>';return;}
+  list.innerHTML=partials.map((p,i)=>{
+    const isDef=!!p.default,isActive=partialPct===p.pct;
+    return`<div class="pct-item${isActive?' active-pct':''}${isDef?' is-default':''}" draggable="${!isDef}" id="pct-item-${i}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragend="dragEnd()">
+      <div class="pct-item-row">
+        ${!isDef?'<div class="pct-item-drag" title="Arrastar">⠿</div>':'<div style="width:22px"></div>'}
+        <div class="pct-item-main" onclick="selectActivePct(${i})">
+          <span class="pct-item-pct">${p.pct}%</span>
+          ${isDef?'<span class="pct-item-default">PADRÃO</span>':''}
+        </div>
+        <div class="pct-item-actions">
+          ${!isDef?`<button class="pct-action-btn" onclick="event.stopPropagation();pinPct(${i})"><span class="ab-icon">📌</span><span>Fixar</span></button>`:''}
+          <button class="pct-action-btn" onclick="event.stopPropagation();editPct(${i})"><span class="ab-icon">✏️</span><span>Editar</span></button>
+          <button class="pct-action-btn" onclick="event.stopPropagation();removePct(${i})"><span class="ab-icon">✕</span><span>Remover</span></button>
+        </div>
       </div>
-      <div class="pct-item-actions">
-        <button class="pct-action-btn pin-btn" onclick="event.stopPropagation();pinPct(${i})" title="Fixar como padrão">
-          📌<span>${p.default?'Padrão':'Fixar'}</span>
-        </button>
-        <button class="pct-action-btn" onclick="event.stopPropagation();removePct(${i})" title="Remover">
-          ✕<span>Remover</span>
-        </button>
+      <div class="pct-edit-area" id="pct-edit-${i}">
+        <input class="pct-edit-input" id="pct-edit-input-${i}" type="text" inputmode="numeric" value="${p.pct}">
+        <button class="pct-edit-ok" onclick="confirmEditPct(${i})">OK</button>
+        <button class="pct-edit-cancel" onclick="cancelEditPct(${i})">✕</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-function selectActivePct(i){
-  partialPct=partials[i].pct;
-  updatePartialCard();
-  updateMainChart(lastDailyData);
-  renderPctList();
-}
+function selectActivePct(i){partialPct=partials[i].pct;updatePartialCard();updateMainChart(lastDailyData);renderPctList();}
 
 function pinPct(i){
-  partials.forEach(p=>p.default=false);
-  partials[i].default=true;
-  partialPct=partials[i].pct;
-  savePartials();
-  updatePartialCard();
-  updateMainChart(lastDailyData);
-  renderPctList();
+  partials.forEach(p=>p.default=false);partials[i].default=true;
+  const item=partials.splice(i,1)[0];partials.unshift(item);
+  partialPct=item.pct;savePartials();updatePartialCard();updateMainChart(lastDailyData);renderPctList();
+}
+
+function editPct(i){
+  document.querySelectorAll('.pct-edit-area').forEach(e=>e.classList.remove('show'));
+  const a=document.getElementById(`pct-edit-${i}`);if(a){a.classList.add('show');document.getElementById(`pct-edit-input-${i}`).focus();}
+}
+function cancelEditPct(i){const a=document.getElementById(`pct-edit-${i}`);if(a)a.classList.remove('show');}
+function confirmEditPct(i){
+  const val=parseFloat(document.getElementById(`pct-edit-input-${i}`).value);
+  if(isNaN(val)||val<=0||val>100)return;
+  const wasActive=partials[i].pct===partialPct;
+  partials[i].pct=val;if(wasActive)partialPct=val;
+  savePartials();updatePartialCard();updateMainChart(lastDailyData);renderPctList();
 }
 
 function removePct(i){
-  const wasActive=partials[i].pct===partialPct;
-  partials.splice(i,1);
-  savePartials();
-  if(wasActive){
-    const def=partials.find(p=>p.default);
-    partialPct=def?def.pct:(partials.length?partials[0].pct:null);
-  }
-  updatePartialCard();
-  updateMainChart(lastDailyData);
-  renderPctList();
+  const wasActive=partials[i].pct===partialPct;partials.splice(i,1);savePartials();
+  if(wasActive){const def=partials.find(p=>p.default);partialPct=def?def.pct:(partials.length?partials[0].pct:null);}
+  updatePartialCard();updateMainChart(lastDailyData);renderPctList();
 }
 
-function showAddArea(){
-  document.getElementById('pctAddArea').classList.add('show');
-  document.getElementById('pctAddBtn').style.display='none';
-  document.getElementById('pctInput').value='';
-  document.getElementById('pctInput').focus();
-}
-function hideAddArea(){
-  document.getElementById('pctAddArea').classList.remove('show');
-  document.getElementById('pctAddBtn').style.display='';
-}
+function dragStart(e,i){dragSrcIdx=i;e.dataTransfer.effectAllowed='move';setTimeout(()=>{const el=document.getElementById(`pct-item-${i}`);if(el)el.classList.add('dragging');},0);}
+function dragOver(e,i){e.preventDefault();if(dragSrcIdx===null||dragSrcIdx===i||partials[i]?.default)return;document.querySelectorAll('.pct-item').forEach(el=>el.classList.remove('drag-over'));const el=document.getElementById(`pct-item-${i}`);if(el)el.classList.add('drag-over');}
+function dragDrop(e,i){e.preventDefault();if(dragSrcIdx===null||dragSrcIdx===i||partials[i]?.default)return;const moved=partials.splice(dragSrcIdx,1)[0];partials.splice(i,0,moved);savePartials();renderPctList();}
+function dragEnd(){dragSrcIdx=null;document.querySelectorAll('.pct-item').forEach(el=>{el.classList.remove('dragging');el.classList.remove('drag-over');});}
+
+function showAddArea(){document.getElementById('pctAddArea').classList.add('show');document.getElementById('pctAddBtn').style.display='none';document.getElementById('pctInput').value='';document.getElementById('pctInput').focus();}
+function hideAddArea(){document.getElementById('pctAddArea').classList.remove('show');document.getElementById('pctAddBtn').style.display='';}
 function confirmAddPct(){
   const val=parseFloat(document.getElementById('pctInput').value);
-  if(isNaN(val)||val<=0||val>100){
-    document.getElementById('pctInput').style.borderColor='var(--accent)';
-    setTimeout(()=>document.getElementById('pctInput').style.borderColor='',1200);
-    return;
-  }
-  // Não duplica
+  if(isNaN(val)||val<=0||val>100){document.getElementById('pctInput').style.borderColor='var(--accent)';setTimeout(()=>document.getElementById('pctInput').style.borderColor='',1200);return;}
   if(partials.find(p=>p.pct===val)){hideAddArea();return;}
   const isFirst=partials.length===0;
-  partials.push({pct:val,default:isFirst});
-  savePartials();
+  partials.push({pct:val,default:isFirst});savePartials();
   if(isFirst||partialPct==null)partialPct=val;
-  updatePartialCard();
-  updateMainChart(lastDailyData);
-  hideAddArea();
-  renderPctList();
+  updatePartialCard();updateMainChart(lastDailyData);hideAddArea();renderPctList();
 }
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('pctAddArea')?.classList.contains('show'))confirmAddPct();});
 
-// Permite confirmar com Enter
-document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&document.getElementById('pctAddArea').classList.contains('show'))confirmAddPct();
-});
 
 function initMainChart(){
   mainChart=new Chart(document.getElementById('mainChart').getContext('2d'),{
@@ -1151,6 +1155,8 @@ document.addEventListener('click',e=>{
     document.querySelectorAll('.drop-menu').forEach(d=>d.classList.remove('open'));
   if(!e.target.closest('.period-wrap'))
     document.querySelectorAll('.pdrop').forEach(d=>d.classList.remove('open'));
+  if(!e.target.closest('.pct-wrap'))
+    document.querySelectorAll('.pct-drop').forEach(d=>d.classList.remove('open'));
 });
 </script>
 </body>
