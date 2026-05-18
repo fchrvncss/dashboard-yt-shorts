@@ -87,15 +87,15 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .dblock-title{font-size:0.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:16px;}
 
 /* ── FEATURED VIDEO ── */
-.feat-wrap{display:flex;gap:14px;flex:1;min-height:0;}
-.feat-left{flex:1.1;min-width:0;display:flex;flex-direction:column;gap:0;}
+.feat-wrap{display:flex;gap:14px;flex:1;}
+.feat-left{flex:1.1;min-width:0;display:flex;flex-direction:column;}
 .feat-thumb-wrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;cursor:pointer;border:1px solid var(--border2);flex-shrink:0;}
 .feat-thumb-wrap img{width:100%;height:100%;object-fit:cover;transition:transform 0.3s var(--ease);}
 .feat-thumb-wrap:hover img{transform:scale(1.04);}
 .feat-new-badge{position:absolute;top:8px;left:8px;background:var(--accent);color:#000;font-size:0.48rem;font-weight:800;padding:3px 7px;border-radius:5px;letter-spacing:0.5px;text-transform:uppercase;}
-.feat-title{font-size:0.75rem;font-weight:700;line-height:1.45;cursor:pointer;margin:10px 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);transition:color 0.15s;}
+.feat-title{font-size:0.75rem;font-weight:700;line-height:1.45;cursor:pointer;margin:10px 0 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);transition:color 0.15s;}
 .feat-title:hover{color:var(--accent);}
-.feat-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto;}
+.feat-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 .fstat{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:9px 11px;}
 .fstat-l{font-size:0.5rem;color:var(--t3);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;}
 .fstat-v{font-size:1rem;font-weight:800;color:var(--accent);letter-spacing:-0.3px;line-height:1;}
@@ -117,18 +117,17 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .expand-btn{margin-top:12px;width:100%;padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
 .expand-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);}
 
-/* ── TOP VIDEOS BLOCK ── */
-.top-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;}
-.tvcard{border-radius:9px;overflow:hidden;border:1px solid var(--border);background:var(--s2);cursor:pointer;transition:border-color 0.2s,transform 0.2s var(--ease);display:flex;flex-direction:column;}
-.tvcard:hover{border-color:rgba(255,77,0,0.35);transform:translateY(-2px);}
-.tvcard-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;background:#111;}
-.tvcard-body{padding:8px 9px;flex:1;display:flex;flex-direction:column;gap:6px;}
-.tvcard-title{font-size:0.65rem;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);}
-/* métricas em grid uniforme */
-.tvcard-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:auto;}
-.tvcard-stats .sstat{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.tvcard-stats .sstat svg{width:9px;height:9px;fill:var(--t3);}
-.tvcard-stats .sstat span{font-size:0.52rem;color:var(--t3);white-space:nowrap;}
+/* ── TOP VIDEOS BLOCK — lista ── */
+.top-list{display:flex;flex-direction:column;gap:4px;flex:1;}
+.tli{display:flex;gap:9px;align-items:center;padding:7px 8px;border-radius:9px;cursor:pointer;transition:background 0.15s;border:1px solid transparent;}
+.tli:hover{background:var(--accent-glow);border-color:rgba(255,77,0,0.15);}
+.tli-thumb{width:64px;height:36px;border-radius:6px;object-fit:cover;background:#111;flex-shrink:0;}
+.tli-info{flex:1;min-width:0;}
+.tli-title{font-size:0.67rem;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-bottom:5px;}
+.tli-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
+.tli-stats .sstat{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.tli-stats .sstat svg{width:9px;height:9px;fill:var(--t3);}
+.tli-stats .sstat span{font-size:0.53rem;color:var(--t3);white-space:nowrap;}
 
 /* ── CHART BLOCK ── */
 .chart-blk{display:flex;flex-direction:column;}
@@ -553,7 +552,7 @@ function renderDetail(chId){
     <!-- COL 2: Melhor performance -->
     <div class="dblock">
       <div class="dblock-title">Melhor Performance</div>
-      <div class="top-grid" id="tg-${chId}">${renderTopGrid(top.slice(0,4))}</div>
+      <div id="tg-${chId}">${renderTopGrid(top.slice(0,4))}</div>
       ${top.length>4?`<button class="expand-btn" onclick="openPopup('top','${chId}')">Ver todos</button>`:''}
     </div>
 
@@ -585,19 +584,19 @@ function renderDetail(chId){
 
 function renderTopGrid(vids){
   if(!vids||!vids.length)return'<div style="color:var(--t3);font-size:0.7rem;padding:4px">Sem dados</div>';
-  return vids.map(v=>`
-    <div class="tvcard" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
-      <img class="tvcard-thumb" src="${v.thumb||''}" loading="lazy">
-      <div class="tvcard-body">
-        <div class="tvcard-title">${v.title||''}</div>
-        <div class="tvcard-stats">
+  return`<div class="top-list">`+vids.map(v=>`
+    <div class="tli" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
+      <img class="tli-thumb" src="${v.thumb||''}" loading="lazy">
+      <div class="tli-info">
+        <div class="tli-title">${v.title||''}</div>
+        <div class="tli-stats">
           <div class="sstat">${I.eye}<span>${N(v.views)}</span></div>
           <div class="sstat">${I.like}<span>${N(v.likes)}</span></div>
           <div class="sstat">${I.cmt}<span>${N(v.comments)}</span></div>
           <div class="sstat">${I.dol}<span>$${Number(v.revenue||0).toFixed(2)}</span></div>
         </div>
       </div>
-    </div>`).join('');
+    </div>`).join('')+`</div>`;
 }
 
 // CHART
