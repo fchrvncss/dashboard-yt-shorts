@@ -695,6 +695,8 @@ function renderPList(){
 }
 async function ppage(dir){
   if(ppSearch)return;
+  // Melhor Performance não tem paginação
+  if(ppType==='top')return;
   const idx=ppPages.indexOf(ppCurTok);
   if(dir==='first'){ppCurTok=null;ppPage=0;await loadPPage(null);}
   else if(dir==='prev'&&idx>0){ppCurTok=ppPages[idx-1];ppPage=idx-1;await loadPPage(ppCurTok);}
@@ -712,9 +714,9 @@ function updatePNav(){
   document.getElementById('popupCnt').textContent=ppTotal>0?`~${ppTotal} vídeos`:'';
   const info=ppNext||ppPage>0?`Pág ${ppPage+1}`:'';
   ['pnI','pnIB'].forEach(id=>document.getElementById(id).textContent=info);
-  const hp=ppPage>0,hn=!!ppNext;
+  const hp=ppPage>0,hn=!!ppNext&&ppType==='recent';
   ['pnF','pnP'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hp;});
-  ['pnN','pnNB'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hn;});
+  ['pnN','pnNB','pnL'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hn;});
   document.getElementById('pnPB').disabled=!hp;
   document.getElementById('pnavT').style.opacity=ppType==='recent'&&(hn||ppPage>0)?'1':'0.35';
 }
