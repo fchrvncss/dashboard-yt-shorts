@@ -147,14 +147,12 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .chart-canvas-box{flex:1;position:relative;min-height:200px;}
 
 /* ── POPUP ── */
-.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);z-index:500;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:background 0.28s,backdrop-filter 0.28s;}
-.popup-overlay.open{background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);pointer-events:auto;}
-.popup-box{background:#0a0a0a;border:1px solid var(--accent);border-radius:20px;display:flex;overflow:hidden;position:relative;transform:scale(0.95) translateY(12px);opacity:0;transition:transform 0.3s var(--ease),opacity 0.25s ease;max-height:88vh;}
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none!important;transition:background 0.28s,backdrop-filter 0.28s;visibility:hidden;}
+.popup-overlay.open{background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);pointer-events:auto!important;visibility:visible;}
+.popup-box{background:#0a0a0a;border:1px solid var(--accent);border-radius:20px;display:flex;overflow:hidden;position:relative;transform:scale(0.95) translateY(12px);opacity:0;transition:transform 0.3s var(--ease),opacity 0.25s ease;max-height:84vh;}
 .popup-overlay.open .popup-box{transform:scale(1) translateY(0);opacity:1;}
-/* wrapper para posicionar o ✕ acima da caixa */
-.popup-outer{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
-/* ✕ fora do popup-box, acima e à direita */
-.popup-close{background:rgba(10,10,10,0.9);border:1px solid var(--border);color:var(--t3);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;transition:all 0.18s;flex-shrink:0;align-self:flex-end;}
+.popup-outer{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+.popup-close{background:rgba(10,10,10,0.9);border:1px solid var(--border);color:var(--t3);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;transition:all 0.18s;flex-shrink:0;}
 .popup-close:hover{border-color:var(--accent);color:var(--accent);}
 .popup-list{width:640px;max-width:92vw;display:flex;flex-direction:column;transition:width 0.36s var(--ease);flex-shrink:0;}
 .popup-list.collapsed{width:260px;}
@@ -663,7 +661,6 @@ async function openPopup(type,chId){
   document.getElementById('popupDC').innerHTML='';
   document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));
   const overlay=document.getElementById('popupOverlay');
-  overlay.style.pointerEvents='';
   overlay.classList.add('open');
   document.body.classList.add('no-scroll');
   await loadPPage(null);
@@ -821,7 +818,6 @@ function closeDetail(){
 function closePopup(){
   const overlay=document.getElementById('popupOverlay');
   overlay.classList.remove('open');
-  overlay.style.pointerEvents='none';
   document.body.classList.remove('no-scroll');
   ppCompareMode=false;
   ppActiveIdx=null;
