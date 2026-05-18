@@ -552,8 +552,8 @@ function renderDetail(chId){
     <!-- COL 2: Melhor performance -->
     <div class="dblock">
       <div class="dblock-title">Melhor Performance</div>
-      <div id="tg-${chId}">${renderTopGrid(top.slice(0,4))}</div>
-      ${top.length>4?`<button class="expand-btn" onclick="openPopup('top','${chId}')">Ver todos</button>`:''}
+      <div id="tg-${chId}">${renderTopGrid(top.slice(0,6))}</div>
+      ${top.length>6?`<button class="expand-btn" onclick="openPopup('top','${chId}')">Ver todos</button>`:''}
     </div>
 
     <!-- COL 3: Gráfico -->
@@ -645,7 +645,7 @@ async function setPeriod(chId,p){
 
 // POPUP
 async function openPopup(type,chId){
-  ppType=type;ppChId=chId;ppPage=0;ppPages=[null];ppSearch=false;ppVids=[];ppFilt=[];ppCurTok=null;ppNext=null;
+  ppType=type;ppChId=chId;ppPage=0;ppPages=[null];ppSearch=false;ppVids=[];ppFilt=[];ppCurTok=null;ppNext=null;ppActiveIdx=null;
   document.getElementById('popupSearch').value='';
   document.getElementById('popupTtl').textContent=type==='recent'?'Últimos Vídeos':'Melhor Performance';
   document.getElementById('popupDetail').classList.remove('open');
@@ -709,11 +709,25 @@ function updatePNav(){
   document.getElementById('pnPB').disabled=!hp;
   document.getElementById('pnavT').style.opacity=ppType==='recent'&&(hn||ppPage>0)?'1':'0.35';
 }
+let ppActiveIdx=null;
 async function selectVid(idx,el){
-  document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));el.classList.add('on');
-  const v=ppFilt[idx];if(!v)return;
-  document.getElementById('popupList').classList.add('collapsed');
   const detail=document.getElementById('popupDetail');
+  const listPanel=document.getElementById('popupList');
+
+  // Se clicar no mesmo vídeo já aberto, fecha o painel
+  if(ppActiveIdx===idx&&detail.classList.contains('open')){
+    detail.classList.remove('open');
+    listPanel.classList.remove('collapsed');
+    el.classList.remove('on');
+    ppActiveIdx=null;
+    return;
+  }
+
+  document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));
+  el.classList.add('on');
+  ppActiveIdx=idx;
+  const v=ppFilt[idx];if(!v)return;
+  listPanel.classList.add('collapsed');
   const dc=document.getElementById('popupDC');
   dc.innerHTML='<div class="mload">Carregando métricas...</div>';
   detail.classList.add('open');
@@ -723,6 +737,9 @@ async function selectVid(idx,el){
     const d=await r.json();
     const dt=v.publishedAt?new Date(v.publishedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'';
     dc.innerHTML=`
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button onclick="closeDetail()" style="background:transparent;border:1px solid var(--border);color:var(--t3);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:0.78rem;display:flex;align-items:center;justify-content:center;transition:all 0.18s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t3)'">✕</button>
+      </div>
       <div class="dv-prev">
         <img src="${v.thumb||''}" loading="lazy">
         <div><div class="dv-title">${v.title||''}</div><div class="dv-date">${dt}</div>
@@ -737,6 +754,12 @@ async function selectVid(idx,el){
         <div class="mc"><div class="mc-l">Min. Assistidos</div><div class="mc-v">${N(d.minutes||0)}</div></div>
       </div>`;
   }catch{dc.innerHTML='<div class="mload">Erro ao carregar</div>';}
+}
+function closeDetail(){
+  document.getElementById('popupDetail').classList.remove('open');
+  document.getElementById('popupList').classList.remove('collapsed');
+  document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));
+  ppActiveIdx=null;
 }
 function closePopup(){document.getElementById('popupOverlay').classList.remove('open');document.body.classList.remove('no-scroll');}
 function handleOverlayClick(e){if(e.target===document.getElementById('popupOverlay'))closePopup();}
