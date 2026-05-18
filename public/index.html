@@ -54,11 +54,30 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#111;}
 
 /* ── TOTALS ── */
-.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
-.tcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:border-color 0.2s,transform 0.2s var(--ease);}
-.tcard:hover{border-color:var(--accent);transform:translateY(-2px);}
+.totals{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.tcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:border-color 0.2s,transform 0.2s var(--ease);cursor:pointer;user-select:none;}
+.tcard:hover{border-color:rgba(255,77,0,0.4);transform:translateY(-2px);}
+.tcard.active{border-color:var(--accent);background:var(--accent-glow);}
 .tcard-l{font-size:0.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:6px;}
 .tcard-v{font-size:2rem;font-weight:900;color:var(--accent);letter-spacing:-1px;line-height:1;}
+.tcard-sub{font-size:0.58rem;color:var(--t3);margin-top:4px;}
+
+/* PARTIAL REVENUE POPUP */
+.pct-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:600;display:flex;align-items:center;justify-content:center;visibility:hidden;pointer-events:none;transition:background 0.25s,backdrop-filter 0.25s;}
+.pct-overlay.open{visibility:visible;pointer-events:auto;}
+.pct-box{background:#0a0a0a;border:1px solid var(--accent);border-radius:18px;padding:24px;width:300px;transform:scale(0.95) translateY(10px);opacity:0;transition:transform 0.28s var(--ease),opacity 0.22s ease;}
+.pct-overlay.open .pct-box{transform:scale(1) translateY(0);opacity:1;}
+.pct-title{font-size:0.78rem;font-weight:800;margin-bottom:16px;}
+.pct-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.pct-opt{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--t2);font-size:0.78rem;cursor:pointer;text-align:left;transition:all 0.18s;}
+.pct-opt:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);}
+.pct-opt.on{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);font-weight:700;}
+.pct-custom{display:none;flex-direction:column;gap:8px;margin-bottom:16px;}
+.pct-custom.show{display:flex;}
+.pct-input{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#000;color:var(--text);font-size:0.9rem;font-weight:700;width:100%;outline:none;text-align:center;transition:border-color 0.18s;}
+.pct-input:focus{border-color:var(--accent);}
+.pct-apply{width:100%;padding:10px;border-radius:10px;background:var(--accent);color:#000;border:none;font-weight:800;font-size:0.8rem;cursor:pointer;transition:opacity 0.18s;}
+.pct-apply:hover{opacity:0.85;}
 
 /* ── MAIN CHART ── */
 .main-chart-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px 10px;margin-bottom:20px;height:260px;}
@@ -247,11 +266,11 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
       <div class="popup-body" id="popupBody"></div>
       <div class="popup-nav-bot">
         <div class="popup-nav" style="border:none;padding:3px 0">
-          <button class="pnb" onclick="ppage('first')">|◀</button>
+          <button class="pnb" id="pnFB" onclick="ppage('first')">|◀</button>
           <button class="pnb" id="pnPB" onclick="ppage('prev')">◀</button>
           <div class="pni" id="pnIB">—</div>
           <button class="pnb" id="pnNB" onclick="ppage('next')">▶</button>
-          <button class="pnb" onclick="ppage('last')">▶|</button>
+          <button class="pnb" id="pnLB" onclick="ppage('last')">▶|</button>
         </div>
       </div>
     </div>
@@ -303,9 +322,38 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
   </header>
 
   <div class="totals">
-    <div class="tcard"><div class="tcard-l" id="lRev">Receita Total</div><div class="tcard-v" id="vRev">$0.00</div></div>
-    <div class="tcard"><div class="tcard-l">Views Totais</div><div class="tcard-v" id="vViews">0</div></div>
-    <div class="tcard"><div class="tcard-l">RPM Médio</div><div class="tcard-v" id="vRPM">$0.00</div></div>
+    <div class="tcard active" id="tc-revenue" onclick="setMainMetric('revenue')">
+      <div class="tcard-l" id="lRev">Receita Total</div>
+      <div class="tcard-v" id="vRev">$0.00</div>
+    </div>
+    <div class="tcard" id="tc-views" onclick="setMainMetric('views')">
+      <div class="tcard-l">Views Totais</div>
+      <div class="tcard-v" id="vViews">0</div>
+    </div>
+    <div class="tcard" id="tc-rpm" onclick="setMainMetric('rpm')">
+      <div class="tcard-l">RPM Médio</div>
+      <div class="tcard-v" id="vRPM">$0.00</div>
+    </div>
+    <div class="tcard" id="tc-partial" onclick="openPctPopup()" style="position:relative">
+      <div class="tcard-l">Receita Parcial <span id="pctBadge" style="background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-size:0.5rem;font-weight:800;margin-left:4px">30%</span></div>
+      <div class="tcard-v" id="vPartial">$0.00</div>
+      <div class="tcard-sub">Clique para ajustar %</div>
+    </div>
+  </div>
+
+  <!-- PARTIAL REVENUE POPUP -->
+  <div class="pct-overlay" id="pctOverlay" onclick="handlePctOverlay(event)">
+    <div class="pct-box">
+      <div class="pct-title">Receita Parcial</div>
+      <div class="pct-opts">
+        <button class="pct-opt on" id="pct30" onclick="selectPct(30)">30%</button>
+        <button class="pct-opt" id="pctCustomBtn" onclick="selectPct('custom')">Personalizado</button>
+      </div>
+      <div class="pct-custom" id="pctCustomArea">
+        <input class="pct-input" id="pctInput" type="number" min="1" max="100" placeholder="Ex: 45" value="">
+      </div>
+      <button class="pct-apply" onclick="applyPct()">Aplicar</button>
+    </div>
   </div>
 
   <div class="main-chart-wrap"><canvas id="mainChart"></canvas></div>
@@ -470,6 +518,7 @@ function updateUI(){
   document.getElementById('vRev').innerText=`$${tR.toFixed(2)}`;
   document.getElementById('vViews').innerText=tV.toLocaleString();
   document.getElementById('vRPM').innerText=tV>0?`$${((tR/tV)*1000).toFixed(2)}`:'$0.00';
+  document.getElementById('vPartial').innerText=`$${(tR*(partialPct/100)).toFixed(2)}`;
   updateMainChart(dD);
 }
 
@@ -715,11 +764,25 @@ function updatePNav(){
   const info=ppNext||ppPage>0?`Pág ${ppPage+1}`:'';
   ['pnI','pnIB'].forEach(id=>document.getElementById(id).textContent=info);
   const hp=ppPage>0,hn=!!ppNext&&ppType==='recent';
-  ['pnF','pnP'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hp;});
-  ['pnN','pnNB','pnL'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hn;});
-  document.getElementById('pnPB').disabled=!hp;
+  ['pnF','pnP','pnFB','pnPB'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hp;});
+  ['pnN','pnNB','pnL','pnLB'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hn;});
   document.getElementById('pnavT').style.opacity=ppType==='recent'&&(hn||ppPage>0)?'1':'0.35';
 }
+
+// Scroll do popup funciona mesmo com cursor fora
+document.addEventListener('wheel',e=>{
+  const overlay=document.getElementById('popupOverlay');
+  if(!overlay.classList.contains('open'))return;
+  e.preventDefault();
+  const body=document.getElementById('popupBody');
+  const detail=document.getElementById('popupDetail');
+  // Scrolla o painel de detalhe se estiver aberto, senão scrolla a lista
+  if(detail.classList.contains('open')){
+    detail.querySelector('.popup-detail-inner').scrollTop+=e.deltaY;
+  } else {
+    body.scrollTop+=e.deltaY;
+  }
+},{passive:false});
 let ppActiveIdx=null, ppCompareMode=false;
 
 function metricsHTML(v, d, isCompare=false){
@@ -844,22 +907,122 @@ function renderSidebar(){
 }
 
 // MAIN CHART
+let mainMetric='revenue', partialPct=30, lastDailyData={};
+
+function setMainMetric(metric){
+  mainMetric=metric;
+  ['revenue','views','rpm'].forEach(m=>{
+    document.getElementById('tc-'+m).classList.toggle('active',m===metric);
+  });
+  document.getElementById('tc-partial').classList.remove('active');
+  updateMainChart(lastDailyData);
+}
+
+// PARTIAL REVENUE POPUP
+function openPctPopup(){
+  document.getElementById('pctOverlay').classList.add('open');
+  // Reset state to current
+  const is30=partialPct===30;
+  document.getElementById('pct30').classList.toggle('on',is30);
+  document.getElementById('pctCustomBtn').classList.toggle('on',!is30);
+  document.getElementById('pctCustomArea').classList.toggle('show',!is30);
+  if(!is30)document.getElementById('pctInput').value=partialPct;
+}
+function handlePctOverlay(e){if(e.target===document.getElementById('pctOverlay'))closePctPopup();}
+function closePctPopup(){document.getElementById('pctOverlay').classList.remove('open');}
+function selectPct(val){
+  const is30=val===30;
+  document.getElementById('pct30').classList.toggle('on',is30);
+  document.getElementById('pctCustomBtn').classList.toggle('on',!is30);
+  document.getElementById('pctCustomArea').classList.toggle('show',!is30);
+  if(is30){document.getElementById('pctInput').value='';}
+}
+function applyPct(){
+  const customVal=document.getElementById('pctInput').value;
+  const is30=document.getElementById('pct30').classList.contains('on');
+  if(is30){partialPct=30;}
+  else{
+    const v=parseFloat(customVal);
+    if(isNaN(v)||v<=0||v>100){document.getElementById('pctInput').style.borderColor='var(--accent)';return;}
+    partialPct=v;
+  }
+  document.getElementById('pctBadge').textContent=partialPct+'%';
+  closePctPopup();
+  updateMainChart(lastDailyData);
+  // Update partial card value
+  const rev=parseFloat(document.getElementById('vRev').textContent.replace('$','').replace(',','.'))||0;
+  document.getElementById('vPartial').textContent='$'+(rev*(partialPct/100)).toFixed(2);
+}
+
 function initMainChart(){
   mainChart=new Chart(document.getElementById('mainChart').getContext('2d'),{
     type:'line',
-    data:{labels:[],datasets:[{data:[],borderColor:'#ff4d00',tension:0.4,fill:true,
-      backgroundColor:c=>{const g=c.chart.ctx.createLinearGradient(0,0,0,c.chart.height);g.addColorStop(0,'rgba(255,77,0,0.25)');g.addColorStop(1,'rgba(255,77,0,0)');return g;},
-      borderWidth:2.5,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#ff4d00'}]},
+    data:{labels:[],datasets:[
+      {data:[],borderColor:'#ff4d00',tension:0.4,fill:true,
+        backgroundColor:c=>{const g=c.chart.ctx.createLinearGradient(0,0,0,c.chart.height);g.addColorStop(0,'rgba(255,77,0,0.25)');g.addColorStop(1,'rgba(255,77,0,0)');return g;},
+        borderWidth:2.5,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#ff4d00'},
+      // Dataset receita parcial — só visível quando metric=revenue
+      {data:[],borderColor:'rgba(255,77,0,0.4)',tension:0.4,fill:false,
+        borderWidth:1.5,borderDash:[4,3],pointRadius:0,pointHoverRadius:4,
+        pointHoverBackgroundColor:'rgba(255,77,0,0.6)'}
+    ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:4,bottom:2}},
-      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'rgba(6,6,6,0.95)',borderColor:'#222',borderWidth:1,titleColor:'#555',titleFont:{size:10},bodyColor:'#fff',bodyFont:{size:12,weight:'700'},padding:10,displayColors:false}},
-      scales:{y:{grid:{color:'rgba(255,255,255,0.03)',drawBorder:false},border:{display:false},ticks:{color:'#2e2e2e',font:{size:10},maxTicksLimit:5,callback:v=>v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v}},
-        x:{grid:{display:false},border:{display:false},ticks:{color:'#2e2e2e',font:{size:10},maxTicksLimit:8,maxRotation:0}}}}
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        backgroundColor:'rgba(6,6,6,0.95)',borderColor:'#222',borderWidth:1,
+        titleColor:'#555',titleFont:{size:10},bodyColor:'#fff',bodyFont:{size:12,weight:'700'},
+        padding:10,displayColors:true,
+        callbacks:{label:ctx=>{
+          const label=ctx.datasetIndex===1?`Parcial (${partialPct}%)`:mainMetric==='revenue'?'Receita':mainMetric==='views'?'Views':'RPM';
+          const val=ctx.raw;
+          if(mainMetric==='views')return`${label}: ${N(val)}`;
+          return`${label}: $${val>=1000?(val/1000).toFixed(1)+'k':val.toFixed(2)}`;
+        }}}},
+      scales:{
+        y:{grid:{color:'rgba(255,255,255,0.03)',drawBorder:false},border:{display:false},
+          ticks:{color:'#2e2e2e',font:{size:10},maxTicksLimit:5,
+            callback:v=>{
+              if(mainMetric==='views')return v>=1000?(v/1000).toFixed(0)+'k':v;
+              return v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v;
+            }}},
+        x:{grid:{display:false},border:{display:false},
+          ticks:{color:'#2e2e2e',font:{size:10},maxTicksLimit:8,maxRotation:0}}}}
   });
 }
+
 function updateMainChart(dD){
+  lastDailyData=dD;
   const sorted=Object.keys(dD).sort();
   mainChart.data.labels=sorted.map(d=>{const p=d.split('-');return p[2]+'/'+p[1];});
-  mainChart.data.datasets[0].data=sorted.map(d=>dD[d]);
+
+  if(mainMetric==='revenue'){
+    const revData=sorted.map(d=>dD[d]||0);
+    mainChart.data.datasets[0].data=revData;
+    mainChart.data.datasets[0].fill=true;
+    mainChart.data.datasets[1].data=revData.map(v=>v*(partialPct/100));
+    mainChart.data.datasets[1].hidden=false;
+  } else if(mainMetric==='views'){
+    // Soma views por dia
+    const vD={};
+    CHANNELS.forEach(ch=>{
+      if(!sel.has(ch.id))return;
+      (results[ch.id]||[]).forEach(r=>{vD[r[0]]=(vD[r[0]]||0)+r[2];});
+    });
+    mainChart.data.datasets[0].data=sorted.map(d=>vD[d]||0);
+    mainChart.data.datasets[0].fill=true;
+    mainChart.data.datasets[1].data=[];
+    mainChart.data.datasets[1].hidden=true;
+  } else if(mainMetric==='rpm'){
+    const rD={},vD2={};
+    CHANNELS.forEach(ch=>{
+      if(!sel.has(ch.id))return;
+      (results[ch.id]||[]).forEach(r=>{rD[r[0]]=(rD[r[0]]||0)+r[1];vD2[r[0]]=(vD2[r[0]]||0)+r[2];});
+    });
+    mainChart.data.datasets[0].data=sorted.map(d=>vD2[d]>0?(rD[d]/vD2[d])*1000:0);
+    mainChart.data.datasets[0].fill=true;
+    mainChart.data.datasets[1].data=[];
+    mainChart.data.datasets[1].hidden=true;
+  }
+
   mainChart.update();
 }
 
