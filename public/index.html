@@ -151,6 +151,11 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .popup-overlay.open{background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);pointer-events:auto;}
 .popup-box{background:#0a0a0a;border:1px solid var(--accent);border-radius:20px;display:flex;overflow:hidden;position:relative;transform:scale(0.95) translateY(12px);opacity:0;transition:transform 0.3s var(--ease),opacity 0.25s ease;max-height:88vh;}
 .popup-overlay.open .popup-box{transform:scale(1) translateY(0);opacity:1;}
+/* wrapper para posicionar o ✕ acima da caixa */
+.popup-outer{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+/* ✕ fora do popup-box, acima e à direita */
+.popup-close{background:rgba(10,10,10,0.9);border:1px solid var(--border);color:var(--t3);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;transition:all 0.18s;flex-shrink:0;align-self:flex-end;}
+.popup-close:hover{border-color:var(--accent);color:var(--accent);}
 .popup-list{width:640px;max-width:92vw;display:flex;flex-direction:column;transition:width 0.36s var(--ease);flex-shrink:0;}
 .popup-list.collapsed{width:260px;}
 .popup-head{padding:14px 14px 10px;border-bottom:1px solid var(--border);}
@@ -178,8 +183,6 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .popup-detail{width:0;overflow:hidden;transition:width 0.36s var(--ease),opacity 0.3s ease;opacity:0;pointer-events:none;border-left:0px solid var(--border);}
 .popup-detail.open{width:380px;opacity:1;pointer-events:auto;border-left:1px solid var(--border);}
 .popup-detail-inner{width:380px;padding:18px;overflow-y:auto;max-height:88vh;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.popup-close{position:absolute;top:11px;right:11px;background:transparent;border:1px solid var(--border);color:var(--t3);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;transition:all 0.18s;z-index:10;}
-.popup-close:hover{border-color:var(--accent);color:var(--accent);}
 .dv-prev{display:flex;gap:11px;align-items:flex-start;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid var(--border);}
 .dv-prev img{width:100px;height:56px;border-radius:7px;object-fit:cover;flex-shrink:0;}
 .dv-title{font-size:0.75rem;font-weight:700;line-height:1.4;color:var(--text);}
@@ -190,6 +193,10 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .mc-v{font-size:1.2rem;font-weight:800;color:var(--accent);letter-spacing:-0.4px;}
 .mc-s{font-size:0.58rem;color:var(--t3);margin-top:2px;}
 .mload{text-align:center;padding:28px;color:var(--t3);font-size:0.74rem;}
+/* separador de comparação */
+.compare-sep{display:flex;align-items:center;gap:8px;margin:14px 0;opacity:0.4;}
+.compare-sep::before,.compare-sep::after{content:'';flex:1;height:1px;background:var(--border);}
+.compare-sep span{font-size:0.55rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;}
 
 /* ── AUTH ── */
 .auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;}
@@ -221,9 +228,10 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 
 <!-- POPUP -->
 <div class="popup-overlay" id="popupOverlay" onclick="handleOverlayClick(event)">
-  <div class="popup-box">
+  <div class="popup-outer">
     <button class="popup-close" onclick="closePopup()">✕</button>
-    <div class="popup-list" id="popupList">
+    <div class="popup-box">
+      <div class="popup-list" id="popupList">
       <div class="popup-head">
         <div class="popup-title-row">
           <div class="popup-ttl" id="popupTtl">Vídeos</div>
@@ -252,6 +260,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
     <div class="popup-detail" id="popupDetail">
       <div class="popup-detail-inner"><div id="popupDC"></div></div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -653,7 +662,9 @@ async function openPopup(type,chId){
   document.getElementById('popupList').classList.remove('collapsed');
   document.getElementById('popupDC').innerHTML='';
   document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));
-  document.getElementById('popupOverlay').classList.add('open');
+  const overlay=document.getElementById('popupOverlay');
+  overlay.style.pointerEvents='';
+  overlay.classList.add('open');
   document.body.classList.add('no-scroll');
   await loadPPage(null);
 }
@@ -710,12 +721,63 @@ function updatePNav(){
   document.getElementById('pnPB').disabled=!hp;
   document.getElementById('pnavT').style.opacity=ppType==='recent'&&(hn||ppPage>0)?'1':'0.35';
 }
-let ppActiveIdx=null;
+let ppActiveIdx=null, ppCompareMode=false;
+
+function metricsHTML(v, d, isCompare=false){
+  const dt=v.publishedAt?new Date(v.publishedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'';
+  return`
+    <div class="dv-prev">
+      <img src="${v.thumb||''}" loading="lazy">
+      <div><div class="dv-title">${v.title||''}</div><div class="dv-date">${dt}</div>
+      <a href="https://youtube.com/watch?v=${v.id}" target="_blank" style="font-size:0.62rem;color:var(--accent);text-decoration:none;margin-top:5px;display:inline-block">Abrir ↗</a></div>
+    </div>
+    <div class="mgrid">
+      <div class="mc"><div class="mc-l">Views</div><div class="mc-v">${N(d.views||0)}</div></div>
+      <div class="mc"><div class="mc-l">Receita</div><div class="mc-v">$${(d.revenue||0).toFixed(2)}</div></div>
+      <div class="mc"><div class="mc-l">Taxa de Likes</div><div class="mc-v">${d.likeRate||'—'}</div><div class="mc-s">por 1.000 views</div></div>
+      <div class="mc"><div class="mc-l">Comentários</div><div class="mc-v">${N(d.comments||0)}</div></div>
+      <div class="mc"><div class="mc-l">Retenção</div><div class="mc-v">${d.retention||'—'}</div><div class="mc-s">% assistido</div></div>
+      <div class="mc"><div class="mc-l">Min. Assistidos</div><div class="mc-v">${N(d.minutes||0)}</div></div>
+    </div>
+    ${!isCompare?`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px">
+      <button onclick="closeDetail()" style="padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t3)'">← Voltar</button>
+      <button onclick="startCompare()" style="padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t3)'">⇄ Comparar</button>
+    </div>`:''}`;
+}
+
 async function selectVid(idx,el){
   const detail=document.getElementById('popupDetail');
   const listPanel=document.getElementById('popupList');
+  const dc=document.getElementById('popupDC');
 
-  // Se clicar no mesmo vídeo já aberto, fecha o painel
+  // Se estiver em modo comparar, seleciona o segundo vídeo
+  if(ppCompareMode){
+    ppCompareMode=false;
+    listPanel.classList.add('collapsed');
+    detail.classList.add('open');
+    document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));
+    el.classList.add('on');
+    const v=ppFilt[idx];if(!v)return;
+    // Mostra loading apenas na seção de comparação
+    const compareSection=document.getElementById('compareSection');
+    if(compareSection)compareSection.innerHTML='<div class="mload">Carregando...</div>';
+    const{start,end}=getPeriod(ppChId);
+    try{
+      const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${CID[ppChId]}&startDate=${start}&endDate=${end}`);
+      const d=await r.json();
+      if(compareSection)compareSection.innerHTML=`
+        <div class="compare-sep"><span>Comparando com</span></div>
+        ${metricsHTML(v,d,true)}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px">
+          <button onclick="closeDetail()" style="padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t3)'">← Voltar</button>
+          <button onclick="startCompare()" style="padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t3)'">⇄ Novo Comparar</button>
+        </div>`;
+    }catch{if(compareSection)compareSection.innerHTML='<div class="mload">Erro ao carregar</div>';}
+    return;
+  }
+
+  // Clique no mesmo vídeo — fecha painel
   if(ppActiveIdx===idx&&detail.classList.contains('open')){
     detail.classList.remove('open');
     listPanel.classList.remove('collapsed');
@@ -729,38 +791,41 @@ async function selectVid(idx,el){
   ppActiveIdx=idx;
   const v=ppFilt[idx];if(!v)return;
   listPanel.classList.add('collapsed');
-  const dc=document.getElementById('popupDC');
   dc.innerHTML='<div class="mload">Carregando métricas...</div>';
   detail.classList.add('open');
   const{start,end}=getPeriod(ppChId);
   try{
     const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${CID[ppChId]}&startDate=${start}&endDate=${end}`);
     const d=await r.json();
-    const dt=v.publishedAt?new Date(v.publishedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'';
-    dc.innerHTML=`
-      <div class="dv-prev">
-        <img src="${v.thumb||''}" loading="lazy">
-        <div><div class="dv-title">${v.title||''}</div><div class="dv-date">${dt}</div>
-        <a href="https://youtube.com/watch?v=${v.id}" target="_blank" style="font-size:0.62rem;color:var(--accent);text-decoration:none;margin-top:5px;display:inline-block">Abrir ↗</a></div>
-      </div>
-      <div class="mgrid">
-        <div class="mc"><div class="mc-l">Views</div><div class="mc-v">${N(d.views||0)}</div></div>
-        <div class="mc"><div class="mc-l">Receita</div><div class="mc-v">$${(d.revenue||0).toFixed(2)}</div></div>
-        <div class="mc"><div class="mc-l">Taxa de Likes</div><div class="mc-v">${d.likeRate||'—'}</div><div class="mc-s">por 1.000 views</div></div>
-        <div class="mc"><div class="mc-l">Comentários</div><div class="mc-v">${N(d.comments||0)}</div></div>
-        <div class="mc"><div class="mc-l">Retenção</div><div class="mc-v">${d.retention||'—'}</div><div class="mc-s">% assistido</div></div>
-        <div class="mc"><div class="mc-l">Min. Assistidos</div><div class="mc-v">${N(d.minutes||0)}</div></div>
-      </div>
-      <button onclick="closeDetail()" style="margin-top:14px;width:100%;padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t3)'">← Voltar</button>`;
+    dc.innerHTML=`<div id="mainMetrics">${metricsHTML(v,d,false)}</div><div id="compareSection"></div>`;
   }catch{dc.innerHTML='<div class="mload">Erro ao carregar</div>';}
 }
+
+function startCompare(){
+  ppCompareMode=true;
+  // Expande lista para selecionar vídeo de comparação
+  document.getElementById('popupList').classList.remove('collapsed');
+  document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));
+  // Garante seção de comparação visível com prompt
+  const cs=document.getElementById('compareSection');
+  if(cs)cs.innerHTML='<div class="compare-sep"><span>Selecione um vídeo para comparar</span></div>';
+}
+
 function closeDetail(){
   document.getElementById('popupDetail').classList.remove('open');
   document.getElementById('popupList').classList.remove('collapsed');
   document.querySelectorAll('.pvi').forEach(i=>i.classList.remove('on'));
   ppActiveIdx=null;
+  ppCompareMode=false;
 }
-function closePopup(){document.getElementById('popupOverlay').classList.remove('open');document.body.classList.remove('no-scroll');}
+function closePopup(){
+  const overlay=document.getElementById('popupOverlay');
+  overlay.classList.remove('open');
+  overlay.style.pointerEvents='none';
+  document.body.classList.remove('no-scroll');
+  ppCompareMode=false;
+  ppActiveIdx=null;
+}
 function handleOverlayClick(e){if(e.target===document.getElementById('popupOverlay'))closePopup();}
 
 // SIDEBAR
