@@ -369,7 +369,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
     </div>
     <div class="hcontrols">
       <div class="filter-group">
-        <div class="clear-x" id="clearX" onclick="resetFilters()">✕<span>Limpar</span></div>
+        <div class="clear-x" id="clearX" onclick="resetFilters()">✕<span id="clearXLabel">Limpar</span></div>
         <div class="drop-wrap">
           <button class="pill btn-canais" id="btnCanais" onclick="toggleDrop('dropCanais')">Filtrar Canais ▾</button>
           <div class="drop-menu" id="dropCanais"></div>
@@ -537,8 +537,10 @@ const I={
   cmt:`<svg viewBox="0 0 16 16"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H5l-3 3V3a1 1 0 011-1z"/></svg>`,
   dol:`<svg viewBox="0 0 16 16"><path d="M8 1v1.5C5.5 2.8 4 4 4 5.5c0 2 2 3 4 3.5 1.5.4 2 1 2 1.5 0 .8-1 1.5-2 1.5-1.5 0-2.5-.7-2.5-1.5H4c0 1.5 1.5 2.7 4 3V15h1v-1.5c2.5-.3 4-1.5 4-3s-1.5-2.7-4-3.2C7.5 6.9 7 6.3 7 5.5c0-.8.8-1.5 2-1.5s2 .7 2 1.5h1.5C12.5 4 11 2.8 9 2.5V1H8z"/></svg>`
 };
+const LOCALE_MAP={pt:'pt-BR',en:'en-US',es:'es-ES',fr:'fr-FR',de:'de-DE',ja:'ja-JP',ko:'ko-KR'};
 const N=n=>{if(n==null)return'—';n=+n;if(isNaN(n))return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'k';return n.toLocaleString('pt-BR');};
-const D=d=>{if(!d)return'—';return new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});};
+const D=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'short'});};
+const DL=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'long',year:'numeric'});};
 
 // AUTH
 async function login(){
@@ -621,7 +623,7 @@ function renderMonths(){
     c.appendChild(o);
   }
 }
-function setPreset(d){activePeriod=d;hlPeriod('opt-'+d);document.getElementById('btnPeriod').innerText=(d===1?'Último Dia':d+' Dias')+' ▾';fetchAll();}
+function setPreset(d){activePeriod=d;hlPeriod('opt-'+d);const tl=T();document.getElementById('btnPeriod').innerText=(d===1?tl.lastDay:tl['last'+d]||d+' Dias')+' ▾';fetchAll();}
 function hlPeriod(id){document.querySelectorAll('.drop-menu .dopt').forEach(e=>e.classList.remove('sel'));const t=document.getElementById(id);if(t)t.classList.add('sel');}
 
 // FETCH
@@ -715,7 +717,7 @@ function renderDetail(chId){
   const{recent,top,rows,period,metric,recentTotal}=dd[chId];
   const t=T();
   const feat=recent[0]||null,side=recent.slice(1,6);
-  const pl={7:'7 Dias',28:'28 Dias',90:'90 Dias'};
+  const pl={7:T().last7,28:T().last28,90:T().last90};
 
   grid.innerHTML=`
     <!-- COL 1: Últimos vídeos -->
@@ -776,7 +778,7 @@ function renderDetail(chId){
             <button class="mbtn" onclick="swChart('${chId}','revenue',this)">${t.receitaBtn}</button>
           </div>
           <div class="period-wrap">
-            <button class="pbtn" onclick="togglePDrop('${chId}',event)">${pl[period]||'28 Dias'} ▾</button>
+            <button class="pbtn" onclick="togglePDrop('${chId}',event)">${pl[period]||T().last28} ▾</button>
             <div class="pdrop" id="pd-${chId}">
               <div class="popt${period===7?' on':''}" onclick="setPeriod('${chId}',7)">7 ${t.last7.split(' ').slice(-1)[0]}</div>
               <div class="popt${period===28?' on':''}" onclick="setPeriod('${chId}',28)">28 ${t.last28.split(' ').slice(-1)[0]}</div>
@@ -875,7 +877,7 @@ async function openPopup(type,chId){
 }
 async function loadPPage(token){
   const rid=CID[ppChId];
-  document.getElementById('popupBody').innerHTML='<div style="padding:18px;text-align:center;color:var(--t3);font-size:0.74rem">Carregando...</div>';
+  document.getElementById('popupBody').innerHTML=`<div style="padding:18px;text-align:center;color:var(--t3);font-size:0.74rem">${T().carregando}</div>`;
   if(ppType==='recent'){
     let url=`/api/recent-videos?channelId=${rid}`;if(token)url+=`&pageToken=${encodeURIComponent(token)}`;
     const d=await fetch(url).then(r=>r.json()).catch(()=>({ok:false,videos:[]}));
@@ -953,7 +955,7 @@ let ppActiveIdx=null, ppCompareMode=false;
 
 function metricsHTML(v, d, isCompare=false){
   const t=T();
-  const dt=v.publishedAt?new Date(v.publishedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'';
+  const dt=v.publishedAt?DL(v.publishedAt):'';
   return`
     <div class="dv-prev">
       <img src="${v.thumb||''}" loading="lazy">
@@ -990,7 +992,7 @@ async function selectVid(idx,el){
     const v=ppFilt[idx];if(!v)return;
     // Mostra loading apenas na seção de comparação
     const compareSection=document.getElementById('compareSection');
-    if(compareSection)compareSection.innerHTML='<div class="mload">Carregando...</div>';
+    if(compareSection)compareSection.innerHTML=`<div class="mload">${T().carregando}</div>`;
     const{start,end}=getPeriod(ppChId);
     try{
       const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${CID[ppChId]}&startDate=${start}&endDate=${end}`);
@@ -1020,7 +1022,7 @@ async function selectVid(idx,el){
   ppActiveIdx=idx;
   const v=ppFilt[idx];if(!v)return;
   listPanel.classList.add('collapsed');
-  dc.innerHTML='<div class="mload">Carregando métricas...</div>';
+  dc.innerHTML=`<div class="mload">${T().carregandoMet}</div>`;
   detail.classList.add('open');
   const{start,end}=getPeriod(ppChId);
   try{
@@ -1258,7 +1260,7 @@ function initMainChart(){
           labelPointStyle:ctx=>ctx.datasetIndex===0?{pointStyle:'circle',rotation:0}:{pointStyle:'circle',rotation:0},
           label:ctx=>{
             if(ctx.datasetIndex===1&&partialPct==null)return null;
-            const label=ctx.datasetIndex===1?`Parcial (${partialPct}%)`:mainMetric==='revenue'?'Receita':mainMetric==='views'?'Views':'RPM';
+            const label=ctx.datasetIndex===1?`${T().parcial} (${partialPct}%)`:mainMetric==='revenue'?T().metReceita:mainMetric==='views'?T().metViews:'RPM';
             const val=ctx.raw;
             if(mainMetric==='views')return` ${label}: ${N(val)}`;
             return` ${label}: $${val>=1000?(val/1000).toFixed(1)+'k':val.toFixed(2)}`;
@@ -1362,37 +1364,37 @@ function toggleSettLang(e){
 
 // ── I18N ──────────────────────────────────────────────────
 const LANGS={
-  pt:{filterCanais:'Filtrar Canais',conexoes:'Conexões',receita:'Receita Total',parcial:'Receita Parcial',views:'Views Totais',rpm:'RPM Médio',canal:'Canal',receita2:'Receita',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clique para gerenciar',lastDay:'Último Dia',last7:'Últimos 7 Dias',last28:'Últimos 28 Dias',last90:'Últimos 90 Dias',idioma:'Idioma',themeDark:'Escuro',themeLight:'Claro',tema:'Tema',menu:'Menu',emBreve:'Em breve',periodo:'28 Dias',
+  pt:{filterCanais:'Filtrar Canais',conexoes:'Conexões',receita:'Receita Total',parcial:'Receita Parcial',views:'Views Totais',rpm:'RPM Médio',canal:'Canal',receita2:'Receita',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clique para gerenciar',lastDay:'Último Dia',last7:'Últimos 7 Dias',last28:'Últimos 28 Dias',last90:'Últimos 90 Dias',idioma:'Idioma',themeDark:'Escuro',themeLight:'Claro',tema:'Tema',menu:'Menu',emBreve:'Em breve',periodo:'28 Dias',limpar:'Limpar',
     ultimosVideos:'Últimos Vídeos',melhorPerf:'Melhor Performance',desempenho:'Desempenho',verTodos:'Ver todos',viewsBtn:'Views',minutesBtn:'Min.',receitaBtn:'Receita',semVideos:'Sem vídeos',semDados:'Sem dados',carregando:'Carregando...',carregandoMet:'Carregando métricas...',
     metViews:'Views',metReceita:'Receita',metLikes:'Taxa de Likes',metComents:'Comentários',metRetencao:'Retenção',metMin:'Min. Assistidos',metPor1k:'por 1.000 views',metPorc:'% assistido',abrir:'Abrir ↗',voltar:'← Voltar',comparar:'⇄ Comparar',
     pctTitle:'Receita Parcial',pctAdd:'+ Nova Parcial',pctCancel:'Cancelar',pctConfirm:'Adicionar',pctEmpty:'Nenhuma parcial adicionada',pctPadrao:'PADRÃO',pctFixar:'Fixar',pctEditar:'Editar',pctRemover:'Remover',
     conexoesTitle:'Conexões',semConexoes:'Nenhum canal vinculado',buscarVideo:'Buscar vídeo...'},
-  en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',receita2:'Revenue',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days',idioma:'Language',themeDark:'Dark',themeLight:'Light',tema:'Theme',menu:'Menu',emBreve:'Coming soon',periodo:'28 Days',
+  en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',receita2:'Revenue',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days',idioma:'Language',themeDark:'Dark',themeLight:'Light',tema:'Theme',menu:'Menu',emBreve:'Coming soon',periodo:'28 Days',limpar:'Clear',
     ultimosVideos:'Latest Videos',melhorPerf:'Best Performance',desempenho:'Performance',verTodos:'See all',viewsBtn:'Views',minutesBtn:'Min.',receitaBtn:'Revenue',semVideos:'No videos',semDados:'No data',carregando:'Loading...',carregandoMet:'Loading metrics...',
     metViews:'Views',metReceita:'Revenue',metLikes:'Like Rate',metComents:'Comments',metRetencao:'Retention',metMin:'Watch Minutes',metPor1k:'per 1,000 views',metPorc:'% watched',abrir:'Open ↗',voltar:'← Back',comparar:'⇄ Compare',
     pctTitle:'Partial Revenue',pctAdd:'+ New Partial',pctCancel:'Cancel',pctConfirm:'Add',pctEmpty:'No partials added',pctPadrao:'DEFAULT',pctFixar:'Pin',pctEditar:'Edit',pctRemover:'Remove',
     conexoesTitle:'Connections',semConexoes:'No channels linked',buscarVideo:'Search video...'},
-  es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',receita2:'Ingresos',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días',idioma:'Idioma',themeDark:'Oscuro',themeLight:'Claro',tema:'Tema',menu:'Menú',emBreve:'Próximamente',periodo:'28 Días',
+  es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',receita2:'Ingresos',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días',idioma:'Idioma',themeDark:'Oscuro',themeLight:'Claro',tema:'Tema',menu:'Menú',emBreve:'Próximamente',periodo:'28 Días',limpar:'Limpiar',
     ultimosVideos:'Últimos Vídeos',melhorPerf:'Mejor Performance',desempenho:'Rendimiento',verTodos:'Ver todos',viewsBtn:'Vistas',minutesBtn:'Min.',receitaBtn:'Ingresos',semVideos:'Sin vídeos',semDados:'Sin datos',carregando:'Cargando...',carregandoMet:'Cargando métricas...',
     metViews:'Vistas',metReceita:'Ingresos',metLikes:'Tasa de Likes',metComents:'Comentarios',metRetencao:'Retención',metMin:'Min. Vistos',metPor1k:'por 1.000 vistas',metPorc:'% visto',abrir:'Abrir ↗',voltar:'← Volver',comparar:'⇄ Comparar',
     pctTitle:'Ingresos Parciales',pctAdd:'+ Nueva Parcial',pctCancel:'Cancelar',pctConfirm:'Agregar',pctEmpty:'Sin parciales agregadas',pctPadrao:'PREDETER.',pctFixar:'Fijar',pctEditar:'Editar',pctRemover:'Eliminar',
     conexoesTitle:'Conexiones',semConexoes:'Sin canales vinculados',buscarVideo:'Buscar vídeo...'},
-  fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',receita2:'Revenu',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours',idioma:'Langue',themeDark:'Sombre',themeLight:'Clair',tema:'Thème',menu:'Menu',emBreve:'Bientôt',periodo:'28 Jours',
+  fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',receita2:'Revenu',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours',idioma:'Langue',themeDark:'Sombre',themeLight:'Clair',tema:'Thème',menu:'Menu',emBreve:'Bientôt',periodo:'28 Jours',limpar:'Effacer',
     ultimosVideos:'Dernières Vidéos',melhorPerf:'Meilleures Performances',desempenho:'Performance',verTodos:'Voir tout',viewsBtn:'Vues',minutesBtn:'Min.',receitaBtn:'Revenu',semVideos:'Aucune vidéo',semDados:'Aucune donnée',carregando:'Chargement...',carregandoMet:'Chargement des métriques...',
     metViews:'Vues',metReceita:'Revenu',metLikes:'Taux de Likes',metComents:'Commentaires',metRetencao:'Rétention',metMin:'Min. Regardés',metPor1k:'pour 1 000 vues',metPorc:'% regardé',abrir:'Ouvrir ↗',voltar:'← Retour',comparar:'⇄ Comparer',
     pctTitle:'Revenu Partiel',pctAdd:'+ Nouveau Partiel',pctCancel:'Annuler',pctConfirm:'Ajouter',pctEmpty:'Aucun partiel ajouté',pctPadrao:'DÉFAUT',pctFixar:'Épingler',pctEditar:'Modifier',pctRemover:'Supprimer',
     conexoesTitle:'Connexions',semConexoes:'Aucune chaîne liée',buscarVideo:'Rechercher vidéo...'},
-  de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',receita2:'Einnahmen',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage',idioma:'Sprache',themeDark:'Dunkel',themeLight:'Hell',tema:'Thema',menu:'Menü',emBreve:'Demnächst',periodo:'28 Tage',
+  de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',receita2:'Einnahmen',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage',idioma:'Sprache',themeDark:'Dunkel',themeLight:'Hell',tema:'Thema',menu:'Menü',emBreve:'Demnächst',periodo:'28 Tage',limpar:'Löschen',
     ultimosVideos:'Letzte Videos',melhorPerf:'Beste Leistung',desempenho:'Leistung',verTodos:'Alle anzeigen',viewsBtn:'Aufrufe',minutesBtn:'Min.',receitaBtn:'Einnahmen',semVideos:'Keine Videos',semDados:'Keine Daten',carregando:'Laden...',carregandoMet:'Metriken laden...',
     metViews:'Aufrufe',metReceita:'Einnahmen',metLikes:'Like-Rate',metComents:'Kommentare',metRetencao:'Retention',metMin:'Gesehene Min.',metPor1k:'pro 1.000 Aufrufe',metPorc:'% gesehen',abrir:'Öffnen ↗',voltar:'← Zurück',comparar:'⇄ Vergleichen',
     pctTitle:'Teileinnahmen',pctAdd:'+ Neue Teilung',pctCancel:'Abbrechen',pctConfirm:'Hinzufügen',pctEmpty:'Keine Teilungen',pctPadrao:'STANDARD',pctFixar:'Anheften',pctEditar:'Bearbeiten',pctRemover:'Entfernen',
     conexoesTitle:'Verbindungen',semConexoes:'Keine Kanäle verknüpft',buscarVideo:'Video suchen...'},
-  ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',receita2:'収益',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間',idioma:'言語',themeDark:'ダーク',themeLight:'ライト',tema:'テーマ',menu:'メニュー',emBreve:'近日公開',periodo:'28日間',
+  ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',receita2:'収益',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間',idioma:'言語',themeDark:'ダーク',themeLight:'ライト',tema:'テーマ',menu:'メニュー',emBreve:'近日公開',periodo:'28日間',limpar:'クリア',
     ultimosVideos:'最新動画',melhorPerf:'最高パフォーマンス',desempenho:'パフォーマンス',verTodos:'すべて見る',viewsBtn:'再生数',minutesBtn:'分',receitaBtn:'収益',semVideos:'動画なし',semDados:'データなし',carregando:'読み込み中...',carregandoMet:'指標を読み込み中...',
     metViews:'再生数',metReceita:'収益',metLikes:'いいね率',metComents:'コメント',metRetencao:'視聴維持率',metMin:'視聴分数',metPor1k:'1,000再生あたり',metPorc:'%視聴',abrir:'開く ↗',voltar:'← 戻る',comparar:'⇄ 比較',
     pctTitle:'部分収益',pctAdd:'+ 新しい部分',pctCancel:'キャンセル',pctConfirm:'追加',pctEmpty:'部分が追加されていません',pctPadrao:'デフォルト',pctFixar:'固定',pctEditar:'編集',pctRemover:'削除',
     conexoesTitle:'接続',semConexoes:'チャンネルが接続されていません',buscarVideo:'動画を検索...'},
-  ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',receita2:'수익',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일',idioma:'언어',themeDark:'다크',themeLight:'라이트',tema:'테마',menu:'메뉴',emBreve:'곧 출시',periodo:'28일',
+  ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',receita2:'수익',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일',idioma:'언어',themeDark:'다크',themeLight:'라이트',tema:'테마',menu:'메뉴',emBreve:'곧 출시',periodo:'28일',limpar:'지우기',
     ultimosVideos:'최신 동영상',melhorPerf:'최고 성과',desempenho:'성과',verTodos:'모두 보기',viewsBtn:'조회수',minutesBtn:'분',receitaBtn:'수익',semVideos:'동영상 없음',semDados:'데이터 없음',carregando:'로딩 중...',carregandoMet:'지표 로딩 중...',
     metViews:'조회수',metReceita:'수익',metLikes:'좋아요율',metComents:'댓글',metRetencao:'시청 유지율',metMin:'시청 분수',metPor1k:'1,000조회당',metPorc:'% 시청',abrir:'열기 ↗',voltar:'← 뒤로',comparar:'⇄ 비교',
     pctTitle:'부분 수익',pctAdd:'+ 새 부분',pctCancel:'취소',pctConfirm:'추가',pctEmpty:'추가된 항목 없음',pctPadrao:'기본값',pctFixar:'고정',pctEditar:'편집',pctRemover:'삭제',
@@ -1435,9 +1437,17 @@ function setLang(l){
   const p7=document.getElementById('opt-7');if(p7)p7.textContent=t.last7;
   const p28=document.getElementById('opt-28');if(p28)p28.textContent=t.last28;
   const p90=document.getElementById('opt-90');if(p90)p90.textContent=t.last90;
-  // Sidebar conexoes — vincular button
+  // Connections sidebar — vincular button (replace full text, not append)
   const vinc=document.querySelector('[onclick="linkNewChannel()"]');
-  if(vinc){const nodes=[...vinc.childNodes];const textNode=nodes.find(n=>n.nodeType===3);if(textNode)textNode.nodeValue=' '+t.vincular;}
+  if(vinc){
+    // Preserve SVG, replace only text
+    const svg=vinc.querySelector('svg');
+    vinc.innerHTML='';
+    if(svg)vinc.appendChild(svg);
+    vinc.append(' '+t.vincular);
+  }
+  // Clear button label
+  const clearLbl=document.getElementById('clearXLabel');if(clearLbl)clearLbl.textContent=t.limpar||'Limpar';
   // Connections sidebar title
   const conexoesTitle=document.querySelector('#sidebarConexoes .sidebar-title');if(conexoesTitle)conexoesTitle.textContent=t.conexoesTitle;
   // Pct dropdown title and buttons
@@ -1508,7 +1518,7 @@ function renderTableSorted(){
       <td colspan="4">
         <div class="detail-inner" id="din-${r.id}">
           <div class="detail-grid" id="dgrid-${r.id}">
-            <div class="dblock" style="align-items:center;justify-content:center"><div style="color:var(--t3);font-size:0.72rem">Carregando...</div></div>
+            <div class="dblock" style="align-items:center;justify-content:center"><div style="color:var(--t3);font-size:0.72rem">${T().carregando}</div></div>
             <div class="dblock"></div><div class="dblock"></div>
           </div>
         </div>
