@@ -60,7 +60,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#111;}
 
 /* ── TOTALS ── */
-.totals{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:20px;align-items:stretch;}
+.totals{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:20px;align-items:stretch;position:relative;}
 .tcard-combined{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:grid;grid-template-columns:1fr 1fr;transition:border-color 0.2s;grid-column:span 2;overflow:hidden;}
 .tcard-combined.has-active{border-color:var(--accent);}
 .tcard-half{padding:20px 22px;cursor:pointer;user-select:none;transition:background 0.18s,transform 0.2s var(--ease);border-right:1px solid var(--border);}
@@ -81,8 +81,8 @@ th.sort-desc::after{content:' ↓';color:var(--accent);}
 .tcard-sub{font-size:0.58rem;color:var(--t3);margin-top:4px;}
 
 /* PARTIAL DROPDOWN */
-.pct-wrap{position:relative;display:flex;flex-direction:column;}
-.pct-drop{position:absolute;top:calc(100% + 8px);left:0;width:320px;background:var(--s1);border:1px solid var(--accent);border-radius:16px;padding:14px;z-index:400;flex-direction:column;gap:0;box-shadow:0 12px 40px rgba(0,0,0,0.95);display:none;max-height:360px;overflow:hidden;}
+.pct-wrap{position:static;display:flex;flex-direction:column;}
+.pct-drop{position:fixed;top:auto;left:auto;width:320px;background:var(--s1);border:1px solid var(--accent);border-radius:16px;padding:14px;z-index:400;flex-direction:column;gap:0;box-shadow:0 12px 40px rgba(0,0,0,0.95);display:none;max-height:360px;overflow:hidden;}
 .pct-drop.open{display:flex;}
 .pct-drop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-shrink:0;}
 .pct-title{font-size:0.72rem;font-weight:800;color:var(--text);}
@@ -268,7 +268,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;}
 .auth-overlay.hidden{display:none;}
 .auth-card{background:var(--s1);border:1px solid var(--accent);padding:40px;border-radius:20px;width:300px;text-align:center;}
-.auth-input{width:100%;padding:13px;background:#000;border:1px solid var(--border);color:var(--text);border-radius:50px;margin-bottom:16px;text-align:center;outline:none;font-size:0.85rem;transition:border-color 0.2s;}
+.auth-input{width:100%;padding:13px;background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:50px;margin-bottom:16px;text-align:center;outline:none;font-size:0.85rem;transition:border-color 0.2s;}
 .auth-input:focus{border-color:var(--accent);}
 .auth-btn{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:50px;font-weight:800;cursor:pointer;font-size:0.88rem;transition:opacity 0.2s;}
 .auth-btn:hover{opacity:0.85;}
@@ -276,7 +276,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 /* ── SIDEBAR ── */
 .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;display:none;}
 .sidebar-overlay.active{display:block;}
-.sidebar{position:fixed;top:0;right:-340px;width:300px;height:100vh;background:#000;border-left:1px solid var(--accent);z-index:200;padding:22px;transition:right 0.3s var(--ease);overflow-y:auto;scrollbar-width:none;}
+.sidebar{position:fixed;top:0;right:-340px;width:300px;height:100vh;background:var(--bg);border-left:1px solid var(--accent);z-index:200;padding:22px;transition:right 0.3s var(--ease);overflow-y:auto;scrollbar-width:none;}
 .sidebar.open{right:0;}
 .side-card{background:var(--s1);padding:14px 16px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);cursor:pointer;transition:border-color 0.18s,background 0.18s,transform 0.2s var(--ease);}
 .side-card:hover{border-color:rgba(255,77,0,0.3);background:var(--accent-glow);transform:scale(1.02);}
@@ -1133,11 +1133,19 @@ function togglePctDrop(e){
   const drop=document.getElementById('pctDrop');
   if(!drop)return;
   const isOpen=drop.classList.contains('open');
-  // Fecha outros menus
   document.querySelectorAll('.drop-menu,.pdrop').forEach(d=>d.classList.remove('open'));
-  if(isOpen){
-    drop.classList.remove('open');
-  } else {
+  if(isOpen){drop.classList.remove('open');}
+  else{
+    // Position below the partial card
+    const card=document.getElementById('tc-partial');
+    if(card){
+      const rect=card.getBoundingClientRect();
+      const scrollY=window.scrollY||window.pageYOffset;
+      drop.style.position='fixed';
+      drop.style.top=(rect.bottom+6)+'px';
+      drop.style.left=rect.left+'px';
+      drop.style.width=Math.max(rect.width,280)+'px';
+    }
     drop.classList.add('open');
     renderPctList();
     hideAddArea();
@@ -1308,11 +1316,14 @@ document.addEventListener('click',e=>{
     document.querySelectorAll('.drop-menu').forEach(d=>d.classList.remove('open'));
   if(!e.target.closest('.period-wrap'))
     document.querySelectorAll('.pdrop').forEach(d=>d.classList.remove('open'));
-  if(!e.target.closest('.pct-wrap'))
-    document.querySelectorAll('.pct-drop').forEach(d=>d.classList.remove('open'));
+  if(!e.target.closest('#tc-partial')&&!e.target.closest('#pctDrop'))
+    document.getElementById('pctDrop')?.classList.remove('open');
 });
 
 // ── THEME ─────────────────────────────────────────────────
+const SVG_MOON=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
+const SVG_SUN=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
 function setTheme(t){
   document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
   localStorage.setItem('automata_theme',t);
@@ -1320,14 +1331,9 @@ function setTheme(t){
   const icon=document.getElementById('settThemeIcon');
   const label=document.getElementById('settThemeLabel');
   const toggle=document.getElementById('settThemeToggle');
-  if(icon)icon.textContent=isLight?'☀️':'🌙';
-  if(label)label.textContent=isLight?'Claro':'Escuro';
+  if(icon)icon.innerHTML=isLight?SVG_SUN:SVG_MOON;
+  if(label)label.textContent=isLight?(LANGS[currentLang]||LANGS.pt).themeLight:(LANGS[currentLang]||LANGS.pt).themeDark;
   if(toggle)toggle.classList.toggle('on',isLight);
-  // Fix drop-menu background for light mode
-  document.querySelectorAll('.drop-menu,.pct-drop').forEach(el=>{
-    el.style.background=isLight?'#fff':'';
-    el.style.boxShadow=isLight?'0 12px 40px rgba(0,0,0,0.15)':'';
-  });
 }
 function toggleTheme(){
   const cur=localStorage.getItem('automata_theme')||'dark';
@@ -1345,37 +1351,55 @@ function toggleSettLang(e){
 
 // ── I18N ──────────────────────────────────────────────────
 const LANGS={
-  pt:{filterCanais:'Filtrar Canais',conexoes:'Conexões',receita:'Receita Total',parcial:'Receita Parcial',views:'Views Totais',rpm:'RPM Médio',canal:'Canal',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clique para gerenciar',lastDay:'Último Dia',last7:'Últimos 7 Dias',last28:'Últimos 28 Dias',last90:'Últimos 90 Dias'},
-  en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days'},
-  es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días'},
-  fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours'},
-  de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage'},
-  ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間'},
-  ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일'}
+  pt:{filterCanais:'Filtrar Canais',conexoes:'Conexões',receita:'Receita Total',parcial:'Receita Parcial',views:'Views Totais',rpm:'RPM Médio',canal:'Canal',receita2:'Receita',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clique para gerenciar',lastDay:'Último Dia',last7:'Últimos 7 Dias',last28:'Últimos 28 Dias',last90:'Últimos 90 Dias',idioma:'Idioma',themeDark:'Escuro',themeLight:'Claro',tema:'Tema',menu:'Menu',emBreve:'Em breve',periodo:'28 Dias'},
+  en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',receita2:'Revenue',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days',idioma:'Language',themeDark:'Dark',themeLight:'Light',tema:'Theme',menu:'Menu',emBreve:'Coming soon',periodo:'28 Days'},
+  es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',receita2:'Ingresos',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días',idioma:'Idioma',themeDark:'Oscuro',themeLight:'Claro',tema:'Tema',menu:'Menú',emBreve:'Próximamente',periodo:'28 Días'},
+  fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',receita2:'Revenu',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours',idioma:'Langue',themeDark:'Sombre',themeLight:'Clair',tema:'Thème',menu:'Menu',emBreve:'Bientôt',periodo:'28 Jours'},
+  de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',receita2:'Einnahmen',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage',idioma:'Sprache',themeDark:'Dunkel',themeLight:'Hell',tema:'Thema',menu:'Menü',emBreve:'Demnächst',periodo:'28 Tage'},
+  ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',receita2:'収益',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間',idioma:'言語',themeDark:'ダーク',themeLight:'ライト',tema:'テーマ',menu:'メニュー',emBreve:'近日公開',periodo:'28日間'},
+  ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',receita2:'수익',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일',idioma:'언어',themeDark:'다크',themeLight:'라이트',tema:'테마',menu:'메뉴',emBreve:'곧 출시',periodo:'28일'}
 };
 let currentLang='pt';
 function setLang(l){
   currentLang=l;
   localStorage.setItem('automata_lang',l);
   const t=LANGS[l]||LANGS.pt;
-  // Highlight selected
+  // Highlight selected lang
   document.querySelectorAll('[id^="lang-"]').forEach(el=>el.classList.remove('sel'));
   const lEl=document.getElementById('lang-'+l);if(lEl)lEl.classList.add('sel');
-  // Update UI text
-  const btn=document.getElementById('btnCanais');if(btn)btn.textContent=t.filterCanais+' ▾';
+  // Header buttons
+  const btnCanais=document.getElementById('btnCanais');if(btnCanais)btnCanais.textContent=t.filterCanais+' ▾';
+  const btnPeriod=document.getElementById('btnPeriod');if(btnPeriod&&activePeriod===28)btnPeriod.textContent=t.last28+' ▾';
+  const btnConexoes=document.querySelector('[onclick="toggleConexoes(true)"]');
+  if(btnConexoes)btnConexoes.childNodes[btnConexoes.childNodes.length-1].nodeValue=' '+t.conexoes;
+  // Settings labels
+  const settLangLabel=document.getElementById('settLangLabel');if(settLangLabel)settLangLabel.textContent=t.idioma;
+  const settThemeLabel=document.getElementById('settThemeLabel');
+  if(settThemeLabel){const isLight=localStorage.getItem('automata_theme')==='light';settThemeLabel.textContent=isLight?t.themeLight:t.themeDark;}
+  // Cards
   const lRev=document.getElementById('lRev');if(lRev)lRev.textContent=t.receita;
-  document.querySelectorAll('.tcard-l').forEach((el,i)=>{
-    if(i===1){const b=document.getElementById('pctBadge');el.innerHTML=t.parcial+(b?` <span id="pctBadge">${b.textContent}</span>`:'');}
-    if(i===2)el.textContent=t.views;
-    if(i===3)el.textContent=t.rpm;
-  });
-  document.getElementById('th-name').childNodes[0].nodeValue=t.canal;
-  document.getElementById('th-rev').childNodes[0].nodeValue=t.receita;
-  document.getElementById('th-views').childNodes[0].nodeValue=t.views;
+  // Partial card label — preserva o badge
+  const partialLabel=document.querySelector('#tc-partial .tcard-l');
+  if(partialLabel){const badge=document.getElementById('pctBadge');const badgeHTML=badge?badge.outerHTML:'';partialLabel.innerHTML=t.parcial+(badgeHTML?' '+badgeHTML:'');}
+  const vViewsL=document.querySelector('#tc-views .tcard-l');if(vViewsL)vViewsL.textContent=t.views;
+  const vRPML=document.querySelector('#tc-rpm .tcard-l');if(vRPML)vRPML.textContent=t.rpm;
+  const gerir=document.querySelector('#tc-partial .tcard-sub');if(gerir)gerir.textContent=t.gerir;
+  // Table headers
+  const thName=document.getElementById('th-name');if(thName){const after=thName.querySelector('::after');thName.childNodes[0].nodeValue=t.canal;}
+  const thRev=document.getElementById('th-rev');if(thRev)thRev.childNodes[0].nodeValue=t.receita2;
+  const thViews=document.getElementById('th-views');if(thViews)thViews.childNodes[0].nodeValue=t.views;
+  // Period options
   const p1=document.getElementById('opt-1');if(p1)p1.textContent=t.lastDay;
   const p7=document.getElementById('opt-7');if(p7)p7.textContent=t.last7;
   const p28=document.getElementById('opt-28');if(p28)p28.textContent=t.last28;
   const p90=document.getElementById('opt-90');if(p90)p90.textContent=t.last90;
+  // Sidebar conexoes — vincular button
+  const vinc=document.querySelector('[onclick="linkNewChannel()"]');
+  if(vinc){const nodes=[...vinc.childNodes];const textNode=nodes.find(n=>n.nodeType===3);if(textNode)textNode.nodeValue=' '+t.vincular;}
+  // Apply buttons in dropdowns
+  document.querySelectorAll('.apply-btn').forEach(b=>b.textContent=t.aplicar);
+  // Re-apply theme label
+  setTheme(localStorage.getItem('automata_theme')||'dark');
 }
 (()=>{const l=localStorage.getItem('automata_lang')||'pt';setLang(l);})();
 
