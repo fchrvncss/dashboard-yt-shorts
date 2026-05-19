@@ -1348,7 +1348,7 @@ function toggleSettLang(e){
   list.classList.toggle('open',!isOpen);
   if(arrow)arrow.classList.toggle('open',!isOpen);
 }
-(()=>{const t=localStorage.getItem('automata_theme')||'dark';setTheme(t);})();
+// NOTE: theme and lang are initialized at the bottom boot IIFE after LANGS is declared
 
 // ── I18N ──────────────────────────────────────────────────
 const LANGS={
