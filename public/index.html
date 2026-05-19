@@ -16,6 +16,12 @@
   --ease:cubic-bezier(0.16,1,0.3,1);
   --r:14px;
 }
+html[data-theme='light']{
+  --bg:#f5f5f5;--s1:#ffffff;--s2:#f0f0f0;--s3:#e8e8e8;
+  --border:#e0e0e0;--border2:#d0d0d0;
+  --accent:#ff4d00;--accent-dim:rgba(255,77,0,0.1);--accent-glow:rgba(255,77,0,0.08);
+  --text:#111;--t2:#555;--t3:#999;
+}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;}
 body{padding:24px;}
@@ -55,12 +61,18 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 /* ── TOTALS ── */
 .totals{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:20px;align-items:stretch;}
-.tcard-combined{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:grid;grid-template-columns:1fr 1fr;overflow:visible;transition:border-color 0.2s;grid-column:span 2;}
+.tcard-combined{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:grid;grid-template-columns:1fr 1fr;transition:border-color 0.2s;grid-column:span 2;overflow:hidden;}
 .tcard-combined.has-active{border-color:var(--accent);}
 .tcard-half{padding:20px 22px;cursor:pointer;user-select:none;transition:background 0.18s,transform 0.2s var(--ease);border-right:1px solid var(--border);}
 .tcard-half:last-child{border-right:none;flex:1;}
 .tcard-half:hover{background:rgba(255,77,0,0.04);transform:scale(1.02);}
 .tcard-half.active{background:var(--accent-glow);}
+
+/* sortable table headers */
+th{padding:12px 16px;text-align:left;font-size:0.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;}
+th:hover{color:var(--accent);}
+th.sort-asc::after{content:' ↑';color:var(--accent);}
+th.sort-desc::after{content:' ↓';color:var(--accent);}
 .tcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:border-color 0.2s,transform 0.2s var(--ease);cursor:pointer;user-select:none;}
 .tcard:hover{border-color:rgba(255,77,0,0.4);transform:translateY(-2px);}
 .tcard.active{border-color:var(--accent);background:var(--accent-glow);}
@@ -122,7 +134,6 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 /* ── TABLE ── */
 .table-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:0;}
 table{width:100%;border-collapse:collapse;}
-th{padding:12px 16px;text-align:left;font-size:0.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);font-weight:600;}
 td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;vertical-align:middle;}
 .channel-row{cursor:pointer;}
 .channel-row td{transition:background 0.12s,transform 0.18s var(--ease);}
@@ -345,7 +356,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
       <div class="filter-group">
         <div class="clear-x" id="clearX" onclick="resetFilters()">✕<span>Limpar</span></div>
         <div class="drop-wrap">
-          <button class="pill btn-canais" id="btnCanais" onclick="toggleDrop('dropCanais')">Canais ▾</button>
+          <button class="pill btn-canais" id="btnCanais" onclick="toggleDrop('dropCanais')">Filtrar Canais ▾</button>
           <div class="drop-menu" id="dropCanais"></div>
         </div>
       </div>
@@ -363,7 +374,27 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0zM1 13s-1 0-1-1 1-4 6-4h1c5 0 6 3 6 4s-1 1-1 1H1z"/></svg>
         Conexões
       </button>
-      <button class="pill" onclick="toggleSidebar(true)">⋮</button>
+      <div class="drop-wrap">
+        <button class="pill" onclick="toggleDrop('dropSettings')" title="Configurações">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 100 6.492 3.246 3.246 0 000-6.492zM5.754 8a2.246 2.246 0 114.492 0 2.246 2.246 0 01-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 01-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 01-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 01.52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 011.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 011.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 01.52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 01-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 01-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 002.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 001.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 00-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 00-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 00-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 001.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 003.06 4.474l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 002.692-1.115l.094-.319z"/></svg>
+        </button>
+        <div class="drop-menu" id="dropSettings" style="width:220px;right:0;left:auto">
+          <!-- Idioma -->
+          <div style="font-size:0.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:4px 11px 6px;font-weight:700">Idioma</div>
+          <div class="dopt" onclick="setLang('pt')" id="lang-pt">🇧🇷 Português</div>
+          <div class="dopt" onclick="setLang('en')" id="lang-en">🇺🇸 English</div>
+          <div class="dopt" onclick="setLang('es')" id="lang-es">🇪🇸 Español</div>
+          <div class="dopt" onclick="setLang('fr')" id="lang-fr">🇫🇷 Français</div>
+          <div class="dopt" onclick="setLang('de')" id="lang-de">🇩🇪 Deutsch</div>
+          <div class="dopt" onclick="setLang('ja')" id="lang-ja">🇯🇵 日本語</div>
+          <div class="dopt" onclick="setLang('ko')" id="lang-ko">🇰🇷 한국어</div>
+          <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+          <!-- Tema -->
+          <div style="font-size:0.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:4px 11px 6px;font-weight:700">Tema</div>
+          <div class="dopt" onclick="setTheme('dark')" id="theme-dark">🌙 Escuro</div>
+          <div class="dopt" onclick="setTheme('light')" id="theme-light">☀️ Claro</div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -413,7 +444,12 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Canal</th><th>Receita</th><th>Views</th><th>RPM</th></tr></thead>
+      <thead><tr>
+        <th onclick="sortTable('name')" id="th-name">Canal</th>
+        <th onclick="sortTable('rev')" id="th-rev">Receita</th>
+        <th onclick="sortTable('views')" id="th-views">Views</th>
+        <th onclick="sortTable('rpm')" id="th-rpm">RPM</th>
+      </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -574,38 +610,30 @@ async function fetchCh(ch,s,e){
 
 // UI
 function updateUI(){
-  const tbody=document.getElementById('tbody');tbody.innerHTML='';openId=null;
+  openId=null;
   let tR=0,tV=0,dD={},maxDate=null;
   if(activePeriod===1){
     let ad=[];Object.values(results).forEach(rows=>rows.forEach(r=>{if(r[1]>0)ad.push(r[0]);}));
     const y=new Date();y.setDate(y.getDate()-1);
     maxDate=ad.length?ad.sort().reverse()[0]:y.toISOString().split('T')[0];
     document.getElementById('lRev').innerText='Receita ('+maxDate.split('-').reverse().join('/')+')';
-  }else document.getElementById('lRev').innerText='Receita Total';
+  }else document.getElementById('lRev').innerText=(LANGS[currentLang]||LANGS.pt).receita;
+
+  tableDataCache=[];
   CHANNELS.forEach(ch=>{
     if(!sel.has(ch.id))return;
     let rows=results[ch.id]||[];
     if(activePeriod===1)rows=rows.filter(r=>r[0]===maxDate);
     const rS=rows.reduce((a,b)=>a+b[1],0),vS=rows.reduce((a,b)=>a+b[2],0),rpm=vS>0?(rS/vS)*1000:0;
     tR+=rS;tV+=vS;rows.forEach(r=>dD[r[0]]=(dD[r[0]]||0)+r[1]);
-    tbody.innerHTML+=`
-      <tr class="channel-row" onclick="toggleDetail('${ch.id}')">
-        <td><div class="chan-cell"><img src="${thumbs[ch.id]||''}" class="chan-av"><span>${ch.name}</span></div></td>
-        <td class="rev-cell">$${rS.toFixed(2)}</td>
-        <td>${vS.toLocaleString()}</td>
-        <td class="muted-cell">$${rpm.toFixed(2)}</td>
-      </tr>
-      <tr class="detail-tr" id="dtr-${ch.id}">
-        <td colspan="4">
-          <div class="detail-inner" id="din-${ch.id}">
-            <div class="detail-grid" id="dgrid-${ch.id}">
-              <div class="dblock" style="align-items:center;justify-content:center"><div style="color:var(--t3);font-size:0.72rem">Carregando...</div></div>
-              <div class="dblock"></div><div class="dblock"></div>
-            </div>
-          </div>
-        </td>
-      </tr>`;
+    tableDataCache.push({id:ch.id,name:ch.name,thumb:thumbs[ch.id]||'',rev:rS,views:vS,rpm});
   });
+
+  // Apply default sort (by revenue desc)
+  const thEl=document.getElementById('th-'+sortCol);
+  if(thEl){document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));thEl.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');}
+  renderTableSorted();
+
   totalRevenue=tR;
   document.getElementById('vRev').innerText=`$${tR.toFixed(2)}`;
   document.getElementById('vViews').innerText=tV.toLocaleString();
@@ -1254,6 +1282,94 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.pct-wrap'))
     document.querySelectorAll('.pct-drop').forEach(d=>d.classList.remove('open'));
 });
+
+// ── THEME ─────────────────────────────────────────────────
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
+  localStorage.setItem('automata_theme',t);
+  document.getElementById('theme-dark').classList.toggle('sel',t==='dark');
+  document.getElementById('theme-light').classList.toggle('sel',t==='light');
+}
+(()=>{const t=localStorage.getItem('automata_theme')||'dark';setTheme(t);})();
+
+// ── I18N ──────────────────────────────────────────────────
+const LANGS={
+  pt:{filterCanais:'Filtrar Canais',conexoes:'Conexões',receita:'Receita Total',parcial:'Receita Parcial',views:'Views Totais',rpm:'RPM Médio',canal:'Canal',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clique para gerenciar',lastDay:'Último Dia',last7:'Últimos 7 Dias',last28:'Últimos 28 Dias',last90:'Últimos 90 Dias'},
+  en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days'},
+  es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días'},
+  fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours'},
+  de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage'},
+  ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間'},
+  ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일'}
+};
+let currentLang='pt';
+function setLang(l){
+  currentLang=l;
+  localStorage.setItem('automata_lang',l);
+  const t=LANGS[l]||LANGS.pt;
+  // Highlight selected
+  document.querySelectorAll('[id^="lang-"]').forEach(el=>el.classList.remove('sel'));
+  const lEl=document.getElementById('lang-'+l);if(lEl)lEl.classList.add('sel');
+  // Update UI text
+  const btn=document.getElementById('btnCanais');if(btn)btn.textContent=t.filterCanais+' ▾';
+  const lRev=document.getElementById('lRev');if(lRev)lRev.textContent=t.receita;
+  document.querySelectorAll('.tcard-l').forEach((el,i)=>{
+    if(i===1){const b=document.getElementById('pctBadge');el.innerHTML=t.parcial+(b?` <span id="pctBadge">${b.textContent}</span>`:'');}
+    if(i===2)el.textContent=t.views;
+    if(i===3)el.textContent=t.rpm;
+  });
+  document.getElementById('th-name').childNodes[0].nodeValue=t.canal;
+  document.getElementById('th-rev').childNodes[0].nodeValue=t.receita;
+  document.getElementById('th-views').childNodes[0].nodeValue=t.views;
+  const p1=document.getElementById('opt-1');if(p1)p1.textContent=t.lastDay;
+  const p7=document.getElementById('opt-7');if(p7)p7.textContent=t.last7;
+  const p28=document.getElementById('opt-28');if(p28)p28.textContent=t.last28;
+  const p90=document.getElementById('opt-90');if(p90)p90.textContent=t.last90;
+}
+(()=>{const l=localStorage.getItem('automata_lang')||'pt';setLang(l);})();
+
+// ── SORT TABLE ────────────────────────────────────────────
+let sortCol='rev', sortDir='desc';
+let tableDataCache=[];
+
+function sortTable(col){
+  if(sortCol===col)sortDir=sortDir==='desc'?'asc':'desc';
+  else{sortCol=col;sortDir=col==='name'?'asc':'desc';}
+  document.querySelectorAll('thead th').forEach(th=>{th.classList.remove('sort-asc','sort-desc');});
+  const thEl=document.getElementById('th-'+col);
+  if(thEl)thEl.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
+  renderTableSorted();
+}
+
+function renderTableSorted(){
+  if(!tableDataCache.length)return;
+  const sorted=[...tableDataCache].sort((a,b)=>{
+    let va,vb;
+    if(sortCol==='name'){va=a.name.toLowerCase();vb=b.name.toLowerCase();return sortDir==='asc'?va.localeCompare(vb):vb.localeCompare(va);}
+    if(sortCol==='rev'){va=a.rev;vb=b.rev;}
+    else if(sortCol==='views'){va=a.views;vb=b.views;}
+    else if(sortCol==='rpm'){va=a.rpm;vb=b.rpm;}
+    return sortDir==='asc'?va-vb:vb-va;
+  });
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML=sorted.map(r=>`
+    <tr class="channel-row" onclick="toggleDetail('${r.id}')">
+      <td><div class="chan-cell"><img src="${r.thumb||''}" class="chan-av"><span>${r.name}</span></div></td>
+      <td class="rev-cell">$${r.rev.toFixed(2)}</td>
+      <td>${r.views.toLocaleString()}</td>
+      <td class="muted-cell">$${r.rpm.toFixed(2)}</td>
+    </tr>
+    <tr class="detail-tr" id="dtr-${r.id}">
+      <td colspan="4">
+        <div class="detail-inner" id="din-${r.id}">
+          <div class="detail-grid" id="dgrid-${r.id}">
+            <div class="dblock" style="align-items:center;justify-content:center"><div style="color:var(--t3);font-size:0.72rem">Carregando...</div></div>
+            <div class="dblock"></div><div class="dblock"></div>
+          </div>
+        </div>
+      </td>
+    </tr>`).join('');
+}
 </script>
 </body>
 </html>
