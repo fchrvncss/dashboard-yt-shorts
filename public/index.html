@@ -1328,11 +1328,12 @@ function setTheme(t){
   document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
   localStorage.setItem('automata_theme',t);
   const isLight=t==='light';
+  const lang=LANGS[currentLang]||LANGS.pt;
   const icon=document.getElementById('settThemeIcon');
   const label=document.getElementById('settThemeLabel');
   const toggle=document.getElementById('settThemeToggle');
   if(icon)icon.innerHTML=isLight?SVG_SUN:SVG_MOON;
-  if(label)label.textContent=isLight?(LANGS[currentLang]||LANGS.pt).themeLight:(LANGS[currentLang]||LANGS.pt).themeDark;
+  if(label)label.textContent=isLight?lang.themeLight:lang.themeDark;
   if(toggle)toggle.classList.toggle('on',isLight);
 }
 function toggleTheme(){
@@ -1384,10 +1385,13 @@ function setLang(l){
   const vViewsL=document.querySelector('#tc-views .tcard-l');if(vViewsL)vViewsL.textContent=t.views;
   const vRPML=document.querySelector('#tc-rpm .tcard-l');if(vRPML)vRPML.textContent=t.rpm;
   const gerir=document.querySelector('#tc-partial .tcard-sub');if(gerir)gerir.textContent=t.gerir;
-  // Table headers
-  const thName=document.getElementById('th-name');if(thName){const after=thName.querySelector('::after');thName.childNodes[0].nodeValue=t.canal;}
-  const thRev=document.getElementById('th-rev');if(thRev)thRev.childNodes[0].nodeValue=t.receita2;
-  const thViews=document.getElementById('th-views');if(thViews)thViews.childNodes[0].nodeValue=t.views;
+  // Table headers — safe update preserving sort arrows
+  const thName=document.getElementById('th-name');
+  if(thName){const tn=Array.from(thName.childNodes).find(n=>n.nodeType===3);if(tn)tn.nodeValue=t.canal+' ';}
+  const thRev=document.getElementById('th-rev');
+  if(thRev){const tn=Array.from(thRev.childNodes).find(n=>n.nodeType===3);if(tn)tn.nodeValue=t.receita2+' ';}
+  const thViews=document.getElementById('th-views');
+  if(thViews){const tn=Array.from(thViews.childNodes).find(n=>n.nodeType===3);if(tn)tn.nodeValue=t.views+' ';}
   // Period options
   const p1=document.getElementById('opt-1');if(p1)p1.textContent=t.lastDay;
   const p7=document.getElementById('opt-7');if(p7)p7.textContent=t.last7;
@@ -1398,10 +1402,25 @@ function setLang(l){
   if(vinc){const nodes=[...vinc.childNodes];const textNode=nodes.find(n=>n.nodeType===3);if(textNode)textNode.nodeValue=' '+t.vincular;}
   // Apply buttons in dropdowns
   document.querySelectorAll('.apply-btn').forEach(b=>b.textContent=t.aplicar);
-  // Re-apply theme label
-  setTheme(localStorage.getItem('automata_theme')||'dark');
+  // Re-apply theme label with new lang
+  const isLight=localStorage.getItem('automata_theme')==='light';
+  const themeIcon=document.getElementById('settThemeIcon');
+  const themeLabel=document.getElementById('settThemeLabel');
+  if(themeIcon)themeIcon.innerHTML=isLight?SVG_SUN:SVG_MOON;
+  if(themeLabel)themeLabel.textContent=isLight?t.themeLight:t.themeDark;
 }
-(()=>{const l=localStorage.getItem('automata_lang')||'pt';setLang(l);})();
+(()=>{
+  // Boot order: set lang first (sets currentLang), then theme
+  const l=localStorage.getItem('automata_lang')||'pt';
+  currentLang=l;
+  // highlight lang option
+  document.querySelectorAll('[id^="lang-"]').forEach(el=>el.classList.remove('sel'));
+  const lEl=document.getElementById('lang-'+l);if(lEl)lEl.classList.add('sel');
+  // then full setLang
+  setLang(l);
+  const t2=localStorage.getItem('automata_theme')||'dark';
+  setTheme(t2);
+})();
 
 // ── SORT TABLE ────────────────────────────────────────────
 let sortCol='rev', sortDir='desc';
