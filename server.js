@@ -33,12 +33,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'automata-secure-session',
   resave: false,
   saveUninitialized: false,
-  cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-    httpOnly: true,                          // JS do cliente não consegue ler o cookie
-    secure: process.env.NODE_ENV === 'production', // HTTPS em produção
-    sameSite: 'lax'
-  }
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 dias de sessão no navegador
 }));
 
 app.use(express.json());
@@ -50,12 +45,6 @@ function checkAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
-// Guard para rotas que precisam do banco — evita crash silencioso
-function checkDB(req, res, next) {
-  if (!db) return res.status(503).json({ error: 'Database unavailable' });
-  next();
-}
-
 app.post('/api/login', (req, res) => {
   if (req.body.password === DASHBOARD_PASSWORD) {
     req.session.isAuthenticated = true;
@@ -65,20 +54,12 @@ app.post('/api/login', (req, res) => {
   }
 });
 
-app.post('/api/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) return res.status(500).json({ error: 'Logout failed' });
-    res.clearCookie('connect.sid');
-    res.json({ ok: true });
-  });
-});
-
 app.get('/api/status', (req, res) => {
   res.json({ authenticated: !!req.session.isAuthenticated });
 });
 
 // --- AUTH GOOGLE ---
-app.get('/auth/:slot', checkAuth, checkDB, (req, res) => {
+app.get('/auth/:slot', checkAuth, (req, res) => {
   const slot = req.params.slot;
   const scopes = [
     'https://www.googleapis.com/auth/youtube.readonly',
@@ -109,6 +90,7 @@ app.get('/callback', async (req, res) => {
     });
     const userInfo = await userRes.json();
 
+    // SALVA NO MONGODB (Se já existir, atualiza. Se não, cria.)
     await db.collection('accounts').updateOne(
       { slot: slot },
       { 
@@ -124,20 +106,22 @@ app.get('/callback', async (req, res) => {
 
     res.redirect('/?connected=' + slot);
   } catch (err) {
-    console.error('Erro no callback OAuth:', err.message);
     res.redirect('/?error=auth_failed');
   }
 });
 
 // --- API DATA ---
+
 async function getValidToken(slot) {
   const acc = await db.collection('accounts').findOne({ slot: slot });
   if (!acc) return null;
 
+  // Se o token ainda é válido (com margem de 5 min)
   if (acc.accessToken && acc.expiresAt > Date.now() + 300000) {
     return acc.accessToken;
   }
 
+  // Se expirou, usa o Refresh Token
   if (!acc.refreshToken) return null;
   try {
     const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -152,58 +136,11 @@ async function getValidToken(slot) {
     
     await db.collection('accounts').updateOne(
       { slot: slot },
-      { $set: { accessToken: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) } }
-    );
-    return data.access_token;
-  } catch (e) { console.error('Erro ao renovar token:', e.message); return null; }
-}
-
-app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
-  try {
-    const docs = await db.collection('accounts').find().toArray();
-    const accounts = {};
-    docs.forEach(doc => {
-      accounts[doc.slot] = { email: doc.email, connected: true };
-    });
-    res.json(accounts);
-  } catch (e) { console.error('Erro em /api/accounts:', e.message); res.json({}); }
-});
-
-app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.query.ids}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await r.json();
-      if (data.items) {
-        const thumbs = {};
-        data.items.forEach(i => thumbs[i.id] = i.snippet.thumbnails.default.url);
-        return res.json({ ok: true, thumbs });
+      { 
+        $set: { 
+          accessToken: data.access_token, 
+          expiresAt: Date.now() + (data.expires_in * 1000) 
+        } 
       }
-    } catch (e) { console.error('Erro ao buscar thumbs:', e.message); }
-  }
-  res.json({ ok: false });
-});
-
-app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
-  const { channelId, startDate, endDate } = req.query;
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=estimatedRevenue,views&dimensions=day`;
-      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) continue;
-      const data = await r.json();
-      return res.json({ ok: true, rows: data.rows || [] });
-    } catch (e) { console.error('Erro em /api/analytics:', e.message); }
-  }
-  res.json({ ok: false });
-});
-
-app.listen(PORT, () => console.log(`Server ON: ${PORT}`));
+    );
+    return data.access_token
