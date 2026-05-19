@@ -49,8 +49,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .dopt{display:flex;align-items:center;gap:10px;padding:10px 11px;cursor:pointer;border-radius:10px;font-size:0.82rem;color:var(--t2);transition:background 0.15s,color 0.15s,transform 0.2s var(--ease);}
 .dopt:hover{background:var(--accent-dim);color:#ff9d66;transform:scale(1.02);}
 .dopt.sel{color:var(--accent);font-weight:700;background:var(--accent-glow);}
-.apply-btn{background:transparent;color:var(--accent);border:1px solid var(--accent);padding:10px;border-radius:10px;font-weight:700;font-size:0.72rem;cursor:pointer;margin-top:8px;position:sticky;bottom:0;width:100%;text-transform:uppercase;transition:0.2s;}
-.apply-btn:hover{background:var(--accent);color:#000;transform:scale(1.02);}
+.apply-btn{background:var(--accent);color:#000;border:none;padding:10px;border-radius:10px;font-weight:700;font-size:0.72rem;cursor:pointer;margin-top:8px;position:sticky;bottom:0;width:100%;text-transform:uppercase;transition:0.2s;}
+.apply-btn:hover{background:#ff6a2b;transform:scale(1.02);}
 .av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#111;}
 
 /* ── TOTALS ── */
@@ -279,7 +279,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- POPUP -->
 <div class="popup-overlay" id="popupOverlay" onclick="handleOverlayClick(event)">
@@ -359,6 +359,10 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
           <div id="monthOpts"></div>
         </div>
       </div>
+      <button class="pill" onclick="toggleConexoes(true)" style="border-color:rgba(255,77,0,0.4)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0zM1 13s-1 0-1-1 1-4 6-4h1c5 0 6 3 6 4s-1 1-1 1H1z"/></svg>
+        Conexões
+      </button>
       <button class="pill" onclick="toggleSidebar(true)">⋮</button>
     </div>
   </header>
@@ -415,13 +419,26 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
   </div>
 </div>
 
-<!-- SIDEBAR -->
+<!-- SIDEBAR (3 pontinhos — futuras opções) -->
 <div class="sidebar" id="sidebar">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-    <span style="font-size:0.72rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700">Conexões</span>
+    <span style="font-size:0.72rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700">Menu</span>
     <button class="pill" onclick="toggleSidebar(false)" style="border-color:var(--accent);color:var(--accent);padding:0 10px;height:28px;font-size:0.72rem">✕</button>
   </div>
   <div id="sidebarContent"></div>
+</div>
+
+<!-- SIDEBAR CONEXÕES -->
+<div class="sidebar" id="sidebarConexoes">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <span style="font-size:0.72rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700">Conexões</span>
+    <button class="pill" onclick="toggleConexoes(false)" style="border-color:var(--accent);color:var(--accent);padding:0 10px;height:28px;font-size:0.72rem">✕</button>
+  </div>
+  <div id="conexoesContent"></div>
+  <button onclick="linkNewChannel()" style="width:100%;margin-top:14px;padding:11px;border-radius:12px;background:var(--accent);color:#000;border:none;font-weight:700;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 01.5.5V7.5H14a.5.5 0 010 1H8.5V14a.5.5 0 01-1 0V8.5H2a.5.5 0 010-1H7.5V1.5A.5.5 0 018 1z"/></svg>
+    Vincular Canal
+  </button>
 </div>
 
 <script>
@@ -853,15 +870,22 @@ function updatePNav(){
 // Scroll do popup funciona mesmo com cursor fora
 document.addEventListener('wheel',e=>{
   const overlay=document.getElementById('popupOverlay');
-  if(!overlay.classList.contains('open'))return;
-  e.preventDefault();
-  const body=document.getElementById('popupBody');
-  const detail=document.getElementById('popupDetail');
-  // Scrolla o painel de detalhe se estiver aberto, senão scrolla a lista
-  if(detail.classList.contains('open')){
-    detail.querySelector('.popup-detail-inner').scrollTop+=e.deltaY;
-  } else {
-    body.scrollTop+=e.deltaY;
+  if(overlay.classList.contains('open')){
+    e.preventDefault();
+    const body=document.getElementById('popupBody');
+    const detail=document.getElementById('popupDetail');
+    if(detail.classList.contains('open')){
+      detail.querySelector('.popup-detail-inner').scrollTop+=e.deltaY;
+    } else {
+      body.scrollTop+=e.deltaY;
+    }
+    return;
+  }
+  // Scroll do dropdown de canais quando aberto
+  const dropCanais=document.getElementById('dropCanais');
+  if(dropCanais&&dropCanais.classList.contains('open')){
+    e.preventDefault();
+    dropCanais.scrollTop+=e.deltaY;
   }
 },{passive:false});
 let ppActiveIdx=null, ppCompareMode=false;
@@ -976,8 +1000,14 @@ function toggleSidebar(open){
   if(open){s.classList.add('open');o.classList.add('active');document.body.classList.add('no-scroll');}
   else{s.classList.remove('open');o.classList.remove('active');document.body.classList.remove('no-scroll');}
 }
-function renderSidebar(){
-  const c=document.getElementById('sidebarContent');c.innerHTML='';
+function toggleConexoes(open){
+  const s=document.getElementById('sidebarConexoes'),o=document.getElementById('sidebarOverlay');
+  if(open){renderConexoes();s.classList.add('open');o.classList.add('active');document.body.classList.add('no-scroll');}
+  else{s.classList.remove('open');o.classList.remove('active');document.body.classList.remove('no-scroll');}
+}
+function renderConexoes(){
+  const c=document.getElementById('conexoesContent');c.innerHTML='';
+  if(!CHANNELS.length){c.innerHTML='<div style="color:var(--t3);font-size:0.78rem;text-align:center;padding:20px">Nenhum canal vinculado</div>';return;}
   CHANNELS.forEach(ch=>{
     const isC=!!accounts[ch.id];
     const card=document.createElement('div');card.className='side-card';
@@ -985,6 +1015,21 @@ function renderSidebar(){
     card.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><img src="${thumbs[ch.id]||''}" class="av"><span style="font-size:0.82rem;font-weight:600">${ch.name}</span></div><div class="sball${isC?' on':''}"></div>`;
     c.appendChild(card);
   });
+}
+function renderSidebar(){
+  // Sidebar dos 3 pontinhos — reservado para futuras opções
+  const c=document.getElementById('sidebarContent');
+  c.innerHTML='<div style="color:var(--t3);font-size:0.75rem;text-align:center;padding:20px">Em breve</div>';
+}
+// Redireciona overlay click para fechar qualquer sidebar aberta
+document.getElementById('sidebarOverlay').addEventListener('click',()=>{
+  toggleSidebar(false);
+  toggleConexoes(false);
+});
+function linkNewChannel(){
+  // Gera próximo slot disponível e redireciona para auth
+  const nextSlot=String(CHANNELS.length+1);
+  window.location.href=`/auth/${nextSlot}`;
 }
 
 // MAIN CHART
