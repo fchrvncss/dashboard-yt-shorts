@@ -202,6 +202,16 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .expand-btn{margin-top:auto;padding-top:10px;width:100%;padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
 .expand-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);}
 
+/* ── DUAL VIDEO BLOCK (Últimos Vídeos + Melhor Performance alinhados) ── */
+.vid-dual-block{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-radius:0;}
+.vid-dual-cell{background:var(--s1);padding:14px;display:flex;flex-direction:column;}
+.vid-pair-item{background:var(--s1);display:flex;gap:9px;align-items:center;padding:8px 12px;cursor:pointer;border:1px solid transparent;transition:background 0.15s,border-color 0.15s;min-height:58px;}
+.vid-pair-item:hover{background:var(--accent-glow);border-color:rgba(255,77,0,0.12);}
+.vid-pair-item.empty{cursor:default;pointer-events:none;}
+.vid-pair-item.empty:hover{background:var(--s1);border-color:transparent;}
+.vid-foot-cell{background:var(--s1);padding:7px 12px;}
+@media(max-width:900px){.vid-dual-block{grid-template-columns:1fr;}}
+
 /* ── TOP VIDEOS BLOCK — lista ── */
 .top-list{display:flex;flex-direction:column;gap:4px;flex:1;}
 .tli{display:flex;gap:9px;align-items:center;padding:7px 8px;border-radius:9px;cursor:pointer;transition:background 0.15s,transform 0.18s var(--ease);border:1px solid transparent;}
@@ -594,18 +604,11 @@ const N=n=>{if(n==null)return'—';n=+n;if(isNaN(n))return'—';if(n>=1e6)return
 const D=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'short'});};
 const DL=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'long',year:'numeric'});};
 
-// AUTH — senha nunca é salva em texto puro; armazenamos apenas o hash SHA-256
-async function hashPwd(pwd){
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 async function login(){
   const pwd=document.getElementById('pwInput').value;
   const keep=document.getElementById('keepMe').checked;
-  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
+  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd,remember:keep})});
   if(r.ok){
-    if(keep){const h=await hashPwd(pwd);localStorage.setItem('automata_pwh',h);}
-    else localStorage.removeItem('automata_pwh');
     document.getElementById('authOverlay').classList.add('hidden');
     document.getElementById('app').style.display='block';
     init();
@@ -806,16 +809,44 @@ function renderDetail(chId){
   const grid=document.getElementById('dgrid-'+chId);if(!grid)return;
   const{recent,top,rows,period,metric,recentTotal}=dd[chId];
   const t=T();
-  const feat=recent[0]||null,side=recent.slice(1,6);
+  const feat=recent[0]||null;
+  const side=recent.slice(1,7);   // até 6 itens na lista recente
+  const topItems=top.slice(0,6);  // até 6 itens na lista de performance
   const pl={7:T().last7,28:T().last28,90:T().last90};
+  const maxItems=Math.max(side.length,topItems.length);
+
+  // Gera um item de vídeo para a grade dual (isRecent=true mostra data, false mostra receita)
+  const vidItem=(v,isRecent)=>v
+    ?`<div class="vid-pair-item" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
+        <img class="tli-thumb" src="${v.thumb||''}" loading="lazy">
+        <div class="tli-info">
+          <div class="tli-title">${v.title||''}</div>
+          <div class="tli-stats">
+            ${isRecent
+              ?`<div class="sstat">${I.cal}<span>${D(v.publishedAt)}</span></div>
+                <div class="sstat">${I.eye}<span>${N(v.views)}</span></div>
+                <div class="sstat">${I.like}<span>${N(v.likes)}</span></div>
+                <div class="sstat">${I.cmt}<span>${N(v.comments)}</span></div>`
+              :`<div class="sstat">${I.eye}<span>${N(v.views)}</span></div>
+                <div class="sstat">${I.like}<span>${N(v.likes)}</span></div>
+                <div class="sstat">${I.cmt}<span>${N(v.comments)}</span></div>
+                <div class="sstat">${I.dol}<span>$${Number(v.revenue||0).toFixed(2)}</span></div>`}
+          </div>
+        </div>
+      </div>`
+    :`<div class="vid-pair-item empty"></div>`;
+
+  let itemRows='';
+  for(let i=0;i<maxItems;i++) itemRows+=vidItem(side[i],true)+vidItem(topItems[i],false);
 
   grid.innerHTML=`
-    <!-- COL 1: Últimos vídeos -->
-    <div class="dblock">
-      <div class="dblock-title">${t.ultimosVideos}</div>
-      <div class="feat-wrap">
-        <div class="feat-left">
-          ${feat?`
+    <!-- COL 1+2: Últimos vídeos + Melhor performance (alinhados) -->
+    <div class="vid-dual-block">
+
+      <!-- Cabeçalho: vídeo destaque (esq) | título melhor perf (dir) -->
+      <div class="vid-dual-cell">
+        <div class="dblock-title">${t.ultimosVideos}</div>
+        ${feat?`
           <div class="feat-thumb-wrap" onclick="window.open('https://youtube.com/watch?v=${feat.id}','_blank')">
             <img src="${feat.thumb||''}" loading="lazy">
             <div class="feat-new-badge">novo</div>
@@ -828,32 +859,23 @@ function renderDetail(chId){
             <div class="fstat"><div class="fstat-l">Data</div><div class="fstat-v" style="font-size:0.75rem">${D(feat.publishedAt)}</div></div>
             <div class="fstat"><div class="fstat-l">${t.metReceita}</div><div class="fstat-v dim" id="frev-${chId}">...</div></div>
             <div class="fstat"><div class="fstat-l">${t.metRetencao}</div><div class="fstat-v dim" id="fret-${chId}">...</div></div>
-          </div>`:`<div style="color:var(--t3);font-size:0.72rem">${t.semVideos}</div>`}
-        </div>
-        <div class="side-list">
-          ${side.map(v=>`
-          <div class="sli" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
-            <img class="sli-thumb" src="${v.thumb||''}" loading="lazy">
-            <div class="sli-info">
-              <div class="sli-title">${v.title||''}</div>
-              <div class="sli-stats">
-                <div class="sstat">${I.cal}<span>${D(v.publishedAt)}</span></div>
-                <div class="sstat">${I.eye}<span>${N(v.views)}</span></div>
-                <div class="sstat">${I.like}<span>${N(v.likes)}</span></div>
-                <div class="sstat">${I.cmt}<span>${N(v.comments)}</span></div>
-              </div>
-            </div>
-          </div>`).join('')}
-        </div>
+          </div>
+        `:`<div style="color:var(--t3);font-size:0.72rem">${t.semVideos}</div>`}
       </div>
-      <button class="expand-btn" onclick="openPopup('recent','${chId}')">${t.verTodos} ${recentTotal>0?'(~'+recentTotal+')':''}</button>
-    </div>
+      <div class="vid-dual-cell" style="justify-content:flex-start">
+        <div class="dblock-title">${t.melhorPerf}</div>
+      </div>
 
-    <!-- COL 2: Melhor performance -->
-    <div class="dblock">
-      <div class="dblock-title">${t.melhorPerf}</div>
-      <div id="tg-${chId}">${renderTopGrid(top.slice(0,6))}</div>
-      ${top.length>6?`<button class="expand-btn" onclick="openPopup('top','${chId}')">${t.verTodos}</button>`:''}
+      <!-- Linhas de itens alinhadas entre as duas listas -->
+      ${itemRows}
+
+      <!-- Rodapé: botões "ver todos" -->
+      <div class="vid-foot-cell">
+        <button class="expand-btn" style="margin-top:0" onclick="openPopup('recent','${chId}')">${t.verTodos} ${recentTotal>0?'(~'+recentTotal+')':''}</button>
+      </div>
+      <div class="vid-foot-cell">
+        ${top.length>0?`<button class="expand-btn" style="margin-top:0" onclick="openPopup('top','${chId}')">${t.verTodos}</button>`:''}
+      </div>
     </div>
 
     <!-- COL 3: Gráfico -->
