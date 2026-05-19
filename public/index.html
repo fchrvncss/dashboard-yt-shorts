@@ -50,7 +50,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 /* ── DROPDOWNS ── */
 .drop-wrap{position:relative;}
-.drop-menu{position:absolute;top:42px;right:0;background:#0c0c0c;border:1px solid var(--accent);border-radius:18px;width:250px;padding:10px;display:none;z-index:200;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.95);max-height:380px;overflow-y:auto;scrollbar-width:none;}
+.drop-menu{position:absolute;top:42px;right:0;background:var(--s1);border:1px solid var(--accent);border-radius:18px;width:250px;padding:10px;display:none;z-index:200;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.95);max-height:380px;overflow-y:auto;scrollbar-width:none;}
 .drop-menu.open{display:flex;}
 .dopt{display:flex;align-items:center;gap:10px;padding:10px 11px;cursor:pointer;border-radius:10px;font-size:0.82rem;color:var(--t2);transition:background 0.15s,color 0.15s,transform 0.2s var(--ease);}
 .dopt:hover{background:var(--accent-dim);color:#ff9d66;transform:scale(1.02);}
@@ -82,7 +82,7 @@ th.sort-desc::after{content:' ↓';color:var(--accent);}
 
 /* PARTIAL DROPDOWN */
 .pct-wrap{position:relative;display:flex;flex-direction:column;}
-.pct-drop{position:absolute;top:calc(100% + 8px);left:0;width:320px;background:#0a0a0a;border:1px solid var(--accent);border-radius:16px;padding:14px;z-index:400;flex-direction:column;gap:0;box-shadow:0 12px 40px rgba(0,0,0,0.95);display:none;max-height:360px;overflow:hidden;}
+.pct-drop{position:absolute;top:calc(100% + 8px);left:0;width:320px;background:var(--s1);border:1px solid var(--accent);border-radius:16px;padding:14px;z-index:400;flex-direction:column;gap:0;box-shadow:0 12px 40px rgba(0,0,0,0.95);display:none;max-height:360px;overflow:hidden;}
 .pct-drop.open{display:flex;}
 .pct-drop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-shrink:0;}
 .pct-title{font-size:0.72rem;font-weight:800;color:var(--text);}
@@ -283,7 +283,22 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .sball{width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);}
 .sball.on{background:var(--accent);}
 
-@media(max-width:1100px){.detail-grid{grid-template-columns:1fr 1fr;}.chart-blk{grid-column:1/-1;}.chart-canvas-box{min-height:160px;}}
+/* ── SETTINGS DROPDOWN ── */
+.sett-row{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:10px;cursor:pointer;transition:background 0.15s,transform 0.18s var(--ease);}
+.sett-row:hover{background:var(--accent-dim);transform:scale(1.02);}
+.sett-icon{font-size:0.9rem;display:flex;align-items:center;color:var(--accent);}
+.sett-label{flex:1;font-size:0.82rem;color:var(--text);font-weight:500;}
+.sett-arrow{font-size:0.65rem;color:var(--t3);transition:transform 0.22s var(--ease);}
+.sett-arrow.open{transform:rotate(180deg);}
+/* lang list — collapsible */
+.sett-lang-list{overflow:hidden;max-height:0;transition:max-height 0.32s var(--ease);}
+.sett-lang-list.open{max-height:180px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.sett-lang-opt{padding:8px 11px 8px 32px!important;font-size:0.78rem!important;}
+/* toggle switch */
+.sett-toggle{width:32px;height:18px;background:var(--border);border-radius:50px;position:relative;transition:background 0.2s;flex-shrink:0;}
+.sett-toggle.on{background:var(--accent);}
+.sett-toggle span{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left 0.2s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.sett-toggle.on span{left:16px;}{.detail-grid{grid-template-columns:1fr 1fr;}.chart-blk{grid-column:1/-1;}.chart-canvas-box{min-height:160px;}}
 @media(max-width:900px){.totals{grid-template-columns:1fr;}.detail-grid{grid-template-columns:1fr;}.feat-wrap{flex-direction:column;}.top-grid{grid-template-columns:1fr;}.popup-list{width:100%!important;max-width:100%;}.popup-detail.open{width:100%!important;border-left:none;border-top:1px solid var(--border);}.popup-detail-inner{width:100%;}.popup-box{flex-direction:column;max-height:92vh;width:95vw;}}
 @media(max-width:768px){body{padding:10px;}.hcontrols{width:100%;justify-content:center;}.drop-menu{position:fixed;bottom:20px;top:auto;left:50%;right:auto;transform:translateX(-50%);width:94vw;max-width:340px;z-index:1001;}}
 </style>
@@ -378,21 +393,35 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
         <button class="pill" onclick="toggleDrop('dropSettings')" title="Configurações">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 100 6.492 3.246 3.246 0 000-6.492zM5.754 8a2.246 2.246 0 114.492 0 2.246 2.246 0 01-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 01-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 01-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 01.52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 011.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 011.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 01.52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 01-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 01-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 002.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 001.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 00-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 00-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 00-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 001.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 003.06 4.474l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 002.692-1.115l.094-.319z"/></svg>
         </button>
-        <div class="drop-menu" id="dropSettings" style="width:220px;right:0;left:auto">
-          <!-- Idioma -->
-          <div style="font-size:0.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:4px 11px 6px;font-weight:700">Idioma</div>
-          <div class="dopt" onclick="setLang('pt')" id="lang-pt">🇧🇷 Português</div>
-          <div class="dopt" onclick="setLang('en')" id="lang-en">🇺🇸 English</div>
-          <div class="dopt" onclick="setLang('es')" id="lang-es">🇪🇸 Español</div>
-          <div class="dopt" onclick="setLang('fr')" id="lang-fr">🇫🇷 Français</div>
-          <div class="dopt" onclick="setLang('de')" id="lang-de">🇩🇪 Deutsch</div>
-          <div class="dopt" onclick="setLang('ja')" id="lang-ja">🇯🇵 日本語</div>
-          <div class="dopt" onclick="setLang('ko')" id="lang-ko">🇰🇷 한국어</div>
+        <div class="drop-menu" id="dropSettings" style="width:200px;right:0;left:auto;padding:8px;">
+
+          <!-- Idioma — row que expande -->
+          <div class="sett-row" id="settLangRow" onclick="toggleSettLang(event)">
+            <span class="sett-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h12M9 3v2m4 16l-4-8-4 8m2-3.5h4"/><path d="M15 5l7 14M18.5 12H22"/></svg>
+            </span>
+            <span class="sett-label" id="settLangLabel">Idioma</span>
+            <span class="sett-arrow" id="settLangArrow">▾</span>
+          </div>
+          <div class="sett-lang-list" id="settLangList">
+            <div class="sett-lang-opt dopt" onclick="setLang('pt');event.stopPropagation()" id="lang-pt">🇧🇷 Português</div>
+            <div class="sett-lang-opt dopt" onclick="setLang('en');event.stopPropagation()" id="lang-en">🇺🇸 English</div>
+            <div class="sett-lang-opt dopt" onclick="setLang('es');event.stopPropagation()" id="lang-es">🇪🇸 Español</div>
+            <div class="sett-lang-opt dopt" onclick="setLang('fr');event.stopPropagation()" id="lang-fr">🇫🇷 Français</div>
+            <div class="sett-lang-opt dopt" onclick="setLang('de');event.stopPropagation()" id="lang-de">🇩🇪 Deutsch</div>
+            <div class="sett-lang-opt dopt" onclick="setLang('ja');event.stopPropagation()" id="lang-ja">🇯🇵 日本語</div>
+            <div class="sett-lang-opt dopt" onclick="setLang('ko');event.stopPropagation()" id="lang-ko">🇰🇷 한국어</div>
+          </div>
+
           <div style="border-top:1px solid var(--border);margin:6px 0"></div>
-          <!-- Tema -->
-          <div style="font-size:0.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:4px 11px 6px;font-weight:700">Tema</div>
-          <div class="dopt" onclick="setTheme('dark')" id="theme-dark">🌙 Escuro</div>
-          <div class="dopt" onclick="setTheme('light')" id="theme-light">☀️ Claro</div>
+
+          <!-- Tema — toggle row -->
+          <div class="sett-row" id="settThemeRow" onclick="toggleTheme()">
+            <span class="sett-icon" id="settThemeIcon">🌙</span>
+            <span class="sett-label" id="settThemeLabel">Escuro</span>
+            <span class="sett-toggle" id="settThemeToggle"><span></span></span>
+          </div>
+
         </div>
       </div>
     </div>
@@ -1287,8 +1316,30 @@ document.addEventListener('click',e=>{
 function setTheme(t){
   document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
   localStorage.setItem('automata_theme',t);
-  document.getElementById('theme-dark').classList.toggle('sel',t==='dark');
-  document.getElementById('theme-light').classList.toggle('sel',t==='light');
+  const isLight=t==='light';
+  const icon=document.getElementById('settThemeIcon');
+  const label=document.getElementById('settThemeLabel');
+  const toggle=document.getElementById('settThemeToggle');
+  if(icon)icon.textContent=isLight?'☀️':'🌙';
+  if(label)label.textContent=isLight?'Claro':'Escuro';
+  if(toggle)toggle.classList.toggle('on',isLight);
+  // Fix drop-menu background for light mode
+  document.querySelectorAll('.drop-menu,.pct-drop').forEach(el=>{
+    el.style.background=isLight?'#fff':'';
+    el.style.boxShadow=isLight?'0 12px 40px rgba(0,0,0,0.15)':'';
+  });
+}
+function toggleTheme(){
+  const cur=localStorage.getItem('automata_theme')||'dark';
+  setTheme(cur==='dark'?'light':'dark');
+}
+function toggleSettLang(e){
+  e.stopPropagation();
+  const list=document.getElementById('settLangList');
+  const arrow=document.getElementById('settLangArrow');
+  const isOpen=list.classList.contains('open');
+  list.classList.toggle('open',!isOpen);
+  if(arrow)arrow.classList.toggle('open',!isOpen);
 }
 (()=>{const t=localStorage.getItem('automata_theme')||'dark';setTheme(t);})();
 
