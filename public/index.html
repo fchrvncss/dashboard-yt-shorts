@@ -59,7 +59,23 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .apply-btn:hover{background:#ff6a2b;transform:scale(1.02);}
 .av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#111;}
 
-/* ── TOTALS ── */
+.drop-section-label{font-size:0.56rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;padding:6px 11px 3px;user-select:none;}
+.drop-divider{border-top:1px solid var(--border);margin:5px 0;}
+/* Calendar modal */
+.cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:600;display:flex;align-items:center;justify-content:center;visibility:hidden;pointer-events:none;transition:opacity 0.25s;}
+.cal-overlay.open{visibility:visible;pointer-events:auto;}
+.cal-box{background:var(--s1);border:1px solid var(--accent);border-radius:18px;padding:22px;width:320px;transform:scale(0.95) translateY(10px);opacity:0;transition:transform 0.28s var(--ease),opacity 0.22s ease;}
+.cal-overlay.open .cal-box{transform:scale(1) translateY(0);opacity:1;}
+.cal-title{font-size:0.75rem;font-weight:800;margin-bottom:14px;color:var(--text);}
+.cal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.cal-label{font-size:0.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;}
+.cal-input{width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.82rem;outline:none;transition:border-color 0.18s;font-family:'Inter',sans-serif;}
+.cal-input:focus{border-color:var(--accent);}
+.cal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cal-apply{padding:9px;border-radius:9px;background:var(--accent);color:#000;border:none;font-weight:800;font-size:0.76rem;cursor:pointer;transition:opacity 0.15s;}
+.cal-apply:hover{opacity:0.85;}
+.cal-cancel{padding:9px;border-radius:9px;background:transparent;border:1px solid var(--border);color:var(--t3);font-weight:700;font-size:0.76rem;cursor:pointer;transition:all 0.15s;}
+.cal-cancel:hover{border-color:var(--accent);color:var(--accent);}
 .totals{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:20px;align-items:stretch;position:relative;}
 .tcard-combined{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:grid;grid-template-columns:1fr 1fr;transition:border-color 0.2s;grid-column:span 2;overflow:hidden;}
 .tcard-combined.has-active{border-color:var(--accent);}
@@ -364,6 +380,27 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 </div>
 
 <!-- APP -->
+<!-- CALENDAR MODAL -->
+<div class="cal-overlay" id="calOverlay" onclick="handleCalOverlay(event)">
+  <div class="cal-box">
+    <div class="cal-title" id="calTitle">Personalizado</div>
+    <div class="cal-row">
+      <div>
+        <div class="cal-label" id="calLblFrom">De</div>
+        <input type="date" class="cal-input" id="calFrom">
+      </div>
+      <div>
+        <div class="cal-label" id="calLblTo">Até</div>
+        <input type="date" class="cal-input" id="calTo">
+      </div>
+    </div>
+    <div class="cal-btns">
+      <button class="cal-cancel" onclick="closeCalModal()" id="calCancelBtn">Cancelar</button>
+      <button class="cal-apply" onclick="applyCustomDate()" id="calApplyBtn">Aplicar</button>
+    </div>
+  </div>
+</div>
+
 <div id="app" style="display:none">
   <header>
     <div class="logo">
@@ -380,12 +417,20 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
       </div>
       <div class="drop-wrap">
         <button class="pill" id="btnPeriod" onclick="toggleDrop('dropDates')">28 Dias ▾</button>
-        <div class="drop-menu" id="dropDates">
-          <div class="dopt" id="opt-1" onclick="setPreset(1)">Último Dia</div>
-          <div class="dopt" id="opt-7" onclick="setPreset(7)">Últimos 7 Dias</div>
+        <div class="drop-menu" id="dropDates" style="width:180px;">
+          <!-- Dias -->
+          <div class="drop-section-label" id="lblDays">Dias</div>
           <div class="dopt sel" id="opt-28" onclick="setPreset(28)">Últimos 28 Dias</div>
+          <div class="dopt" id="opt-7" onclick="setPreset(7)">Últimos 7 Dias</div>
           <div class="dopt" id="opt-90" onclick="setPreset(90)">Últimos 90 Dias</div>
+          <div class="drop-divider"></div>
+          <!-- Meses -->
+          <div class="drop-section-label" id="lblMonths">Meses</div>
           <div id="monthOpts"></div>
+          <div class="drop-divider"></div>
+          <!-- Outras opções -->
+          <div class="dopt" id="opt-max" onclick="setMax()">Max</div>
+          <div class="dopt" id="opt-custom" onclick="openCustomDate()">Personalizado</div>
         </div>
       </div>
       <button class="pill" onclick="toggleConexoes(true)" style="border-color:rgba(255,77,0,0.4)">
@@ -638,7 +683,37 @@ function renderMonths(){
     c.appendChild(o);
   }
 }
-function setPreset(d){activePeriod=d;hlPeriod('opt-'+d);const tl=T();document.getElementById('btnPeriod').innerText=(d===1?tl.lastDay:tl['last'+d]||d+' Dias')+' ▾';fetchAll();}
+function setMax(){
+  activePeriod='max';
+  hlPeriod('opt-max');
+  document.getElementById('btnPeriod').innerText=(T().periodMax||'Max')+' ▾';
+  document.getElementById('dropDates').classList.remove('open');
+  // Fetch from 2020-01-01 to today
+  const start='2020-01-01';
+  const end=new Date().toISOString().split('T')[0];
+  fetchAll(start,end);
+}
+function openCustomDate(){
+  const today=new Date().toISOString().split('T')[0];
+  const d=new Date();d.setDate(d.getDate()-28);
+  document.getElementById('calFrom').value=d.toISOString().split('T')[0];
+  document.getElementById('calTo').value=today;
+  document.getElementById('dropDates').classList.remove('open');
+  document.getElementById('calOverlay').classList.add('open');
+}
+function closeCalModal(){document.getElementById('calOverlay').classList.remove('open');}
+function handleCalOverlay(e){if(e.target===document.getElementById('calOverlay'))closeCalModal();}
+function applyCustomDate(){
+  const f=document.getElementById('calFrom').value;
+  const t=document.getElementById('calTo').value;
+  if(!f||!t||f>t)return;
+  activePeriod='custom';
+  closeCalModal();
+  hlPeriod('opt-custom');
+  document.getElementById('btnPeriod').innerText=(T().periodCustom||'Personalizado')+' ▾';
+  fetchAll(f,t);
+}
+function setPreset(d){activePeriod=d;hlPeriod('opt-'+d);const tl=T();document.getElementById('btnPeriod').innerText=(tl['last'+d]||d+' Dias')+' ▾';fetchAll();}
 function hlPeriod(id){document.querySelectorAll('.drop-menu .dopt').forEach(e=>e.classList.remove('sel'));const t=document.getElementById(id);if(t)t.classList.add('sel');}
 
 // FETCH
@@ -1260,8 +1335,14 @@ function initMainChart(){
       {data:[],borderColor:'#ff4d00',tension:0.4,fill:true,
         backgroundColor:c=>{const g=c.chart.ctx.createLinearGradient(0,0,0,c.chart.height);g.addColorStop(0,'rgba(255,77,0,0.25)');g.addColorStop(1,'rgba(255,77,0,0)');return g;},
         borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#ff4d00',pointBorderColor:'#ff4d00',pointBorderWidth:0,pointHoverRadius:6,pointHoverBackgroundColor:'#ff4d00'},
-      {data:[],borderColor:'rgba(255,77,0,0.45)',tension:0.4,fill:false,
-        borderWidth:1.5,borderDash:[4,3],pointRadius:3,pointBackgroundColor:'transparent',pointBorderColor:'rgba(255,77,0,0.7)',pointBorderWidth:1.5,pointHoverRadius:6,pointHoverBackgroundColor:'transparent',pointHoverBorderColor:'#ff4d00',pointHoverBorderWidth:2}
+      {data:[],borderColor:'rgba(255,77,0,0.5)',tension:0.4,fill:false,
+        borderWidth:1.5,borderDash:[4,3],
+        pointRadius:3,
+        pointBackgroundColor:()=>document.documentElement.getAttribute('data-theme')==='light'?'#fff':'#000',
+        pointBorderColor:'#ff4d00',pointBorderWidth:2,
+        pointHoverRadius:5,
+        pointHoverBackgroundColor:()=>document.documentElement.getAttribute('data-theme')==='light'?'#fff':'#000',
+        pointHoverBorderColor:'#ff4d00',pointHoverBorderWidth:2.5}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:4,bottom:2}},
       plugins:{legend:{display:false},tooltip:{
@@ -1411,37 +1492,37 @@ function logout(){
 
 // ── I18N ──────────────────────────────────────────────────
 const LANGS={
-  pt:{filterCanais:'Filtrar Canais',conexoes:'Conexões',receita:'Receita Total',parcial:'Receita Parcial',views:'Views Totais',rpm:'RPM Médio',canal:'Canal',receita2:'Receita',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clique para gerenciar',lastDay:'Último Dia',last7:'Últimos 7 Dias',last28:'Últimos 28 Dias',last90:'Últimos 90 Dias',idioma:'Idioma',themeDark:'Escuro',themeLight:'Claro',tema:'Tema',menu:'Menu',emBreve:'Em breve',periodo:'28 Dias',limpar:'Limpar',logoutLabel:'Sair',selectCompare:'Selecione um vídeo para comparar',
+  pt:{filterCanais:'Filtrar Canais',conexoes:'Conexões',receita:'Receita Total',parcial:'Receita Parcial',views:'Views Totais',rpm:'RPM Médio',canal:'Canal',receita2:'Receita',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clique para gerenciar',lastDay:'Último Dia',last7:'Últimos 7 Dias',last28:'Últimos 28 Dias',last90:'Últimos 90 Dias',idioma:'Idioma',themeDark:'Escuro',themeLight:'Claro',tema:'Tema',menu:'Menu',emBreve:'Em breve',periodo:'28 Dias',limpar:'Limpar',logoutLabel:'Sair',selectCompare:'Selecione um vídeo para comparar',periodMax:'Máx',periodCustom:'Personalizado',periodDays:'Dias',periodMonths:'Meses',calTitle:'Personalizado',calFrom:'De',calTo:'Até',calApply:'Aplicar',calCancel:'Cancelar',
     ultimosVideos:'Últimos Vídeos',melhorPerf:'Melhor Performance',desempenho:'Desempenho',verTodos:'Ver todos',viewsBtn:'Views',minutesBtn:'Min.',receitaBtn:'Receita',semVideos:'Sem vídeos',semDados:'Sem dados',carregando:'Carregando...',carregandoMet:'Carregando métricas...',
     metViews:'Views',metReceita:'Receita',metLikes:'Taxa de Likes',metComents:'Comentários',metRetencao:'Retenção',metMin:'Min. Assistidos',metPor1k:'por 1.000 views',metPorc:'% assistido',abrir:'Abrir ↗',voltar:'← Voltar',comparar:'⇄ Comparar',
     pctTitle:'Receita Parcial',pctAdd:'+ Nova Parcial',pctCancel:'Cancelar',pctConfirm:'Adicionar',pctEmpty:'Nenhuma parcial adicionada',pctPadrao:'PADRÃO',pctFixar:'Fixar',pctEditar:'Editar',pctRemover:'Remover',
     conexoesTitle:'Conexões',semConexoes:'Nenhum canal vinculado',buscarVideo:'Buscar vídeo...'},
-  en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',receita2:'Revenue',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days',idioma:'Language',themeDark:'Dark',themeLight:'Light',tema:'Theme',menu:'Menu',emBreve:'Coming soon',periodo:'28 Days',limpar:'Clear',logoutLabel:'Logout',selectCompare:'Select a video to compare',
+  en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',receita2:'Revenue',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days',idioma:'Language',themeDark:'Dark',themeLight:'Light',tema:'Theme',menu:'Menu',emBreve:'Coming soon',periodo:'28 Days',limpar:'Clear',logoutLabel:'Logout',selectCompare:'Select a video to compare',periodMax:'Max',periodCustom:'Custom',periodDays:'Days',periodMonths:'Months',calTitle:'Custom Range',calFrom:'From',calTo:'To',calApply:'Apply',calCancel:'Cancel',
     ultimosVideos:'Latest Videos',melhorPerf:'Best Performance',desempenho:'Performance',verTodos:'See all',viewsBtn:'Views',minutesBtn:'Min.',receitaBtn:'Revenue',semVideos:'No videos',semDados:'No data',carregando:'Loading...',carregandoMet:'Loading metrics...',
     metViews:'Views',metReceita:'Revenue',metLikes:'Like Rate',metComents:'Comments',metRetencao:'Retention',metMin:'Watch Minutes',metPor1k:'per 1,000 views',metPorc:'% watched',abrir:'Open ↗',voltar:'← Back',comparar:'⇄ Compare',
     pctTitle:'Partial Revenue',pctAdd:'+ New Partial',pctCancel:'Cancel',pctConfirm:'Add',pctEmpty:'No partials added',pctPadrao:'DEFAULT',pctFixar:'Pin',pctEditar:'Edit',pctRemover:'Remove',
     conexoesTitle:'Connections',semConexoes:'No channels linked',buscarVideo:'Search video...'},
-  es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',receita2:'Ingresos',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días',idioma:'Idioma',themeDark:'Oscuro',themeLight:'Claro',tema:'Tema',menu:'Menú',emBreve:'Próximamente',periodo:'28 Días',limpar:'Limpiar',logoutLabel:'Cerrar sesión',selectCompare:'Selecciona un vídeo para comparar',
+  es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',receita2:'Ingresos',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días',idioma:'Idioma',themeDark:'Oscuro',themeLight:'Claro',tema:'Tema',menu:'Menú',emBreve:'Próximamente',periodo:'28 Días',limpar:'Limpiar',logoutLabel:'Cerrar sesión',selectCompare:'Selecciona un vídeo para comparar',periodMax:'Máx',periodCustom:'Personalizado',periodDays:'Días',periodMonths:'Meses',calTitle:'Personalizado',calFrom:'Desde',calTo:'Hasta',calApply:'Aplicar',calCancel:'Cancelar',
     ultimosVideos:'Últimos Vídeos',melhorPerf:'Mejor Performance',desempenho:'Rendimiento',verTodos:'Ver todos',viewsBtn:'Vistas',minutesBtn:'Min.',receitaBtn:'Ingresos',semVideos:'Sin vídeos',semDados:'Sin datos',carregando:'Cargando...',carregandoMet:'Cargando métricas...',
     metViews:'Vistas',metReceita:'Ingresos',metLikes:'Tasa de Likes',metComents:'Comentarios',metRetencao:'Retención',metMin:'Min. Vistos',metPor1k:'por 1.000 vistas',metPorc:'% visto',abrir:'Abrir ↗',voltar:'← Volver',comparar:'⇄ Comparar',
     pctTitle:'Ingresos Parciales',pctAdd:'+ Nueva Parcial',pctCancel:'Cancelar',pctConfirm:'Agregar',pctEmpty:'Sin parciales agregadas',pctPadrao:'PREDETER.',pctFixar:'Fijar',pctEditar:'Editar',pctRemover:'Eliminar',
     conexoesTitle:'Conexiones',semConexoes:'Sin canales vinculados',buscarVideo:'Buscar vídeo...'},
-  fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',receita2:'Revenu',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours',idioma:'Langue',themeDark:'Sombre',themeLight:'Clair',tema:'Thème',menu:'Menu',emBreve:'Bientôt',periodo:'28 Jours',limpar:'Effacer',logoutLabel:'Déconnexion',selectCompare:'Sélectionnez une vidéo à comparer',
+  fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',receita2:'Revenu',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours',idioma:'Langue',themeDark:'Sombre',themeLight:'Clair',tema:'Thème',menu:'Menu',emBreve:'Bientôt',periodo:'28 Jours',limpar:'Effacer',logoutLabel:'Déconnexion',selectCompare:'Sélectionnez une vidéo à comparer',periodMax:'Max',periodCustom:'Personnalisé',periodDays:'Jours',periodMonths:'Mois',calTitle:'Personnalisé',calFrom:'Du',calTo:'Au',calApply:'Appliquer',calCancel:'Annuler',
     ultimosVideos:'Dernières Vidéos',melhorPerf:'Meilleures Performances',desempenho:'Performance',verTodos:'Voir tout',viewsBtn:'Vues',minutesBtn:'Min.',receitaBtn:'Revenu',semVideos:'Aucune vidéo',semDados:'Aucune donnée',carregando:'Chargement...',carregandoMet:'Chargement des métriques...',
     metViews:'Vues',metReceita:'Revenu',metLikes:'Taux de Likes',metComents:'Commentaires',metRetencao:'Rétention',metMin:'Min. Regardés',metPor1k:'pour 1 000 vues',metPorc:'% regardé',abrir:'Ouvrir ↗',voltar:'← Retour',comparar:'⇄ Comparer',
     pctTitle:'Revenu Partiel',pctAdd:'+ Nouveau Partiel',pctCancel:'Annuler',pctConfirm:'Ajouter',pctEmpty:'Aucun partiel ajouté',pctPadrao:'DÉFAUT',pctFixar:'Épingler',pctEditar:'Modifier',pctRemover:'Supprimer',
     conexoesTitle:'Connexions',semConexoes:'Aucune chaîne liée',buscarVideo:'Rechercher vidéo...'},
-  de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',receita2:'Einnahmen',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage',idioma:'Sprache',themeDark:'Dunkel',themeLight:'Hell',tema:'Thema',menu:'Menü',emBreve:'Demnächst',periodo:'28 Tage',limpar:'Löschen',logoutLabel:'Abmelden',selectCompare:'Video zum Vergleichen auswählen',
+  de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',receita2:'Einnahmen',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage',idioma:'Sprache',themeDark:'Dunkel',themeLight:'Hell',tema:'Thema',menu:'Menü',emBreve:'Demnächst',periodo:'28 Tage',limpar:'Löschen',logoutLabel:'Abmelden',selectCompare:'Video zum Vergleichen auswählen',periodMax:'Max',periodCustom:'Benutzerdefiniert',periodDays:'Tage',periodMonths:'Monate',calTitle:'Benutzerdefiniert',calFrom:'Von',calTo:'Bis',calApply:'Anwenden',calCancel:'Abbrechen',
     ultimosVideos:'Letzte Videos',melhorPerf:'Beste Leistung',desempenho:'Leistung',verTodos:'Alle anzeigen',viewsBtn:'Aufrufe',minutesBtn:'Min.',receitaBtn:'Einnahmen',semVideos:'Keine Videos',semDados:'Keine Daten',carregando:'Laden...',carregandoMet:'Metriken laden...',
     metViews:'Aufrufe',metReceita:'Einnahmen',metLikes:'Like-Rate',metComents:'Kommentare',metRetencao:'Retention',metMin:'Gesehene Min.',metPor1k:'pro 1.000 Aufrufe',metPorc:'% gesehen',abrir:'Öffnen ↗',voltar:'← Zurück',comparar:'⇄ Vergleichen',
     pctTitle:'Teileinnahmen',pctAdd:'+ Neue Teilung',pctCancel:'Abbrechen',pctConfirm:'Hinzufügen',pctEmpty:'Keine Teilungen',pctPadrao:'STANDARD',pctFixar:'Anheften',pctEditar:'Bearbeiten',pctRemover:'Entfernen',
     conexoesTitle:'Verbindungen',semConexoes:'Keine Kanäle verknüpft',buscarVideo:'Video suchen...'},
-  ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',receita2:'収益',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間',idioma:'言語',themeDark:'ダーク',themeLight:'ライト',tema:'テーマ',menu:'メニュー',emBreve:'近日公開',periodo:'28日間',limpar:'クリア',logoutLabel:'ログアウト',selectCompare:'比較する動画を選択',
+  ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',receita2:'収益',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間',idioma:'言語',themeDark:'ダーク',themeLight:'ライト',tema:'テーマ',menu:'メニュー',emBreve:'近日公開',periodo:'28日間',limpar:'クリア',logoutLabel:'ログアウト',selectCompare:'比較する動画を選択',periodMax:'最大',periodCustom:'カスタム',periodDays:'日',periodMonths:'月',calTitle:'カスタム期間',calFrom:'開始',calTo:'終了',calApply:'適用',calCancel:'キャンセル',
     ultimosVideos:'最新動画',melhorPerf:'最高パフォーマンス',desempenho:'パフォーマンス',verTodos:'すべて見る',viewsBtn:'再生数',minutesBtn:'分',receitaBtn:'収益',semVideos:'動画なし',semDados:'データなし',carregando:'読み込み中...',carregandoMet:'指標を読み込み中...',
     metViews:'再生数',metReceita:'収益',metLikes:'いいね率',metComents:'コメント',metRetencao:'視聴維持率',metMin:'視聴分数',metPor1k:'1,000再生あたり',metPorc:'%視聴',abrir:'開く ↗',voltar:'← 戻る',comparar:'⇄ 比較',
     pctTitle:'部分収益',pctAdd:'+ 新しい部分',pctCancel:'キャンセル',pctConfirm:'追加',pctEmpty:'部分が追加されていません',pctPadrao:'デフォルト',pctFixar:'固定',pctEditar:'編集',pctRemover:'削除',
     conexoesTitle:'接続',semConexoes:'チャンネルが接続されていません',buscarVideo:'動画を検索...'},
-  ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',receita2:'수익',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일',idioma:'언어',themeDark:'다크',themeLight:'라이트',tema:'테마',menu:'메뉴',emBreve:'곧 출시',periodo:'28일',limpar:'지우기',logoutLabel:'로그아웃',selectCompare:'비교할 동영상 선택',
+  ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',receita2:'수익',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일',idioma:'언어',themeDark:'다크',themeLight:'라이트',tema:'테마',menu:'메뉴',emBreve:'곧 출시',periodo:'28일',limpar:'지우기',logoutLabel:'로그아웃',selectCompare:'비교할 동영상 선택',periodMax:'최대',periodCustom:'사용자 지정',periodDays:'일',periodMonths:'월',calTitle:'사용자 지정 기간',calFrom:'시작',calTo:'종료',calApply:'적용',calCancel:'취소',
     ultimosVideos:'최신 동영상',melhorPerf:'최고 성과',desempenho:'성과',verTodos:'모두 보기',viewsBtn:'조회수',minutesBtn:'분',receitaBtn:'수익',semVideos:'동영상 없음',semDados:'데이터 없음',carregando:'로딩 중...',carregandoMet:'지표 로딩 중...',
     metViews:'조회수',metReceita:'수익',metLikes:'좋아요율',metComents:'댓글',metRetencao:'시청 유지율',metMin:'시청 분수',metPor1k:'1,000조회당',metPorc:'% 시청',abrir:'열기 ↗',voltar:'← 뒤로',comparar:'⇄ 비교',
     pctTitle:'부분 수익',pctAdd:'+ 새 부분',pctCancel:'취소',pctConfirm:'추가',pctEmpty:'추가된 항목 없음',pctPadrao:'기본값',pctFixar:'고정',pctEditar:'편집',pctRemover:'삭제',
@@ -1479,8 +1560,17 @@ function setLang(l){
   if(thRev){const tn=Array.from(thRev.childNodes).find(n=>n.nodeType===3);if(tn)tn.nodeValue=t.receita2+' ';}
   const thViews=document.getElementById('th-views');
   if(thViews){const tn=Array.from(thViews.childNodes).find(n=>n.nodeType===3);if(tn)tn.nodeValue=t.views+' ';}
-  // Period options
-  const p1=document.getElementById('opt-1');if(p1)p1.textContent=t.lastDay;
+  // Period section labels
+  const lblD=document.getElementById('lblDays');if(lblD)lblD.textContent=t.periodDays||'Dias';
+  const lblM=document.getElementById('lblMonths');if(lblM)lblM.textContent=t.periodMonths||'Meses';
+  const optMax=document.getElementById('opt-max');if(optMax)optMax.textContent=t.periodMax||'Max';
+  const optCust=document.getElementById('opt-custom');if(optCust)optCust.textContent=t.periodCustom||'Personalizado';
+  // Calendar modal
+  const calT=document.getElementById('calTitle');if(calT)calT.textContent=t.calTitle||'Personalizado';
+  const calF=document.getElementById('calLblFrom');if(calF)calF.textContent=t.calFrom||'De';
+  const calTo=document.getElementById('calLblTo');if(calTo)calTo.textContent=t.calTo||'Até';
+  const calA=document.getElementById('calApplyBtn');if(calA)calA.textContent=t.calApply||'Aplicar';
+  const calC=document.getElementById('calCancelBtn');if(calC)calC.textContent=t.calCancel||'Cancelar';
   const p7=document.getElementById('opt-7');if(p7)p7.textContent=t.last7;
   const p28=document.getElementById('opt-28');if(p28)p28.textContent=t.last28;
   const p90=document.getElementById('opt-90');if(p90)p90.textContent=t.last90;
