@@ -12,8 +12,12 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const BASE_URL = process.env.BASE_URL;
 const REDIRECT_URI = `${BASE_URL}/callback`;
+const REDIRECT_URI_LOGIN = `${BASE_URL}/callback-login`;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
 const MONGODB_URI = process.env.MONGODB_URI;
+// ADMIN_EMAIL: e-mail Google autorizado a fazer login no dashboard.
+// Configure em: Render → Environment → ADMIN_EMAIL=seu@email.com
+// Também adicione BASE_URL/callback-login nas URIs autorizadas no Google Cloud Console.
 
 // FIX: db começa como null, não undefined — evita crash em rotas antes da conexão
 let db = null;
@@ -74,6 +78,43 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/status', (req, res) => {
   res.json({ authenticated: !!req.session.isAuthenticated });
+});
+
+// --- LOGIN COM GOOGLE (autenticação do dashboard) ---
+// Diferente do /auth/:slot (que conecta canais), este fluxo autentica o dono do dashboard.
+app.get('/auth/google-login', (req, res) => {
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI_LOGIN)}&response_type=code&scope=${encodeURIComponent('https://www.googleapis.com/auth/userinfo.email')}&access_type=online&prompt=select_account`;
+  res.redirect(url);
+});
+
+app.get('/callback-login', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.redirect('/?error=login_cancelled');
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code, client_id: CLIENT_ID, client_secret: CLIENT_SECRET,
+        redirect_uri: REDIRECT_URI_LOGIN, grant_type: 'authorization_code'
+      })
+    });
+    const tokens = await tokenRes.json();
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+    const userInfo = await userRes.json();
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) return res.redirect('/?error=admin_email_not_configured');
+    if (userInfo.email === adminEmail) {
+      req.session.isAuthenticated = true;
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+      return res.redirect('/');
+    }
+    return res.redirect('/?error=unauthorized_email');
+  } catch (err) {
+    return res.redirect('/?error=login_failed');
+  }
 });
 
 // --- AUTH GOOGLE ---
