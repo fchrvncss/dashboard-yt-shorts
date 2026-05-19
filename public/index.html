@@ -88,10 +88,10 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .pct-item-main{flex:1;padding:8px 10px;display:flex;align-items:center;gap:7px;}
 .pct-item-pct{font-size:0.85rem;font-weight:800;color:var(--accent);}
 .pct-item-default{font-size:0.46rem;background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:auto;}
-.pct-item-actions{display:flex;align-items:stretch;width:0;overflow:hidden;transition:width 0.22s var(--ease);}
+.pct-item-actions{display:flex;align-items:stretch;width:0;overflow:hidden;transition:width 0.22s var(--ease),border-left 0.22s var(--ease);}
 .pct-item:hover .pct-item-actions{border-left:1px solid var(--border);}
 .pct-item:not(.is-default):hover .pct-item-actions{width:120px;}
-.pct-item.is-default:hover .pct-item-actions{width:auto;}
+.pct-item.is-default:hover .pct-item-actions{width:auto;min-width:70px;max-width:96px;}
 .pct-action-btn{padding:0 7px;background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:0.52rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:color 0.12s,background 0.12s;white-space:nowrap;min-height:38px;min-width:30px;}
 .pct-action-btn:hover{color:var(--accent);background:rgba(255,77,0,0.08);}
 .pct-action-btn+.pct-action-btn{border-left:1px solid var(--border);}
@@ -325,7 +325,11 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
     <div style="display:flex;justify-content:center;margin-bottom:18px">
       <svg width="44" height="44" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="4" fill="none"/><rect x="35" y="32" width="10" height="10" fill="#ff4d00"/><rect x="35" y="45" width="10" height="10" fill="#ff4d00"/><rect x="35" y="58" width="10" height="10" fill="#ff4d00"/><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00"/><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00"/><rect x="61" y="45" width="10" height="10" fill="#ff4d00"/></svg>
     </div>
-    <input type="password" id="pwInput" class="auth-input" placeholder="Senha" onkeypress="if(event.key==='Enter')login()">
+    <input type="password" id="pwInput" class="auth-input" placeholder="Senha" autocomplete="current-password" onkeypress="if(event.key==='Enter')login()">
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;justify-content:center">
+      <input type="checkbox" id="keepMe" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
+      <span style="font-size:0.72rem;color:var(--t3)">Manter conectado</span>
+    </label>
     <button class="auth-btn" onclick="login()">Entrar</button>
   </div>
 </div>
@@ -456,9 +460,34 @@ const D=d=>{if(!d)return'—';return new Date(d).toLocaleDateString('pt-BR',{day
 
 // AUTH
 async function login(){
-  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pwInput').value})});
-  if(r.ok){document.getElementById('authOverlay').classList.add('hidden');document.getElementById('app').style.display='block';init();}
+  const pwd=document.getElementById('pwInput').value;
+  const keep=document.getElementById('keepMe').checked;
+  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
+  if(r.ok){
+    if(keep)localStorage.setItem('automata_pwd',pwd);
+    else localStorage.removeItem('automata_pwd');
+    document.getElementById('authOverlay').classList.add('hidden');
+    document.getElementById('app').style.display='block';
+    init();
+  } else {
+    document.getElementById('pwInput').style.borderColor='var(--accent)';
+    setTimeout(()=>document.getElementById('pwInput').style.borderColor='',1200);
+  }
 }
+// Auto-login se senha salva
+(async()=>{
+  const saved=localStorage.getItem('automata_pwd');
+  if(!saved)return;
+  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:saved})});
+  if(r.ok){
+    document.getElementById('authOverlay').classList.add('hidden');
+    document.getElementById('app').style.display='block';
+    init();
+  } else {
+    localStorage.removeItem('automata_pwd');
+    document.getElementById('keepMe').checked=false;
+  }
+})();
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
 async function loadAcc(){try{const r=await fetch('/api/accounts');accounts=await r.json();}catch{}}
 async function loadThumbs(){
@@ -713,9 +742,15 @@ function buildChart(chId,rows,metric){
     type:'line',
     data:{labels,datasets:[{data,borderColor:'#ff4d00',tension:0.4,fill:true,
       backgroundColor:c=>{const g=c.chart.ctx.createLinearGradient(0,0,0,c.chart.height);g.addColorStop(0,'rgba(255,77,0,0.2)');g.addColorStop(1,'rgba(255,77,0,0)');return g;},
-      borderWidth:2,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#ff4d00'}]},
+      borderWidth:2,pointRadius:2.5,pointBackgroundColor:'#ff4d00',pointBorderColor:'#ff4d00',pointBorderWidth:0,pointHoverRadius:5,pointHoverBackgroundColor:'#ff4d00'}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:2,bottom:0,left:0,right:0}},
-      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'rgba(8,8,8,0.95)',borderColor:'#2a2a2a',borderWidth:1,titleColor:'#666',titleFont:{size:10},bodyColor:'#fff',bodyFont:{size:11,weight:'700'},padding:9,displayColors:false,callbacks:{label:ctx=>metric==='revenue'?'$'+ctx.raw.toFixed(2):N(ctx.raw)}}},
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        backgroundColor:'rgba(8,8,8,0.92)',borderColor:'#2a2a2a',borderWidth:1,
+        padding:8,displayColors:true,usePointStyle:true,boxWidth:7,boxHeight:7,
+        callbacks:{
+          labelColor:()=>({borderColor:'#ff4d00',backgroundColor:'#ff4d00',borderWidth:2,borderRadius:4}),
+          label:ctx=>` ${metric==='revenue'?'$'+ctx.raw.toFixed(2):N(ctx.raw)}`
+        }}},
       scales:{y:{position:'left',grid:{color:'rgba(255,255,255,0.03)',drawBorder:false},border:{display:false},ticks:{color:'#3a3a3a',font:{size:9},maxTicksLimit:4,callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v}},
         x:{grid:{display:false},border:{display:false},ticks:{color:'#3a3a3a',font:{size:9},maxTicksLimit:7,maxRotation:0}}}}
   });
@@ -1022,9 +1057,9 @@ function renderPctList(){
           ${isDef?'<span class="pct-item-default">PADRÃO</span>':''}
         </div>
         <div class="pct-item-actions">
-          ${!isDef?`<button class="pct-action-btn" onclick="event.stopPropagation();pinPct(${i})"><span class="ab-icon">📌</span><span>Fixar</span></button>`:''}
-          <button class="pct-action-btn" onclick="event.stopPropagation();editPct(${i})"><span class="ab-icon">✏️</span><span>Editar</span></button>
-          <button class="pct-action-btn" onclick="event.stopPropagation();removePct(${i})"><span class="ab-icon">✕</span><span>Remover</span></button>
+          ${!isDef?`<button class="pct-action-btn" onclick="event.stopPropagation();pinPct(${i})"><span class="ab-icon"><svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor"><path d="M9.5 1a.5.5 0 01.5.5v1l1.5 3H13a.5.5 0 010 1h-.5v5.5a.5.5 0 01-1 0V6.5H11L9.5 3.5v-2a.5.5 0 01.5-.5zM8 6.5L6.5 9H4a.5.5 0 000 1h.5v4a.5.5 0 001 0V10H7l1.5-2.5L8 6.5z"/></svg></span><span>Fixar</span></button>`:''}
+          <button class="pct-action-btn" onclick="event.stopPropagation();editPct(${i})"><span class="ab-icon"><svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor"><path d="M12.85 2.15a1.5 1.5 0 00-2.12 0L3 9.88V13h3.12l7.73-7.73a1.5 1.5 0 000-2.12zM5.5 12H4v-1.5l6.5-6.5 1.5 1.5L5.5 12z"/></svg></span><span>Editar</span></button>
+          <button class="pct-action-btn" onclick="event.stopPropagation();removePct(${i})"><span class="ab-icon"><svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor"><path d="M5.5 1h5l.5.5V3H14v1H2V3h3V1.5L5.5 1zm1 1v1h3V2h-3zM3 5h10l-.5 9.5a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5L3 5zm2 1v7h1V6H5zm3 0v7h1V6H8zm3 0v7h1V6h-1z"/></svg></span><span>Remover</span></button>
         </div>
       </div>
       <div class="pct-edit-area" id="pct-edit-${i}">
@@ -1088,24 +1123,29 @@ function initMainChart(){
     data:{labels:[],datasets:[
       {data:[],borderColor:'#ff4d00',tension:0.4,fill:true,
         backgroundColor:c=>{const g=c.chart.ctx.createLinearGradient(0,0,0,c.chart.height);g.addColorStop(0,'rgba(255,77,0,0.25)');g.addColorStop(1,'rgba(255,77,0,0)');return g;},
-        borderWidth:2.5,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#ff4d00'},
-      // Dataset receita parcial — só visível quando metric=revenue
-      {data:[],borderColor:'rgba(255,77,0,0.4)',tension:0.4,fill:false,
-        borderWidth:1.5,borderDash:[4,3],pointRadius:0,pointHoverRadius:4,
-        pointHoverBackgroundColor:'rgba(255,77,0,0.6)'}
+        borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#ff4d00',pointBorderColor:'#ff4d00',pointBorderWidth:0,pointHoverRadius:6,pointHoverBackgroundColor:'#ff4d00'},
+      {data:[],borderColor:'rgba(255,77,0,0.45)',tension:0.4,fill:false,
+        borderWidth:1.5,borderDash:[4,3],pointRadius:3,pointBackgroundColor:'transparent',pointBorderColor:'rgba(255,77,0,0.7)',pointBorderWidth:1.5,pointHoverRadius:6,pointHoverBackgroundColor:'transparent',pointHoverBorderColor:'#ff4d00',pointHoverBorderWidth:2}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:4,bottom:2}},
-      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-        backgroundColor:'rgba(6,6,6,0.95)',borderColor:'#222',borderWidth:1,
-        titleColor:'#555',titleFont:{size:10},bodyColor:'#fff',bodyFont:{size:12,weight:'700'},
+      plugins:{legend:{display:false},tooltip:{
+        mode:'index',intersect:false,
+        backgroundColor:'rgba(6,6,6,0.92)',borderColor:'#2a2a2a',borderWidth:1,
         padding:10,displayColors:true,
-        callbacks:{label:ctx=>{
-          const label=ctx.datasetIndex===1?`Parcial (${partialPct}%)`:mainMetric==='revenue'?'Receita':mainMetric==='views'?'Views':'RPM';
-          const val=ctx.raw;
-          if(ctx.datasetIndex===1&&partialPct==null)return null;
-          if(mainMetric==='views')return`${label}: ${N(val)}`;
-          return`${label}: $${val>=1000?(val/1000).toFixed(1)+'k':val.toFixed(2)}`;
-        }}}},
+        boxWidth:8,boxHeight:8,
+        usePointStyle:true,
+        callbacks:{
+          labelPointStyle:ctx=>ctx.datasetIndex===0?{pointStyle:'circle',rotation:0}:{pointStyle:'circle',rotation:0},
+          label:ctx=>{
+            if(ctx.datasetIndex===1&&partialPct==null)return null;
+            const label=ctx.datasetIndex===1?`Parcial (${partialPct}%)`:mainMetric==='revenue'?'Receita':mainMetric==='views'?'Views':'RPM';
+            const val=ctx.raw;
+            if(mainMetric==='views')return` ${label}: ${N(val)}`;
+            return` ${label}: $${val>=1000?(val/1000).toFixed(1)+'k':val.toFixed(2)}`;
+          },
+          labelColor:ctx=>ctx.datasetIndex===0?{borderColor:'#ff4d00',backgroundColor:'#ff4d00',borderWidth:2,borderRadius:4}:{borderColor:'rgba(255,77,0,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderRadius:4}
+        }
+      }},
       scales:{
         y:{grid:{color:'rgba(255,255,255,0.03)',drawBorder:false},border:{display:false},
           ticks:{color:'#2e2e2e',font:{size:10},maxTicksLimit:5,
