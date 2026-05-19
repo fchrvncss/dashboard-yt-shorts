@@ -1,1342 +1,775 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Automata YT - Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js">
-    </script>
-    <style>
-        /* ===== RESET & BASE ===== */
-        *,
-        *::before,<br/>
-        *::after {<br/>
-            box-sizing: border-box;<br/>
-            margin: 0;<br/>
-            padding: 0;
-        }
-        :root {
-            --bg: #f5f5f5;<br/>
-            --card-bg: #ffffff;<br/>
-            --text: #1a1a1a;<br/>
-            --text-sec: #555555;<br/>
-            --border: #e0e0e0;<br/>
-            --accent: #ff6a00;<br/>
-            --accent-hover: #e55e00;<br/>
-            --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);<br/>
-            --radius: 12px;<br/>
-            --transition: 0.25s ease;
-        }
-        .dark {
-            --bg: #121212;<br/>
-            --card-bg: #1e1e1e;<br/>
-            --text: #e0e0e0;<br/>
-            --text-sec: #aaaaaa;<br/>
-            --border: #333;<br/>
-            --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;<br/>
-            background: var(--bg);<br/>
-            color: var(--text);<br/>
-            transition: background var(--transition), color var(--transition);<br/>
-            min-height: 100vh;<br/>
-            overflow-x: hidden;
-        }
-        a {
-            color: var(--accent);<br/>
-            text-decoration: none;
-        }
-        /* ===== LOGIN ===== */
-        #login-screen {
-            position: fixed;<br/>
-            inset: 0;<br/>
-            display: flex;<br/>
-            align-items: center;<br/>
-            justify-content: center;<br/>
-            background: var(--bg);<br/>
-            z-index: 1000;<br/>
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-        }
-        #login-screen.hidden {
-            opacity: 0;<br/>
-            visibility: hidden;<br/>
-            pointer-events: none;
-        }
-        .login-box {
-            background: var(--card-bg);<br/>
-            padding: 40px 36px;<br/>
-            border-radius: var(--radius);<br/>
-            box-shadow: var(--shadow);<br/>
-            width: 360px;<br/>
-            max-width: 90vw;
-        }
-        .login-box h1 {
-            font-size: 24px;<br/>
-            margin-bottom: 8px;<br/>
-            color: var(--accent);
-        }
-        .login-box p {
-            font-size: 14px;<br/>
-            color: var(--text-sec);<br/>
-            margin-bottom: 24px;
-        }
-        .login-box label {
-            display: block;<br/>
-            font-size: 13px;<br/>
-            margin-bottom: 4px;<br/>
-            color: var(--text-sec);
-        }
-        .login-box input[type="password"] {
-            width: 100%;<br/>
-            padding: 12px 14px;<br/>
-            border: 1px solid var(--border);<br/>
-            border-radius: 8px;<br/>
-            background: var(--bg);<br/>
-            color: var(--text);<br/>
-            font-size: 15px;<br/>
-            transition: border var(--transition);<br/>
-            margin-bottom: 12px;
-        }
-        .login-box input[type="password"]:focus {<br/>
-            outline: none;<br/>
-            border-color: var(--accent);
-        }
-        .login-box .remember {
-            display: flex;<br/>
-            align-items: center;<br/>
-            gap: 8px;<br/>
-            margin-bottom: 20px;<br/>
-            font-size: 13px;<br/>
-            color: var(--text-sec);
-        }
-        .login-box button {
-            width: 100%;<br/>
-            padding: 12px;<br/>
-            background: var(--accent);<br/>
-            color: #fff;<br/>
-            border: none;<br/>
-            border-radius: 8px;<br/>
-            font-size: 16px;<br/>
-            font-weight: 600;<br/>
-            cursor: pointer;<br/>
-            transition: background var(--transition);
-        }
-        .login-box button:hover {<br/>
-            background: var(--accent-hover);
-        }
-        .login-error {
-            color: #d32f2f;<br/>
-            font-size: 13px;<br/>
-            margin-top: 8px;<br/>
-            display: none;
-        }
-        /* ===== LAYOUT ===== */
-        #app {
-            display: flex;<br/>
-            min-height: 100vh;
-        }
-        /* ===== SIDEBAR ===== */
-        .sidebar {
-            width: 230px;<br/>
-            background: var(--card-bg);<br/>
-            border-right: 1px solid var(--border);<br/>
-            padding: 24px 16px;<br/>
-            display: flex;<br/>
-            flex-direction: column;<br/>
-            gap: 8px;<br/>
-            flex-shrink: 0;<br/>
-            transition: background var(--transition), border var(--transition);
-        }
-        .sidebar .logo {
-            font-size: 20px;<br/>
-            font-weight: 700;<br/>
-            color: var(--accent);<br/>
-            margin-bottom: 24px;
-        }
-        .sidebar nav {
-            display: flex;<br/>
-            flex-direction: column;<br/>
-            gap: 4px;
-        }
-        .sidebar nav a {
-            padding: 10px 14px;<br/>
-            border-radius: 8px;<br/>
-            color: var(--text-sec);<br/>
-            font-size: 14px;<br/>
-            font-weight: 500;<br/>
-            transition: background 0.2s, color 0.2s;
-        }
-        .sidebar nav a:hover,
-        .sidebar nav a.active {
-            background: var(--accent);<br/>
-            color: #fff;
-        }
-        .sidebar .connections {
-            margin-top: auto;<br/>
-            border-top: 1px solid var(--border);<br/>
-            padding-top: 16px;
-        }
-        .sidebar .connections h4 {
-            font-size: 12px;<br/>
-            text-transform: uppercase;<br/>
-            letter-spacing: 0.06em;<br/>
-            color: var(--text-sec);<br/>
-            margin-bottom: 8px;
-        }
-        .sidebar .connections .conn-item {
-            display: flex;<br/>
-            align-items: center;<br/>
-            gap: 10px;<br/>
-            padding: 8px 12px;<br/>
-            border-radius: 8px;<br/>
-            background: var(--bg);<br/>
-            font-size: 13px;<br/>
-            margin-bottom: 4px;<br/>
-            cursor: pointer;<br/>
-            transition: background 0.2s;
-        }
-        .sidebar .connections .conn-item:hover {<br/>
-            background: var(--border);
-        }
-        .sidebar .theme-toggle {
-            display: flex;<br/>
-            align-items: center;<br/>
-            justify-content: space-between;<br/>
-            padding: 10px 0;<br/>
-            font-size: 13px;<br/>
-            color: var(--text-sec);<br/>
-            cursor: pointer;<br/>
-            border-top: 1px solid var(--border);<br/>
-            margin-top: 12px;<br/>
-            padding-top: 16px;
-        }
-        /* ===== MAIN ===== */
-        .main {
-            flex: 1;<br/>
-            padding: 24px 32px;<br/>
-            overflow-y: auto;
-        }
-        .main-header {
-            display: flex;<br/>
-            align-items: center;<br/>
-            justify-content: space-between;<br/>
-            margin-bottom: 24px;<br/>
-            flex-wrap: wrap;<br/>
-            gap: 12px;
-        }
-        .main-header h2 {
-            font-size: 22px;<br/>
-            font-weight: 600;
-        }
-        .main-header .right {
-            display: flex;<br/>
-            align-items: center;<br/>
-            gap: 12px;
-        }
-        /* ===== PERÍODO DROPDOWN CUSTOMIZADO ===== */
-        .period-wrapper {
-            position: relative;
-        }
-        .period-trigger {
-            display: flex;<br/>
-            align-items: center;<br/>
-            gap: 6px;<br/>
-            padding: 8px 16px;<br/>
-            background: var(--card-bg);<br/>
-            border: 1px solid var(--border);<br/>
-            border-radius: 8px;<br/>
-            cursor: pointer;<br/>
-            font-size: 14px;<br/>
-            color: var(--text);<br/>
-            transition: border 0.2s;<br/>
-            white-space: nowrap;
-        }
-        .period-trigger:hover {<br/>
-            border-color: var(--accent);
-        }
-        .period-trigger .arrow {
-            transition: transform 0.2s;
-        }
-        .period-trigger.open .arrow {
-            transform: rotate(180deg);
-        }
-        .period-menu {
-            position: absolute;<br/>
-            top: calc(100% + 6px);<br/>
-            right: 0;<br/>
-            min-width: 220px;<br/>
-            background: var(--card-bg);<br/>
-            border: 1px solid var(--border);<br/>
-            border-radius: 10px;<br/>
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);<br/>
-            padding: 8px 0;<br/>
-            display: none;<br/>
-            z-index: 100;<br/>
-            max-height: 400px;<br/>
-            overflow-y: auto;
-        }
-        .period-menu.open {
-            display: block;
-        }
-        .period-menu .section-title {
-            font-size: 11px;<br/>
-            text-transform: uppercase;<br/>
-            letter-spacing: 0.08em;<br/>
-            color: var(--text-sec);<br/>
-            padding: 8px 16px 4px;<br/>
-            font-weight: 600;
-        }
-        .period-menu .opt {
-            padding: 8px 16px;<br/>
-            font-size: 13px;<br/>
-            cursor: pointer;<br/>
-            transition: background 0.15s;<br/>
-            color: var(--text);
-        }
-        .period-menu .opt:hover {<br/>
-            background: var(--bg);
-        }
-        .period-menu .opt.selected {
-            background: var(--accent);<br/>
-            color: #fff;
-        }
-        .period-menu hr {
-            border: none;<br/>
-            border-top: 1px solid var(--border);<br/>
-            margin: 4px 0;
-        }
-        .period-menu .opt-btn {
-            background: var(--accent);<br/>
-            color: #fff;<br/>
-            text-align: center;<br/>
-            border-radius: 6px;<br/>
-            margin: 6px 16px;<br/>
-            padding: 8px;<br/>
-            font-weight: 600;<br/>
-            font-size: 13px;<br/>
-            cursor: pointer;<br/>
-            transition: background 0.2s;
-        }
-        .period-menu .opt-btn:hover {<br/>
-            background: var(--accent-hover);
-        }
-        .period-menu .opt-btn.secondary {
-            background: transparent;<br/>
-            color: var(--text);<br/>
-            border: 1px solid var(--border);
-        }
-        .period-menu .opt-btn.secondary:hover {<br/>
-            background: var(--bg);
-        }
-        /* ===== CARDS ===== */
-        .cards {
-            display: grid;<br/>
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));<br/>
-            gap: 16px;<br/>
-            margin-bottom: 24px;
-        }
-        .card {
-            background: var(--card-bg);<br/>
-            border-radius: var(--radius);<br/>
-            padding: 20px 24px;<br/>
-            box-shadow: var(--shadow);<br/>
-            transition: background var(--transition), box-shadow var(--transition);
-        }
-        .card .label {
-            font-size: 13px;<br/>
-            color: var(--text-sec);<br/>
-            margin-bottom: 4px;
-        }
-        .card .value {
-            font-size: 28px;<br/>
-            font-weight: 700;<br/>
-            color: var(--text);
-        }
-        .card .change {
-            font-size: 13px;<br/>
-            margin-top: 4px;
-        }
-        .card .change.positive {
-            color: #2e7d32;
-        }
-        .card .change.negative {
-            color: #d32f2f;
-        }
-        /* ===== CHART ===== */
-        .chart-container {
-            background: var(--card-bg);<br/>
-            border-radius: var(--radius);<br/>
-            padding: 20px 24px 16px;<br/>
-            box-shadow: var(--shadow);<br/>
-            margin-bottom: 24px;<br/>
-            position: relative;<br/>
-            transition: background var(--transition), box-shadow var(--transition);
-        }
-        .chart-container .chart-header {
-            display: flex;<br/>
-            align-items: center;<br/>
-            justify-content: space-between;<br/>
-            margin-bottom: 12px;
-        }
-        .chart-container .chart-header h3 {
-            font-size: 16px;<br/>
-            font-weight: 600;
-        }
-        /* Marcador "Receita Parcial" */
-        .partial-badge {
-            display: flex;<br/>
-            align-items: center;<br/>
-            gap: 8px;<br/>
-            font-size: 12px;<br/>
-            color: var(--text-sec);
-        }
-        .partial-badge .circle {
-            width: 14px;<br/>
-            height: 14px;<br/>
-            border-radius: 50%;<br/>
-            background: #ffffff;<br/>
-            border: 3px solid var(--accent);
-        }
-        .dark .partial-badge .circle {
-            background: #000000;<br/>
-            border-color: var(--accent);
-        }
-        canvas#mainChart {
-            max-height: 320px;<br/>
-            width: 100% !important;
-        }
-        /* ===== TABELA DE CANAIS ===== */
-        .channels-section {
-            background: var(--card-bg);<br/>
-            border-radius: var(--radius);<br/>
-            box-shadow: var(--shadow);<br/>
-            overflow: hidden;<br/>
-            transition: background var(--transition), box-shadow var(--transition);
-        }
-        .channels-section .ch-header {
-            display: flex;<br/>
-            align-items: center;<br/>
-            justify-content: space-between;<br/>
-            padding: 16px 24px;<br/>
-            border-bottom: 1px solid var(--border);
-        }
-        .channels-section .ch-header h3 {
-            font-size: 16px;<br/>
-            font-weight: 600;
-        }
-        .channels-section table {
-            width: 100%;<br/>
-            border-collapse: collapse;
-        }
-        .channels-section th {
-            text-align: left;<br/>
-            font-size: 11px;<br/>
-            text-transform: uppercase;<br/>
-            letter-spacing: 0.06em;<br/>
-            color: var(--text-sec);<br/>
-            padding: 12px 24px;<br/>
-            border-bottom: 1px solid var(--border);
-        }
-        .channels-section td {
-            padding: 12px 24px;<br/>
-            font-size: 14px;<br/>
-            border-bottom: 1px solid var(--border);<br/>
-            transition: background 0.2s;
-        }
-        .channels-section tr.expandable {
-            cursor: pointer;
-        }
-        .channels-section tr.expandable:hover td {<br/>
-            background: var(--bg);
-        }
-        .channels-section tr.details-row {
-            display: none;
-        }
-        .channels-section tr.details-row.open {
-            display: table-row;
-        }
-        .channels-section .details-cell {
-            padding: 16px 24px 24px;<br/>
-            background: var(--bg);<br/>
-            border-bottom: 1px solid var(--border);
-        }
-        .channels-section .details-cell .subinfo {
-            display: grid;<br/>
-            grid-template-columns: 1fr 1fr;<br/>
-            gap: 16px;
-        }
-        .channels-section .details-cell .subinfo div {
-            font-size: 13px;
-        }
-        .channels-section .details-cell .subinfo span {
-            font-weight: 600;
-        }
-        .channels-section .badge {
-            display: inline-block;<br/>
-            padding: 2px 10px;<br/>
-            border-radius: 20px;<br/>
-            font-size: 11px;<br/>
-            font-weight: 600;
-        }
-        .badge.green {
-            background: #e8f5e9;<br/>
-            color: #2e7d32;
-        }
-        .badge.red {
-            background: #ffebee;<br/>
-            color: #c62828;
-        }
-        .dark .badge.green {
-            background: #1b5e20;<br/>
-            color: #a5d6a7;
-        }
-        .dark .badge.red {
-            background: #b71c1c;<br/>
-            color: #ef9a9a;
-        }
-        /* ===== MODAL CALENDÁRIO ===== */
-        .modal-overlay {
-            position: fixed;<br/>
-            inset: 0;<br/>
-            background: rgba(0, 0, 0, 0.5);<br/>
-            display: none;<br/>
-            align-items: center;<br/>
-            justify-content: center;<br/>
-            z-index: 999;
-        }
-        .modal-overlay.open {
-            display: flex;
-        }
-        .modal-box {
-            background: var(--card-bg);<br/>
-            border-radius: var(--radius);<br/>
-            padding: 28px 32px;<br/>
-            max-width: 400px;<br/>
-            width: 90%;<br/>
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-        }
-        .modal-box h3 {
-            font-size: 18px;<br/>
-            margin-bottom: 20px;
-        }
-        .modal-box .field-group {
-            display: flex;<br/>
-            flex-direction: column;<br/>
-            gap: 4px;<br/>
-            margin-bottom: 16px;
-        }
-        .modal-box .field-group label {
-            font-size: 13px;<br/>
-            color: var(--text-sec);
-        }
-        .modal-box .field-group input[type="date"] {
-            padding: 10px 12px;<br/>
-            border: 1px solid var(--border);<br/>
-            border-radius: 8px;<br/>
-            background: var(--bg);<br/>
-            color: var(--text);<br/>
-            font-size: 14px;<br/>
-            transition: border 0.2s;
-        }
-        .modal-box .field-group input[type="date"]:focus {<br/>
-            outline: none;<br/>
-            border-color: var(--accent);
-        }
-        .modal-box .modal-actions {
-            display: flex;<br/>
-            justify-content: flex-end;<br/>
-            gap: 10px;<br/>
-            margin-top: 20px;
-        }
-        .modal-box .modal-actions button {
-            padding: 10px 20px;<br/>
-            border: none;<br/>
-            border-radius: 8px;<br/>
-            font-size: 14px;<br/>
-            font-weight: 500;<br/>
-            cursor: pointer;<br/>
-            transition: background 0.2s;
-        }
-        .modal-box .modal-actions .cancel {
-            background: transparent;<br/>
-            border: 1px solid var(--border);<br/>
-            color: var(--text);
-        }
-        .modal-box .modal-actions .cancel:hover {<br/>
-            background: var(--bg);
-        }
-        .modal-box .modal-actions .apply {
-            background: var(--accent);<br/>
-            color: #fff;
-        }
-        .modal-box .modal-actions .apply:hover {<br/>
-            background: var(--accent-hover);
-        }
-        .modal-box .error-msg {
-            color: #d32f2f;<br/>
-            font-size: 12px;<br/>
-            display: none;<br/>
-            margin-top: 4px;
-        }
-        /* ===== RECEITA PARCIAL POPUP (Gestão) ===== */
-        .receita-popup {
-            position: fixed;<br/>
-            inset: 0;<br/>
-            background: rgba(0, 0, 0, 0.5);<br/>
-            display: none;<br/>
-            align-items: center;<br/>
-            justify-content: center;<br/>
-            z-index: 1000;
-        }
-        .receita-popup.open {
-            display: flex;
-        }
-        .receita-popup .rp-box {
-            background: var(--card-bg);<br/>
-            border-radius: var(--radius);<br/>
-            padding: 28px 32px;<br/>
-            max-width: 360px;<br/>
-            width: 90%;
-        }
-        .receita-popup .rp-box h3 {
-            margin-bottom: 16px;
-        }
-        .receita-popup .rp-box label {
-            display: block;<br/>
-            font-size: 13px;<br/>
-            margin-bottom: 4px;<br/>
-            color: var(--text-sec);
-        }
-        .receita-popup .rp-box input {
-            width: 100%;<br/>
-            padding: 10px 12px;<br/>
-            border: 1px solid var(--border);<br/>
-            border-radius: 8px;<br/>
-            background: var(--bg);<br/>
-            color: var(--text);<br/>
-            font-size: 14px;<br/>
-            margin-bottom: 12px;
-        }
-        .receita-popup .rp-box button {
-            padding: 10px 20px;<br/>
-            border: none;<br/>
-            border-radius: 8px;<br/>
-            font-size: 14px;<br/>
-            cursor: pointer;<br/>
-            background: var(--accent);<br/>
-            color: #fff;<br/>
-            margin-right: 8px;
-        }
-        .receita-popup .rp-box button:hover {<br/>
-            background: var(--accent-hover);
-        }
-        /* ===== RESPONSIVO ===== */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 60px;<br/>
-                padding: 16px 8px;
-            }
-            .sidebar .logo {
-                font-size: 14px;<br/>
-                text-align: center;
-            }
-            .sidebar nav a {
-                font-size: 12px;<br/>
-                padding: 8px;<br/>
-                text-align: center;
-            }
-            .sidebar .connections h4,
-            .sidebar .connections .conn-item span {
-                display: none;
-            }
-            .sidebar .theme-toggle span {
-                display: none;
-            }
-            .main {
-                padding: 16px;
-            }
-            .main-header {
-                flex-direction: column;<br/>
-                align-items: flex-start;
-            }
-            .cards {
-                grid-template-columns: 1fr;
-            }
-        }
-        /* ===== UTILITÁRIOS ===== */
-        .hidden {
-            display: none !important;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automata YT — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }<br/>
+html, body { height: 100%; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;<br/>
+  background: var(--bg-body);<br/>
+  color: var(--text-primary);<br/>
+  transition: background 0.3s, color 0.3s;<br/>
+  overflow-x: hidden;
+}
+:root {
+  --bg-body: #f5f7fa;<br/>
+  --bg-card: #ffffff;<br/>
+  --bg-sidebar: #1e1e2d;<br/>
+  --text-primary: #1a1a2e;<br/>
+  --text-secondary: #555;<br/>
+  --text-sidebar: #a2a3b7;<br/>
+  --orange: #ff6b35;<br/>
+  --orange-light: #ff8a5c;<br/>
+  --border: #e0e0e0;<br/>
+  --shadow: 0 2px 10px rgba(0,0,0,0.06);<br/>
+  --radius: 12px;<br/>
+  --transition: 0.3s;
+}
+[data-theme="dark"] {
+  --bg-body: #121212;<br/>
+  --bg-card: #1e1e2e;<br/>
+  --bg-sidebar: #0d0d1a;<br/>
+  --text-primary: #e0e0e0;<br/>
+  --text-secondary: #aaa;<br/>
+  --text-sidebar: #888;<br/>
+  --border: #333;<br/>
+  --shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 240px;<br/>
+  background: var(--bg-sidebar); color: var(--text-sidebar);<br/>
+  display: flex; flex-direction: column; padding: 20px 16px;<br/>
+  transition: transform 0.3s; z-index: 100;
+}
+.sidebar .logo {
+  font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 30px;<br/>
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar .logo span { color: var(--orange); }<br/>
+.sidebar nav { flex: 1; }
+.sidebar nav a {
+  display: flex; align-items: center; gap: 12px;<br/>
+  padding: 12px 14px; border-radius: 8px; margin-bottom: 4px;<br/>
+  color: var(--text-sidebar); text-decoration: none; font-size: 14px;<br/>
+  transition: 0.2s;
+}
+.sidebar nav a:hover, .sidebar nav a.active {<br/>
+  background: rgba(255,255,255,0.08); color: #fff;
+}
+.sidebar .connections {
+  border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;<br/>
+  margin-bottom: 16px;
+}
+.sidebar .connections h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; color: #666; }
+.sidebar .connections .conn-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;<br/>
+  border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s;
+}
+.sidebar .connections .conn-item:hover { background: rgba(255,255,255,0.05); }
+.sidebar .toggle-theme {
+  display: flex; align-items: center; justify-content: space-between;<br/>
+  padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.08);<br/>
+  cursor: pointer; font-size: 13px;
+}
+.sidebar .toggle-theme .switch {
+  width: 40px; height: 22px; background: #555; border-radius: 11px;<br/>
+  position: relative; transition: 0.3s;
+}
+.sidebar .toggle-theme .switch::after {<br/>
+  content: ''; position: absolute; top: 2px; left: 2px;<br/>
+  width: 18px; height: 18px; background: #fff; border-radius: 50%;<br/>
+  transition: 0.3s;
+}
+.sidebar .toggle-theme .switch.active { background: var(--orange); }<br/>
+.sidebar .toggle-theme .switch.active::after { left: 20px; }
+
+/* ========== MAIN ========== */
+.main {
+  margin-left: 240px; padding: 20px 30px; min-height: 100vh;<br/>
+  transition: margin-left 0.3s;
+}
+/* ========== HEADER ========== */
+.header {
+  display: flex; justify-content: space-between; align-items: center;<br/>
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.header h1 { font-size: 24px; font-weight: 600; color: var(--text-primary); }
+.period-selector {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;<br/>
+  background: var(--bg-card); border-radius: var(--radius); padding: 6px 8px;<br/>
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.period-selector .group {
+  display: flex; align-items: center; gap: 2px;<br/>
+  padding: 0 6px; border-right: 1px solid var(--border);
+}
+.period-selector .group:last-child { border-right: none; }
+.period-selector .group-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;<br/>
+  color: var(--text-secondary); margin-right: 4px; font-weight: 600;
+}
+.period-btn {
+  background: none; border: none; padding: 6px 10px; border-radius: 6px;<br/>
+  cursor: pointer; font-size: 13px; color: var(--text-secondary);<br/>
+  transition: 0.2s; white-space: nowrap;
+}
+.period-btn:hover { background: rgba(255,107,53,0.1); color: var(--orange); }<br/>
+.period-btn.active { background: var(--orange); color: #fff; }<br/>
+.period-btn.custom { color: var(--orange); font-weight: 600; }
+
+/* ========== CARDS ========== */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+.card {
+  background: var(--bg-card); border-radius: var(--radius); padding: 20px;<br/>
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.card .label { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }<br/>
+.card .value { font-size: 28px; font-weight: 700; color: var(--text-primary); }<br/>
+.card .change { font-size: 13px; margin-top: 4px; }<br/>
+.card .change.up { color: #2e7d32; }<br/>
+.card .change.down { color: #c62828; }
+
+/* ========== CHART ========== */
+.chart-container {
+  background: var(--bg-card); border-radius: var(--radius); padding: 20px;<br/>
+  box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 24px;<br/>
+  position: relative;
+}
+.chart-container canvas { width: 100% !important; max-height: 320px; }
+
+/* ========== TABLE ========== */
+.table-container {
+  background: var(--bg-card); border-radius: var(--radius); padding: 16px;<br/>
+  box-shadow: var(--shadow); border: 1px solid var(--border); overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; }<br/>
+th { text-align: left; padding: 12px 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 2px solid var(--border); }<br/>
+td { padding: 10px 8px; font-size: 14px; border-bottom: 1px solid var(--border); }<br/>
+tr:last-child td { border-bottom: none; }<br/>
+tr.expandable { cursor: pointer; }<br/>
+tr.expandable:hover { background: rgba(255,107,53,0.04); }<br/>
+tr.details-row { display: none; }<br/>
+tr.details-row.open { display: table-row; }<br/>
+tr.details-row td { padding: 12px 16px; background: rgba(0,0,0,0.02); }<br/>
+.details-content { display: flex; gap: 20px; flex-wrap: wrap; }<br/>
+.details-content div { min-width: 140px; }<br/>
+.details-content .det-label { font-size: 11px; color: var(--text-secondary); }<br/>
+.details-content .det-value { font-size: 14px; font-weight: 600; }
+
+/* ========== MODAL (CALENDAR / RECEITA PARCIAL) ========== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;<br/>
+  background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center;<br/>
+  z-index: 200;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--bg-card); border-radius: var(--radius); padding: 28px 32px;<br/>
+  width: 90%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);<br/>
+  border: 1px solid var(--border);
+}
+.modal-box h2 { font-size: 20px; margin-bottom: 16px; color: var(--text-primary); }<br/>
+.modal-box label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+.modal-box input[type="date"],
+.modal-box input[type="number"],
+.modal-box input[type="text"] {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border);<br/>
+  border-radius: 8px; font-size: 14px; background: var(--bg-body);<br/>
+  color: var(--text-primary); margin-bottom: 14px;
+}
+.modal-box .modal-actions {
+  display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;
+}
+.modal-actions button {
+  padding: 10px 22px; border: none; border-radius: 8px; font-size: 14px;<br/>
+  cursor: pointer; transition: 0.2s;
+}
+.modal-actions .btn-cancel { background: var(--border); color: var(--text-primary); }<br/>
+.modal-actions .btn-apply { background: var(--orange); color: #fff; }<br/>
+.modal-actions .btn-apply:hover { background: var(--orange-light); }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 800px) {<br/>
+  .sidebar { transform: translateX(-100%); width: 220px; }<br/>
+  .sidebar.open { transform: translateX(0); }<br/>
+  .main { margin-left: 0; padding: 16px; }<br/>
+  .cards { grid-template-columns: 1fr; }<br/>
+  .period-selector { flex-wrap: wrap; }<br/>
+  .period-selector .group { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 4px; width: 100%; }<br/>
+  .header { flex-direction: column; align-items: stretch; }
+}
+/* mobile toggle button */
+.mobile-toggle {
+  display: none; position: fixed; top: 12px; left: 12px; z-index: 110;<br/>
+  background: var(--orange); border: none; color: #fff; width: 40px; height: 40px;<br/>
+  border-radius: 8px; font-size: 20px; cursor: pointer;
+}
+@media (max-width: 800px) {<br/>
+  .mobile-toggle { display: block; }
+}
+
+/* ========== RECEITA PARCIAL POPUP (inline na tabela) ========== */
+.receita-parcial-popup {
+  display: none; position: absolute; background: var(--bg-card);<br/>
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 16px;<br/>
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15); width: 260px; z-index: 150;
+}
+.receita-parcial-popup.open { display: block; }<br/>
+.receita-parcial-popup input { width: 100%; margin-bottom: 8px; }<br/>
+.receita-parcial-popup .calc-result { font-size: 14px; font-weight: 700; margin: 8px 0; }
+</style>
 </head>
 <body>
 
-    <!-- ===== LOGIN SCREEN ===== -->
-    <div id="login-screen">
-        <div class="login-box">
-            <h1>Automata YT</h1>
-            <p>Insira a senha para acessar o dashboard</p>
-            <label for="login-pass">Senha</label>
-            <input type="password" id="login-pass" placeholder="Digite a senha" />
-            <div class="remember">
-                <input type="checkbox" id="remember-me" />
-                <label for="remember-me">Manter conectado</label>
-            </div>
-            <button onclick="handleLogin()">Entrar</button>
-            <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
-        </div>
+<!-- ========== MOBILE TOGGLE ========== -->
+<button class="mobile-toggle" id="mobileToggle" onclick="toggleSidebar()">☰</button>
+
+<!-- ========== SIDEBAR ========== -->
+<div class="sidebar" id="sidebar">
+  <div class="logo">Automata<span>YT</span></div>
+  <nav>
+    <a href="#" class="active">📊 Dashboard</a>
+    <a href="#">📹 Vídeos</a>
+    <a href="#">👥 Inscritos</a>
+    <a href="#">⚙️ Configurações</a>
+  </nav>
+  <div class="connections">
+    <h4>Conexões</h4>
+    <div class="conn-item">🔗 YouTube</div>
+    <div class="conn-item">🔗 Google Analytics</div>
+    <div class="conn-item">🔗 Monetização</div>
+  </div>
+  <div class="toggle-theme" id="themeToggle">
+    <span>🌙 Tema escuro</span>
+    <div class="switch" id="switchBtn"></div>
+  </div>
+</div>
+
+<!-- ========== MAIN ========== -->
+<div class="main" id="main">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Dashboard</h1>
+    <div class="period-selector" id="periodSelector">
+      <!-- DIAS -->
+      <div class="group">
+        <span class="group-label">Dias</span>
+        <button class="period-btn active" data-value="7">7</button>
+        <button class="period-btn" data-value="28">28</button>
+        <button class="period-btn" data-value="90">90</button>
+      </div>
+      <!-- MESES -->
+      <div class="group" id="monthsGroup">
+        <span class="group-label">Meses</span>
+        <div id="monthsContainer"></div>
+      </div>
+      <!-- MÁX -->
+      <div class="group">
+        <button class="period-btn" data-value="max">♾️ Máx</button>
+      </div>
+      <!-- PERSONALIZADO -->
+      <div class="group">
+        <button class="period-btn custom" id="customBtn">📆 Personalizado</button>
+      </div>
     </div>
+  </div>
 
-    <!-- ===== APP ===== -->
-    <div id="app" class="hidden">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="logo">📊 AYT</div>
-            <nav>
-                <a href="#" class="active">Dashboard</a>
-                <a href="#">Canais</a>
-                <a href="#">Vídeos</a>
-                <a href="#">Receita</a>
-                <a href="#">Configurações</a>
-            </nav>
-            <div class="connections">
-                <h4>Conexões</h4>
-                <div class="conn-item"><span>🔗 YouTube API</span></div>
-                <div class="conn-item"><span>🔗 Google Ads</span></div>
-                <div class="conn-item"><span>🔗 Stripe</span></div>
-            </div>
-            <div class="theme-toggle" onclick="toggleTheme()">
-                <span id="theme-label">🌙 Tema escuro</span>
-                <span id="theme-icon">🌙</span>
-            </div>
-        </aside>
-
-        <!-- MAIN -->
-        <main class="main">
-            <!-- HEADER -->
-            <div class="main-header">
-                <h2>Dashboard</h2>
-                <div class="right">
-                    <!-- Período dropdown -->
-                    <div class="period-wrapper" id="periodWrapper">
-                        <div class="period-trigger" onclick="togglePeriodMenu()">
-                            <span id="periodLabel">Últimos 28 Dias</span>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="period-menu" id="periodMenu">
-                            <!-- DIAS -->
-                            <div class="section-title">DIAS</div>
-                            <div class="opt" data-value="7">Últimos 7 Dias</div>
-                            <div class="opt" data-value="28">Últimos 28 Dias</div>
-                            <div class="opt" data-value="90">Últimos 90 Dias</div>
-                            <hr />
-                            <!-- MESES -->
-                            <div class="section-title">MESES</div>
-                            <div id="mesesContainer"></div>
-                            <hr />
-                            <!-- Máx -->
-                            <div class="section-title">MÁX</div>
-                            <div class="opt" data-value="max">Todo período disponível</div>
-                            <hr />
-                            <!-- Personalizado -->
-                            <div class="section-title">PERSONALIZADO</div>
-                            <div class="opt-btn secondary" onclick="openCalendarModal()">Selecionar datas</div>
-                        </div>
-                    </div>
-                    <!-- Botão gestão receita parcial -->
-                    <button onclick="openReceitaPopup()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">
-                        💰 Gestão Receita
-                    </button>
-                </div>
-            </div>
-
-            <!-- CARDS -->
-            <div class="cards">
-                <div class="card">
-                    <div class="label">Receita (estimada)</div>
-                    <div class="value" id="cardReceita">R$ 12.450,00</div>
-                    <div class="change positive">+12,3%</div>
-                </div>
-                <div class="card">
-                    <div class="label">Visualizações</div>
-                    <div class="value" id="cardViews">284.512</div>
-                    <div class="change positive">+8,7%</div>
-                </div>
-                <div class="card">
-                    <div class="label">RPM</div>
-                    <div class="value" id="cardRPM">R$ 43,76</div>
-                    <div class="change negative">-1,2%</div>
-                </div>
-            </div>
-
-            <!-- CHART -->
-            <div class="chart-container">
-                <div class="chart-header">
-                    <h3>Receita ao longo do tempo</h3>
-                    <div class="partial-badge">
-                        <span class="circle"></span>
-                        <span>Receita Parcial</span>
-                    </div>
-                </div>
-                <canvas id="mainChart"></canvas>
-            </div>
-
-            <!-- TABELA DE CANAIS -->
-            <div class="channels-section">
-                <div class="ch-header">
-                    <h3>Canais</h3>
-                    <span style="font-size:13px;color:var(--text-sec);">Clique para detalhes</span>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Inscritos</th>
-                            <th>Vídeos</th>
-                            <th>Views (28d)</th>
-                            <th>Receita (28d)</th>
-                            <th>RPM</th>
-                            <th>Performance</th>
-                        </tr>
-                    </thead>
-                    <tbody id="channelsBody">
-                        <!-- preenchido via JS -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Rodapé -->
-            <p style="text-align:center;font-size:12px;color:var(--text-sec);margin-top:24px;"><br/>
-                * Dados do YouTube Analytics · Última atualização: hoje
-            </p>
-        </main>
+  <!-- Cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="label">Receita (R$)</div>
+      <div class="value" id="receitaVal">12.450,00</div>
+      <div class="change up">↑ 12%</div>
     </div>
-
-    <!-- ===== MODAL CALENDÁRIO ===== -->
-    <div class="modal-overlay" id="calendarModal">
-        <div class="modal-box">
-            <h3>Selecionar Período Personalizado</h3>
-            <div class="field-group">
-                <label for="dateStart">Data início</label>
-                <input type="date" id="dateStart" />
-            </div>
-            <div class="field-group">
-                <label for="dateEnd">Data fim</label>
-                <input type="date" id="dateEnd" />
-            </div>
-            <div class="error-msg" id="calendarError">A data início deve ser anterior ou igual à data fim.</div>
-            <div class="modal-actions">
-                <button class="cancel" onclick="closeCalendarModal()">Cancelar</button>
-                <button class="apply" onclick="applyCustomPeriod()">Aplicar</button>
-            </div>
-        </div>
+    <div class="card">
+      <div class="label">Views</div>
+      <div class="value" id="viewsVal">234.567</div>
+      <div class="change up">↑ 8%</div>
     </div>
-
-    <!-- ===== POPUP RECEITA PARCIAL (GESTÃO) ===== -->
-    <div class="receita-popup" id="receitaPopup">
-        <div class="rp-box">
-            <h3>Gestão de Receita Parcial</h3>
-            <label>Porcentagem do mês atual (%)</label>
-            <input type="number" id="receitaPercent" value="85" min="0" max="100" step="1" />
-            <label>Valor estimado total (R$)</label>
-            <input type="number" id="receitaTotal" value="12450" step="0.01" />
-            <div style="margin-top:12px;font-size:14px;"><br/>
-                <strong>Receita parcial:</strong> R$ <span id="rpCalculated">10.582,50</span>
-            </div>
-            <div style="margin-top:16px;">
-                <button onclick="applyReceitaParcial()">Aplicar</button>
-                <button onclick="closeReceitaPopup()" style="background:transparent;border:1px solid var(--border);color:var(--text);">Cancelar</button>
-            </div>
-        </div>
+    <div class="card">
+      <div class="label">RPM (R$)</div>
+      <div class="value" id="rpmVal">5,23</div>
+      <div class="change down">↓ 2%</div>
     </div>
+  </div>
 
-    <script>
-        /* 
-           DADOS DE EXEMPLO
-            */
-        const channelsData = [{
-            nome: 'Tech Reviews BR',<br/>
-            inscritos: 45200,<br/>
-            videos: 128,<br/>
-            views28d: 84500,<br/>
-            receita28d: 3840.00,<br/>
-            rpm: 45.44,<br/>
-            performance: 'up',<br/>
-            ultimosVideos: ['Review iPhone 16', 'Melhores SSDs 2026', 'Como montar um PC'],<br/>
-            melhorVideo: 'Review iPhone 16 (42k views)'
-        }, {
-            nome: 'Games & Fun',<br/>
-            inscritos: 128300,<br/>
-            videos: 312,<br/>
-            views28d: 189200,<br/>
-            receita28d: 7200.00,<br/>
-            rpm: 38.06,<br/>
-            performance: 'up',<br/>
-            ultimosVideos: ['Minecraft Modpack', 'Elden Ring DLC', 'Indie Games'],<br/>
-            melhorVideo: 'Minecraft Modpack (98k views)'
-        }, {
-            nome: 'Cozinha Prática',<br/>
-            inscritos: 23400,<br/>
-            videos: 89,<br/>
-            views28d: 32100,<br/>
-            receita28d: 980.00,<br/>
-            rpm: 30.53,<br/>
-            performance: 'down',<br/>
-            ultimosVideos: ['Pão de Queijo Fácil', 'Sobremesa Fit', 'Jantar Rápido'],<br/>
-            melhorVideo: 'Pão de Queijo Fácil (15k views)'
-        }, {
-            nome: 'Música Nacional',<br/>
-            inscritos: 67100,<br/>
-            videos: 45,<br/>
-            views28d: 116700,<br/>
-            receita28d: 2980.00,<br/>
-            rpm: 25.53,<br/>
-            performance: 'up',<br/>
-            ultimosVideos: ['Cover Acústico', 'Playlist MPB', 'Nova Música Original'],<br/>
-            melhorVideo: 'Playlist MPB (67k views)'
-        }];
+  <!-- Chart -->
+  <div class="chart-container">
+    <canvas id="chartCanvas"></canvas>
+  </div>
 
-        // Gera meses dinâmicos (últimos 12)
-        function generateMonths() {
-            const months = [];
-            const now = new Date();
-            for (let i = 11; i >= 0; i--) {
-                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                const label = d.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-                const value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-                months.push({ label: label.charAt(0).toUpperCase() + label.slice(1), value });
-            }
-            return months;
+  <!-- Tabela de Canais -->
+  <div class="table-container" style="position:relative;">
+    <table>
+      <thead>
+        <tr>
+          <th>Canal</th>
+          <th>Receita (R$)</th>
+          <th>Views</th>
+          <th>RPM (R$)</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr class="expandable" data-idx="0">
+          <td><strong>🎮 GamePlay BR</strong></td>
+          <td>4.200,00</td>
+          <td>98.200</td>
+          <td>4,27</td>
+          <td><button class="period-btn" onclick="event.stopPropagation();openParcialPopup(0)">💰 Parcial</button></td>
+        </tr>
+        <tr class="details-row" data-idx="0">
+          <td colspan="5">
+            <div class="details-content">
+              <div><span class="det-label">Últimos 30 dias</span><br><span class="det-value">4.200,00</span></div>
+              <div><span class="det-label">Melhor vídeo</span><br><span class="det-value">Minecraft XP Farm</span></div>
+              <div><span class="det-label">Desempenho</span><br><span class="det-value" style="color:#2e7d32;">+15%</span></div>
+            </div>
+          </td>
+        </tr>
+        <tr class="expandable" data-idx="1">
+          <td><strong>📚 EduTech</strong></td>
+          <td>3.800,00</td>
+          <td>72.400</td>
+          <td>5,25</td>
+          <td><button class="period-btn" onclick="event.stopPropagation();openParcialPopup(1)">💰 Parcial</button></td>
+        </tr>
+        <tr class="details-row" data-idx="1">
+          <td colspan="5">
+            <div class="details-content">
+              <div><span class="det-label">Últimos 30 dias</span><br><span class="det-value">3.800,00</span></div>
+              <div><span class="det-label">Melhor vídeo</span><br><span class="det-value">HTML in 10 min</span></div>
+              <div><span class="det-label">Desempenho</span><br><span class="det-value" style="color:#c62828;">-5%</span></div>
+            </div>
+          </td>
+        </tr>
+        <tr class="expandable" data-idx="2">
+          <td><strong>🎬 Vlog do João</strong></td>
+          <td>2.150,00</td>
+          <td>41.800</td>
+          <td>5,14</td>
+          <td><button class="period-btn" onclick="event.stopPropagation();openParcialPopup(2)">💰 Parcial</button></td>
+        </tr>
+        <tr class="details-row" data-idx="2">
+          <td colspan="5">
+            <div class="details-content">
+              <div><span class="det-label">Últimos 30 dias</span><br><span class="det-value">2.150,00</span></div>
+              <div><span class="det-label">Melhor vídeo</span><br><span class="det-value">Diário na Europa</span></div>
+              <div><span class="det-label">Desempenho</span><br><span class="det-value" style="color:#2e7d32;">+3%</span></div>
+            </div>
+          </td>
+        </tr>
+        <tr class="expandable" data-idx="3">
+          <td><strong>🎵 MusicLab</strong></td>
+          <td>1.900,00</td>
+          <td>30.100</td>
+          <td>6,31</td>
+          <td><button class="period-btn" onclick="event.stopPropagation();openParcialPopup(3)">💰 Parcial</button></td>
+        </tr>
+        <tr class="details-row" data-idx="3">
+          <td colspan="5">
+            <div class="details-content">
+              <div><span class="det-label">Últimos 30 dias</span><br><span class="det-value">1.900,00</span></div>
+              <div><span class="det-label">Melhor vídeo</span><br><span class="det-value">Lo-Fi Beats</span></div>
+              <div><span class="det-label">Desempenho</span><br><span class="det-value" style="color:#2e7d32;">+22%</span></div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== MODAL CALENDÁRIO ========== -->
+<div class="modal-overlay" id="calendarModal">
+  <div class="modal-box">
+    <h2>📆 Selecionar Período</h2>
+    <label>Data de início</label>
+    <input type="date" id="startDate" value="">
+    <label>Data de fim</label>
+    <input type="date" id="endDate" value="">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCalendar()">Cancelar</button>
+      <button class="btn-apply" onclick="applyCalendar()">Aplicar</button>
+    </div>
+    <p id="calendarError" style="color:#c62828;font-size:13px;margin-top:8px;display:none;"></p>
+  </div>
+</div>
+
+<!-- ========== POPUP RECEITA PARCIAL ========== -->
+<div class="modal-overlay" id="parcialModal">
+  <div class="modal-box">
+    <h2>💰 Receita Parcial</h2>
+    <p style="margin-bottom:12px;font-size:14px;color:var(--text-secondary);">Canal: <strong id="parcialCanalName"></strong></p>
+    <label>Percentual (%)</label>
+    <input type="number" id="parcialPercent" value="50" min="0" max="100" step="1">
+    <label>Valor base (R$)</label>
+    <input type="text" id="parcialBase" readonly style="background:#f0f0f0;"><br/>
+    <div class="calc-result" id="parcialResult">Resultado: R$ 0,00</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeParcialPopup()">Cancelar</button>
+      <button class="btn-apply" onclick="applyParcial()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="loginScreen" style="position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg-body);display:flex;align-items:center;justify-content:center;z-index:999;"><br/>
+  <div style="background:var(--bg-card);padding:40px;border-radius:var(--radius);width:90%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center;"><br/>
+    <div style="font-size:32px;font-weight:700;margin-bottom:8px;">Automata<span style="color:var(--orange);">YT</span></div><br/>
+    <p style="color:var(--text-secondary);margin-bottom:24px;">Acesse seu dashboard</p><br/>
+    <input type="password" id="loginPassword" placeholder="Senha" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:12px;background:var(--bg-body);color:var(--text-primary);"><br/>
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:20px;color:var(--text-secondary);">
+      <input type="checkbox" id="keepConnected"> Manter conectado
+    </label>
+    <button onclick="doLogin()" style="width:100%;padding:12px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Entrar</button><br/>
+    <p id="loginError" style="color:#c62828;font-size:14px;margin-top:12px;display:none;"></p>
+  </div>
+</div>
+
+<script>
+// ========== LOGIN ==========
+function doLogin() {
+  const pwd = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  if (pwd === 'automata') {
+    document.getElementById('loginScreen').style.display = 'none';
+    if (document.getElementById('keepConnected').checked) {
+      localStorage.setItem('automata_logged', 'true');
+    }
+  } else {
+    err.textContent = 'Senha incorreta. Tente novamente.';
+    err.style.display = 'block';
+  }
+}
+// auto login if keep connected
+if (localStorage.getItem('automata_logged') === 'true') {
+  document.getElementById('loginPassword').value = 'automata';
+  doLogin();
+}
+
+// ========== THEME ==========
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('switchBtn').classList.toggle('active', theme === 'dark');
+  localStorage.setItem('automata_theme', theme);
+}
+document.getElementById('themeToggle').addEventListener('click', function() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+// load saved theme
+const savedTheme = localStorage.getItem('automata_theme') || 'light';
+applyTheme(savedTheme);
+
+// ========== SIDEBAR MOBILE ==========
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ========== PERIOD / DATES ==========
+let currentPeriod = '7';
+let customRange = { start: null, end: null };
+
+function generateMonths() {
+  const container = document.getElementById('monthsContainer');
+  container.innerHTML = '';
+  const now = new Date();
+  for (let i = 1; i <= 12; i++) {
+    const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = m.toLocaleDateString('pt-BR', { month: 'short' });
+    const btn = document.createElement('button');
+    btn.className = 'period-btn';
+    btn.dataset.value = 'month_' + i;
+    btn.textContent = label;
+    btn.addEventListener('click', function() {
+      setActivePeriod(btn.dataset.value);
+    });
+    container.appendChild(btn);
+  }
+}
+generateMonths();
+
+// period click handling
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    const val = this.dataset.value;
+    if (val === 'max' || val === 'custom') {
+      if (val === 'custom') {
+        document.getElementById('calendarModal').classList.add('open');
+        return;
+      }
+      setActivePeriod(val);
+      return;
+    }
+    setActivePeriod(val);
+  });
+});
+
+function setActivePeriod(val) {
+  currentPeriod = val;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`.period-btn[data-value="${val}"]`).forEach(b => b.classList.add('active'));
+  updateDashboard();
+}
+
+// ========== CALENDAR MODAL ==========
+document.getElementById('customBtn').addEventListener('click', function() {
+  document.getElementById('calendarModal').classList.add('open');
+});
+
+function closeCalendar() {
+  document.getElementById('calendarModal').classList.remove('open');
+  document.getElementById('calendarError').style.display = 'none';
+}
+
+function applyCalendar() {
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+  const err = document.getElementById('calendarError');
+  if (!start || !end) {
+    err.textContent = 'Selecione as duas datas.';
+    err.style.display = 'block';
+    return;
+  }
+  if (new Date(start) > new Date(end)) {
+    err.textContent = 'Data de início deve ser anterior à data de fim.';
+    err.style.display = 'block';
+    return;
+  }
+  customRange.start = start;
+  customRange.end = end;
+  err.style.display = 'none';
+  closeCalendar();
+  setActivePeriod('custom');
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('customBtn').classList.add('active');
+}
+
+// ========== RECEITA PARCIAL POPUP ==========
+let parcialChannelIdx = null;
+const channelData = [
+  { name: 'GamePlay BR', receita: 4200 },<br/>
+  { name: 'EduTech', receita: 3800 },<br/>
+  { name: 'Vlog do João', receita: 2150 },<br/>
+  { name: 'MusicLab', receita: 1900 }
+];
+
+function openParcialPopup(idx) {
+  parcialChannelIdx = idx;
+  document.getElementById('parcialCanalName').textContent = channelData[idx].name;
+  document.getElementById('parcialBase').value = channelData[idx].receita.toFixed(2).replace('.', ',');
+  calcularParcial();
+  document.getElementById('parcialModal').classList.add('open');
+}
+
+function closeParcialPopup() {
+  document.getElementById('parcialModal').classList.remove('open');
+  parcialChannelIdx = null;
+}
+
+function calcularParcial() {
+  const percent = parseFloat(document.getElementById('parcialPercent').value) || 0;
+  const base = channelData[parcialChannelIdx] ? channelData[parcialChannelIdx].receita : 0;
+  const result = (base * percent) / 100;
+  document.getElementById('parcialResult').textContent = 'Resultado: R$ ' + result.toFixed(2).replace('.', ',');
+}
+
+document.getElementById('parcialPercent').addEventListener('input', calcularParcial);
+
+function applyParcial() {
+  // just close and show feedback
+  const percent = document.getElementById('parcialPercent').value;
+  alert(`Receita parcial de ${percent}% aplicada para ${channelData[parcialChannelIdx]?.name}.`);
+  closeParcialPopup();
+}
+
+// ========== TABLE EXPAND ==========
+document.querySelectorAll('.expandable').forEach(tr => {
+  tr.addEventListener('click', function() {
+    const idx = this.dataset.idx;
+    const detailRow = document.querySelector(`.details-row[data-idx="${idx}"]`);
+    if (detailRow) {
+      detailRow.classList.toggle('open');
+    }
+  });
+});
+
+// ========== CHART ==========
+let chart = null;
+function buildChartData() {
+  let labels, receitaData, partialIndex;
+  if (currentPeriod === 'max') {
+    labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    receitaData = [3200, 3500, 3800, 4100, 4300, 4700, 4900, 5200, 5500, 5800, 6000, 12450];
+    partialIndex = 11;
+  } else if (currentPeriod === 'custom') {
+    const start = customRange.start || '2026-01-01';
+    const end = customRange.end || '2026-05-19';
+    const d1 = new Date(start);
+    const d2 = new Date(end);
+    const diffDays = Math.round((d2 - d1) / (1000*60*60*24));
+    const count = Math.min(diffDays + 1, 30);
+    labels = [];
+    receitaData = [];
+    for (let i = 0; i < count; i++) {
+      const d = new Date(d1);
+      d.setDate(d.getDate() + i);
+      labels.push(d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}));
+      receitaData.push(Math.floor(200 + Math.random()*300));
+    }
+    partialIndex = count - 1;
+  } else if (currentPeriod.startsWith('month_')) {
+    const idx = parseInt(currentPeriod.split('_')[1]);
+    const m = new Date();
+    m.setMonth(m.getMonth() - idx);
+    const daysInMonth = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+    labels = [];
+    receitaData = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      labels.push(String(d));
+      receitaData.push(Math.floor(100 + Math.random()*400));
+    }
+    partialIndex = daysInMonth - 1;
+  } else {
+    // dias
+    const days = parseInt(currentPeriod);
+    labels = [];
+    receitaData = [];
+    for (let i = days; i >= 1; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      labels.push(d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}));
+      receitaData.push(Math.floor(50 + Math.random()*300));
+    }
+    partialIndex = days - 1;
+  }
+  // garantindo que partialIndex exista
+  if (partialIndex === undefined || partialIndex >= receitaData.length) partialIndex = receitaData.length - 1;
+  return { labels, receitaData, partialIndex };
+}
+
+function renderChart() {
+  const ctx = document.getElementById('chartCanvas').getContext('2d');
+  const data = buildChartData();
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  
+  if (chart) chart.destroy();
+
+  // dataset da receita total (linha)
+  const totalData = data.receitaData.map(v => v + Math.floor(Math.random()*80 + 20));
+
+  chart = new Chart(ctx, {
+    type: 'line',<br/>
+    data: {<br/>
+      labels: data.labels,<br/>
+      datasets: [
+        {
+          label: 'Receita Total',<br/>
+          data: totalData,<br/>
+          borderColor: '#ff6b35',<br/>
+          backgroundColor: 'rgba(255,107,53,0.08)',<br/>
+          fill: true,<br/>
+          tension: 0.3,<br/>
+          pointRadius: 2,<br/>
+          pointBackgroundColor: '#ff6b35',<br/>
+          borderWidth: 2
+        },
+        {
+          label: 'Receita Parcial',<br/>
+          data: data.receitaData,<br/>
+          borderColor: isDark ? '#888' : '#ccc',<br/>
+          borderDash: [5,5],<br/>
+          backgroundColor: 'rgba(0,0,0,0)',<br/>
+          fill: false,<br/>
+          tension: 0.3,<br/>
+          pointRadius: 0,<br/>
+          borderWidth: 1.5,<br/>
+          pointHitRadius: 8,
+          // bolinha especial no último ponto
         }
+      ]
+    },
+    options: {<br/>
+      responsive: true,<br/>
+      maintainAspectRatio: false,<br/>
+      plugins: {<br/>
+        legend: { labels: { color: isDark ? '#ccc' : '#333' } }
+      },
+      scales: {<br/>
+        x: { ticks: { color: isDark ? '#aaa' : '#555' }, grid: { color: isDark ? '#333' : '#e0e0e0' } },<br/>
+        y: { ticks: { color: isDark ? '#aaa' : '#555' }, grid: { color: isDark ? '#333' : '#e0e0e0' } }
+      }
+    },
+    plugins: [{<br/>
+      afterDraw: function(chart) {
+        const ds = chart.data.datasets[1];
+        if (!ds || !ds.data || ds.data.length === 0) return;
+        const meta = chart.getDatasetMeta(1);
+        if (!meta || !meta.data || meta.data.length === 0) return;
+        const lastIndex = ds.data.length - 1;
+        const point = meta.data[lastIndex];
+        if (!point) return;
+        const ctx = chart.ctx;
+        const x = point.x;
+        const y = point.y;
+        const radius = 7;
+        ctx.save();
+        // cor do fundo: branco no light, preto no dark
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = isDark ? '#000000' : '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#ff6b35';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  });
+}
 
-        const monthsList = generateMonths();
+// ========== UPDATE DASHBOARD ==========
+function updateDashboard() {
+  // Atualizar cards com valores simulados
+  const receita = (12450 + Math.floor(Math.random()*2000)).toFixed(2).replace('.', ',');
+  document.getElementById('receitaVal').textContent = receita;
+  document.getElementById('viewsVal').textContent = (234567 + Math.floor(Math.random()*50000)).toLocaleString('pt-BR');
+  document.getElementById('rpmVal').textContent = (5 + Math.random()*3).toFixed(2).replace('.', ',');
+  renderChart();
+}
 
-        // Estado do período
-        let currentPeriod = '28'; // valor default
+// ========== INIT ==========
+// set default dates for calendar
+const today = new Date();
+const thirtyDaysAgo = new Date(today);
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+document.getElementById('endDate').value = today.toISOString().split('T')[0];
 
-        // Referências
-        let chartInstance = null;
+updateDashboard();
 
-        /* 
-           LOGIN
-            */
-        function handleLogin() {
-            const pass = document.getElementById('login-pass').value;
-            const error = document.getElementById('login-error');
-            if (pass === 'automata') {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                initDashboard();
-            } else {
-                error.style.display = 'block';
-                setTimeout(() => { error.style.display = 'none'; }, 3000);
-            }
-        }
-        // Enter no input
-        document.getElementById('login-pass').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
+// theme change listener to re-render chart
+const observer = new MutationObserver(() => renderChart());
+observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-        /* 
-           TEMA
-            */
-        function toggleTheme() {
-            document.body.classList.toggle('dark');
-            const label = document.getElementById('theme-label');
-            const icon = document.getElementById('theme-icon');
-            const isDark = document.body.classList.contains('dark');
-            label.textContent = isDark ? '☀️ Tema claro' : '🌙 Tema escuro';<br/>
-            icon.textContent = isDark ? '☀️' : '🌙';
-            // Recria o gráfico para atualizar cores
-            if (chartInstance) {
-                updateChart(currentPeriod);
-            }
-        }
+// close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.classList.remove('open');
+    }
+  });
+});
+</script>
 
-        /* 
-           PERÍODO DROPDOWN
-            */
-        function togglePeriodMenu() {
-            const menu = document.getElementById('periodMenu');
-            const trigger = document.querySelector('.period-trigger');
-            menu.classList.toggle('open');
-            trigger.classList.toggle('open');
-            // Fecha ao clicar fora
-            if (menu.classList.contains('open')) {
-                document.addEventListener('click', closePeriodOutside);
-            } else {
-                document.removeEventListener('click', closePeriodOutside);
-            }
-        }
-
-        function closePeriodOutside(e) {
-            const wrapper = document.getElementById('periodWrapper');
-            if (!wrapper.contains(e.target)) {
-                document.getElementById('periodMenu').classList.remove('open');
-                document.querySelector('.period-trigger').classList.remove('open');
-                document.removeEventListener('click', closePeriodOutside);
-            }
-        }
-
-        function selectPeriod(value) {
-            currentPeriod = value;
-            // Atualiza label
-            const labelMap = {
-                '7': 'Últimos 7 Dias',<br/>
-                '28': 'Últimos 28 Dias',<br/>
-                '90': 'Últimos 90 Dias',<br/>
-                'max': 'Todo período'
-            };
-            if (labelMap[value]) {
-                document.getElementById('periodLabel').textContent = labelMap[value];
-            } else {
-                // Mês: extrair label do monthsList
-                const found = monthsList.find(m => m.value === value);
-                if (found) document.getElementById('periodLabel').textContent = found.label;
-            }
-            // Fecha menu
-            document.getElementById('periodMenu').classList.remove('open');
-            document.querySelector('.period-trigger').classList.remove('open');
-            document.removeEventListener('click', closePeriodOutside);
-            // Atualiza dados
-            updateDashboard(value);
-        }
-
-        // Preenche meses no dropdown
-        function populateMonths() {
-            const container = document.getElementById('mesesContainer');
-            container.innerHTML = '';
-            monthsList.forEach(m => {
-                const div = document.createElement('div');
-                div.className = 'opt';
-                div.dataset.value = m.value;
-                div.textContent = m.label;
-                div.addEventListener('click', () => selectPeriod(m.value));
-                container.appendChild(div);
-            });
-        }
-
-        // Eventos das opções fixas
-        document.querySelectorAll('.period-menu .opt[data-value]').forEach(el => {
-            el.addEventListener('click', () => selectPeriod(el.dataset.value));
-        });
-
-        // Máx
-        document.querySelector('.opt[data-value="max"]').addEventListener('click', () => selectPeriod('max'));
-
-        // Preencher meses ao iniciar
-        populateMonths();
-
-        /* 
-           CALENDÁRIO MODAL
-            */
-        function openCalendarModal() {
-            // Fecha dropdown primeiro
-            document.getElementById('periodMenu').classList.remove('open');
-            document.querySelector('.period-trigger').classList.remove('open');
-            document.removeEventListener('click', closePeriodOutside);
-            // Seta datas padrão (últimos 28 dias)
-            const hoje = new Date();
-            const fim = hoje.toISOString().split('T')[0];
-            const inicio = new Date(hoje.getTime() - 28 * 86400000).toISOString().split('T')[0];
-            document.getElementById('dateStart').value = inicio;
-            document.getElementById('dateEnd').value = fim;
-            document.getElementById('calendarError').style.display = 'none';
-            document.getElementById('calendarModal').classList.add('open');
-        }
-
-        function closeCalendarModal() {
-            document.getElementById('calendarModal').classList.remove('open');
-        }
-
-        function applyCustomPeriod() {
-            const start = document.getElementById('dateStart').value;
-            const end = document.getElementById('dateEnd').value;
-            if (!start || !end) {
-                document.getElementById('calendarError').textContent = 'Selecione ambas as datas.';
-                document.getElementById('calendarError').style.display = 'block';
-                return;
-            }
-            if (start > end) {
-                document.getElementById('calendarError').textContent = 'A data início deve ser anterior ou igual à data fim.';
-                document.getElementById('calendarError').style.display = 'block';
-                return;
-            }
-            document.getElementById('calendarError').style.display = 'none';
-            // Atualiza label
-            const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR');
-            document.getElementById('periodLabel').textContent = `${fmt(start)} - ${fmt(end)}`;
-            currentPeriod = 'custom';
-            closeCalendarModal();
-            // Atualiza dashboard com dados mockados (pode adaptar)
-            updateDashboard('custom');
-        }
-
-        // Fechar modal ao clicar fora
-        document.getElementById('calendarModal').addEventListener('click', function(e) {
-            if (e.target === this) closeCalendarModal();
-        });
-
-        /* 
-           RECEITA PARCIAL POPUP
-            */
-        function openReceitaPopup() {
-            document.getElementById('receitaPopup').classList.add('open');
-            // Calcula inicial
-            calcReceitaParcial();
-        }
-
-        function closeReceitaPopup() {
-            document.getElementById('receitaPopup').classList.remove('open');
-        }
-
-        function calcReceitaParcial() {
-            const percent = parseFloat(document.getElementById('receitaPercent').value) || 0;
-            const total = parseFloat(document.getElementById('receitaTotal').value) || 0;
-            const parcial = (total * percent / 100);
-            document.getElementById('rpCalculated').textContent = parcial.toLocaleString('pt-BR', { style: 'currency',<br/>
-                currency: 'BRL' });
-        }
-
-        document.getElementById('receitaPercent').addEventListener('input', calcReceitaParcial);
-        document.getElementById('receitaTotal').addEventListener('input', calcReceitaParcial);
-
-        function applyReceitaParcial() {
-            const percent = parseFloat(document.getElementById('receitaPercent').value) || 0;
-            const total = parseFloat(document.getElementById('receitaTotal').value) || 0;
-            const parcial = total * percent / 100;
-            // Atualiza card receita
-            document.getElementById('cardReceita').textContent = parcial.toLocaleString('pt-BR', { style: 'currency',<br/>
-                currency: 'BRL' });
-            // Fecha popup
-            closeReceitaPopup();
-            // Feedback visual
-            document.querySelector('.partial-badge .circle').style.borderColor = '#ff6a00';
-            setTimeout(() => {
-                document.querySelector('.partial-badge .circle').style.borderColor = 'var(--accent)';
-            }, 600);
-        }
-
-        // Fechar popup ao clicar fora
-        document.getElementById('receitaPopup').addEventListener('click', function(e) {
-            if (e.target === this) closeReceitaPopup();
-        });
-
-        /* 
-           DASHBOARD - DADOS MOCK
-            */
-        function generateChartData(period) {
-            let labels, values;
-            const now = new Date();
-            if (period === '7') {
-                labels = Array.from({ length: 7 }, (_, i) => {
-                    const d = new Date(now.getTime() - (6 - i) * 86400000);
-                    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                });
-                values = [320, 450, 380, 510, 490, 620, 580];
-            } else if (period === '28') {
-                labels = Array.from({ length: 4 }, (_, i) => `Semana ${i+1}`);
-                values = [3200, 3800, 4100, 4500];
-            } else if (period === '90') {
-                labels = ['Mês 1', 'Mês 2', 'Mês 3'];
-                values = [12500, 13800, 14200];
-            } else if (period === 'max') {
-                labels = monthsList.map(m => m.label.split(' ')[0]);
-                values = monthsList.map(() => Math.floor(8000 + Math.random() * 6000));
-            } else if (period === 'custom') {
-                // Simula 10 pontos
-                labels = Array.from({ length: 10 }, (_, i) => `P${i+1}`);<br/>
-                values = Array.from({ length: 10 }, () => Math.floor(300 + Math.random() * 700));
-            } else {
-                // Mês específico - pega 4 semanas
-                labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-                values = [800, 920, 1100, 1050];
-            }
-            return { labels, values };
-        }
-
-        function updateChart(period) {
-            const data = generateChartData(period);
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            const isDark = document.body.classList.contains('dark');
-            const gridColor = isDark ? '#333' : '#e0e0e0';<br/>
-            const textColor = isDark ? '#aaaaaa' : '#555';
-
-            if (chartInstance) chartInstance.destroy();
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',<br/>
-                data: {<br/>
-                    labels: data.labels,<br/>
-                    datasets: [{<br/>
-                        label: 'Receita (R$)',<br/>
-                        data: data.values,<br/>
-                        borderColor: '#ff6a00',<br/>
-                        backgroundColor: 'rgba(255,106,0,0.1)',<br/>
-                        tension: 0.3,<br/>
-                        fill: true,<br/>
-                        pointRadius: 4,<br/>
-                        pointBackgroundColor: '#ff6a00',<br/>
-                        pointBorderColor: '#fff',<br/>
-                        pointBorderWidth: 2,
-                    }]
-                },
-                options: {<br/>
-                    responsive: true,<br/>
-                    maintainAspectRatio: false,<br/>
-                    plugins: {<br/>
-                        legend: { display: false },<br/>
-                        tooltip: {<br/>
-                            callbacks: {<br/>
-                                label: (ctx) => `R$ ${ctx.parsed.y.toFixed(2)}`
-                            }
-                        }
-                    },
-                    scales: {<br/>
-                        x: {<br/>
-                            grid: { color: gridColor },<br/>
-                            ticks: { color: textColor, font: { size: 11 } }
-                        },
-                        y: {<br/>
-                            grid: { color: gridColor },<br/>
-                            ticks: {<br/>
-                                color: textColor,<br/>
-                                font: { size: 11 },<br/>
-                                callback: (v) => 'R$ ' + v.toFixed(0)
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateCards(period) {
-            // Dados mockados
-            let receita, views, rpm, receitaChange, viewsChange, rpmChange;
-            if (period === '7') {
-                receita = 2840.00;
-                views = 45200;
-                rpm = 62.83;
-                receitaChange = '+5,2%';
-                viewsChange = '+3,1%';
-                rpmChange = '+2,0%';
-            } else if (period === '28') {
-                receita = 12450.00;
-                views = 284512;
-                rpm = 43.76;
-                receitaChange = '+12,3%';
-                viewsChange = '+8,7%';
-                rpmChange = '-1,2%';
-            } else if (period === '90') {
-                receita = 38400.00;
-                views = 712000;
-                rpm = 53.93;
-                receitaChange = '+18,5%';
-                viewsChange = '+14,2%';
-                rpmChange = '+3,7%';
-            } else if (period === 'max') {
-                receita = 142500.00;
-                views = 2840000;
-                rpm = 50.18;
-                receitaChange = '+32,0%';
-                viewsChange = '+27,4%';
-                rpmChange = '+3,6%';
-            } else {
-                receita = 4500.00;
-                views = 98000;
-                rpm = 45.92;
-                receitaChange = '+6,8%';
-                viewsChange = '+5,2%';
-                rpmChange = '+1,5%';
-            }
-
-            document.getElementById('cardReceita').textContent = receita.toLocaleString('pt-BR', { style: 'currency',<br/>
-                currency: 'BRL' });
-            document.getElementById('cardViews').textContent = views.toLocaleString('pt-BR');
-            document.getElementById('cardRPM').textContent = rpm.toLocaleString('pt-BR', { style: 'currency',<br/>
-                currency: 'BRL' });
-
-            // Atualiza mudanças (simplificado)
-            document.querySelectorAll('.card .change').forEach((el, idx) => {
-                if (idx === 0) el.textContent = receitaChange;
-                else if (idx === 1) el.textContent = viewsChange;
-                else el.textContent = rpmChange;
-                // Cor positiva/negativa
-                el.className = 'change ' + (el.textContent.includes('+') ? 'positive' : 'negative');
-            });
-        }
-
-        function updateTable() {
-            const tbody = document.getElementById('channelsBody');
-            tbody.innerHTML = '';
-            channelsData.forEach((ch, idx) => {
-                const perfClass = ch.performance === 'up' ? 'green' : 'red';<br/>
-                const perfLabel = ch.performance === 'up' ? '▲ Subindo' : '▼ Caindo';
-                const tr = document.createElement('tr');
-                tr.className = 'expandable';
-                tr.dataset.index = idx;
-                tr.innerHTML = `
-                    <td><strong>${ch.nome}</strong></td>
-                    <td>${ch.inscritos.toLocaleString('pt-BR')}</td>
-                    <td>${ch.videos}</td>
-                    <td>${ch.views28d.toLocaleString('pt-BR')}</td>
-                    <td>${ch.receita28d.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}</td>
-                    <td>${ch.rpm.toFixed(2)}</td>
-                    <td><span class="badge ${perfClass}">${perfLabel}</span></td>
-                `;
-                tr.addEventListener('click', () => toggleDetails(idx));
-                tbody.appendChild(tr);
-
-                // Linha de detalhes
-                const detTr = document.createElement('tr');
-                detTr.className = 'details-row';
-                detTr.id = `details-${idx}`;
-                detTr.innerHTML = `
-                    <td colspan="7">
-                        <div class="details-cell">
-                            <div class="subinfo">
-                                <div><span>Últimos vídeos:</span> ${ch.ultimosVideos.join(', ')}</div><br/>
-                                <div><span>Melhor performance:</span> ${ch.melhorVideo}</div>
-                            </div>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(detTr);
-            });
-        }
-
-        function toggleDetails(idx) {
-            const tr = document.getElementById(`details-${idx}`);
-            tr.classList.toggle('open');
-        }
-
-        function updateDashboard(period) {
-            updateCards(period);
-            updateChart(period);
-            updateTable();
-        }
-
-        /* 
-           INICIALIZAÇÃO
-            */
-        function initDashboard() {
-            // Verifica tema salvo (opcional)
-            // Por padrão tema claro
-            updateDashboard('28');
-            // Seleciona "Últimos 28 Dias" como default no dropdown
-            document.querySelectorAll('.opt').forEach(el => {
-                if (el.dataset.value === '28') {
-                    el.classList.add('selected');
-                } else {
-                    el.classList.remove('selected');
-                }
-            });
-        }
-
-        // Auto-login se senha salva? Poderia, mas deixaremos simples
-        // Prevenir envio do form
-        document.querySelector('.login-box button').type = 'button';
-    </script>
 </body>
 </html>
