@@ -207,7 +207,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .period-wrap{position:relative;}
 .pbtn{padding:3px 10px;border-radius:50px;font-size:0.6rem;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--t3);cursor:pointer;transition:all 0.18s;}
 .pbtn:hover{border-color:var(--accent);color:var(--accent);}
-.pdrop{position:absolute;top:26px;right:0;background:#0c0c0c;border:1px solid var(--accent);border-radius:12px;padding:6px;display:none;z-index:300;flex-direction:column;min-width:105px;box-shadow:0 8px 28px rgba(0,0,0,0.95);}
+.pdrop{position:absolute;top:26px;right:0;background:var(--s1);border:1px solid var(--accent);border-radius:12px;padding:6px;display:none;z-index:300;flex-direction:column;min-width:105px;box-shadow:0 8px 28px rgba(0,0,0,0.95);}
 .pdrop.open{display:flex;}
 .popt{padding:6px 10px;border-radius:7px;font-size:0.72rem;color:var(--t2);cursor:pointer;transition:background 0.12s,transform 0.18s var(--ease);}
 .popt:hover{background:var(--accent-dim);color:#ff9d66;transform:scale(1.03);}
@@ -300,7 +300,8 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .sett-toggle{width:32px;height:18px;background:var(--border);border-radius:50px;position:relative;transition:background 0.2s;flex-shrink:0;}
 .sett-toggle.on{background:var(--accent);}
 .sett-toggle span{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left 0.2s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,0.3);}
-.sett-toggle.on span{left:16px;}{.detail-grid{grid-template-columns:1fr 1fr;}.chart-blk{grid-column:1/-1;}.chart-canvas-box{min-height:160px;}}
+.sett-toggle.on span{left:16px;}
+@media(max-width:1100px){.detail-grid{grid-template-columns:1fr 1fr;}.chart-blk{grid-column:1/-1;}.chart-canvas-box{min-height:160px;}}
 @media(max-width:900px){.totals{grid-template-columns:1fr;}.detail-grid{grid-template-columns:1fr;}.feat-wrap{flex-direction:column;}.top-grid{grid-template-columns:1fr;}.popup-list{width:100%!important;max-width:100%;}.popup-detail.open{width:100%!important;border-left:none;border-top:1px solid var(--border);}.popup-detail-inner{width:100%;}.popup-box{flex-direction:column;max-height:92vh;width:95vw;}}
 @media(max-width:768px){body{padding:10px;}.hcontrols{width:100%;justify-content:center;}.drop-menu{position:fixed;bottom:20px;top:auto;left:50%;right:auto;transform:translateX(-50%);width:94vw;max-width:340px;z-index:1001;}}
 </style>
@@ -548,14 +549,18 @@ const N=n=>{if(n==null)return'—';n=+n;if(isNaN(n))return'—';if(n>=1e6)return
 const D=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'short'});};
 const DL=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'long',year:'numeric'});};
 
-// AUTH
+// AUTH — senha nunca é salva em texto puro; armazenamos apenas o hash SHA-256
+async function hashPwd(pwd){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 async function login(){
   const pwd=document.getElementById('pwInput').value;
   const keep=document.getElementById('keepMe').checked;
   const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
   if(r.ok){
-    if(keep)localStorage.setItem('automata_pwd',pwd);
-    else localStorage.removeItem('automata_pwd');
+    if(keep){const h=await hashPwd(pwd);localStorage.setItem('automata_pwh',h);}
+    else localStorage.removeItem('automata_pwh');
     document.getElementById('authOverlay').classList.add('hidden');
     document.getElementById('app').style.display='block';
     init();
@@ -564,19 +569,20 @@ async function login(){
     setTimeout(()=>document.getElementById('pwInput').style.borderColor='',1200);
   }
 }
-// Auto-login se senha salva
+// Auto-login via cookie de sessão (sem re-enviar senha)
 (async()=>{
-  const saved=localStorage.getItem('automata_pwd');
-  if(!saved)return;
-  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:saved})});
-  if(r.ok){
-    document.getElementById('authOverlay').classList.add('hidden');
-    document.getElementById('app').style.display='block';
-    init();
-  } else {
-    localStorage.removeItem('automata_pwd');
-    document.getElementById('keepMe').checked=false;
-  }
+  // Migração: remove chave antiga com senha em texto puro se ainda existir
+  localStorage.removeItem('automata_pwd');
+  // Verifica se sessão ainda está ativa no servidor
+  try{
+    const r=await fetch('/api/status');
+    const d=await r.json();
+    if(d.authenticated){
+      document.getElementById('authOverlay').classList.add('hidden');
+      document.getElementById('app').style.display='block';
+      init();
+    }
+  }catch(err){console.warn('Erro ao verificar sessão:',err);}
 })();
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
 async function loadAcc(){try{const r=await fetch('/api/accounts');accounts=await r.json();}catch{}}
@@ -646,7 +652,7 @@ async function fetchAll(cs,ce){
 }
 async function fetchCh(ch,s,e){
   try{const r=await fetch(`/api/analytics?channelId=${CID[ch.id]}&startDate=${s}&endDate=${e}`);const d=await r.json();results[ch.id]=d.ok?d.rows:[];}
-  catch{results[ch.id]=[];}
+  catch(err){console.warn(`Erro ao buscar dados de ${ch.name}:`,err);results[ch.id]=[];}
 }
 
 // UI
@@ -729,7 +735,6 @@ function renderDetail(chId){
   const pl={7:T().last7,28:T().last28,90:T().last90};
 
   grid.innerHTML=`
-    <!-- COL 1: Últimos vídeos -->
     <!-- COL 1: Últimos vídeos -->
     <div class="dblock">
       <div class="dblock-title">${t.ultimosVideos}</div>
@@ -1107,18 +1112,18 @@ function linkNewChannel(){
 }
 
 // MAIN CHART
-// MAIN CHART
 let mainMetric='revenue', partialPct=null, lastDailyData={};
 let partials=[], dragSrcIdx=null;
 
 function loadPartials(){
-  try{const s=localStorage.getItem('automata_partials');if(s)partials=JSON.parse(s);}catch{}
+  try{const s=localStorage.getItem('automata_partials');if(s)partials=JSON.parse(s);}
+  catch(err){console.warn('Erro ao carregar parciais:',err);partials=[];}
   const def=partials.find(p=>p.default);
   if(def)partialPct=def.pct;
   else if(partials.length)partialPct=partials[0].pct;
   updatePartialCard();
 }
-function savePartials(){try{localStorage.setItem('automata_partials',JSON.stringify(partials));}catch{}}
+function savePartials(){try{localStorage.setItem('automata_partials',JSON.stringify(partials));}catch(err){console.warn('Erro ao salvar parciais:',err);}}
 
 let totalRevenue=0;
 
@@ -1395,7 +1400,8 @@ function toggleSettLang(e){
 }
 
 function logout(){
-  localStorage.removeItem('automata_pwd');
+  localStorage.removeItem('automata_pwh');
+  fetch('/api/logout',{method:'POST'}).catch(()=>{});
   document.getElementById('app').style.display='none';
   document.getElementById('authOverlay').classList.remove('hidden');
   document.getElementById('pwInput').value='';
