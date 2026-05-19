@@ -981,7 +981,7 @@ function filterPopup(){
 }
 function renderPList(){
   const body=document.getElementById('popupBody');
-  if(!ppFilt.length){body.innerHTML='<div style="padding:18px;text-align:center;color:var(--t3);font-size:0.74rem">Nenhum vídeo</div>';return;}
+  if(!ppFilt.length){body.innerHTML=`<div style="padding:18px;text-align:center;color:var(--t3);font-size:0.74rem">${T().semVideos}</div>`;return;}
   const isTop=ppType==='top';
   body.innerHTML=ppFilt.map((v,i)=>`
     <div class="pvi" onclick="selectVid(${i},this)">
