@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const fetch = require('node-fetch');
+const path = require('path');
 const { MongoClient } = require('mongodb');
 
 const app = express();
@@ -13,25 +14,26 @@ const REDIRECT_URI = `${BASE_URL}/callback`;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// --- MONGODB COM RETRY ---
-let db;
-let mongoClient;
+// FIX: db começa como null, não undefined — evita crash em rotas antes da conexão
+let db = null;
+
 async function connectDB() {
   try {
-    mongoClient = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-    await mongoClient.connect();
-    db = mongoClient.db('automata_db');
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    db = client.db('automata_db');
     console.log('MongoDB Conectado!');
-    mongoClient.on('close', () => {
-      console.warn('MongoDB desconectado. Reconectando em 5s...');
-      setTimeout(connectDB, 5000);
-    });
   } catch (err) {
-    console.error('ERRO NO MONGODB:', err.message, '— Tentando novamente em 5s...');
-    setTimeout(connectDB, 5000);
+    console.error('ERRO CRÍTICO NO MONGODB:', err.message);
   }
 }
 connectDB();
+
+// FIX: middleware que bloqueia rotas se o banco não estiver disponível
+function checkDB(req, res, next) {
+  if (!db) return res.status(503).json({ error: 'Database unavailable' });
+  next();
+}
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'automata-secure-session',
@@ -39,10 +41,10 @@ app.use(session({
   saveUninitialized: false,
   cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
 }));
+
 app.use(express.json());
 app.use(express.static('public'));
 
-// --- SEGURANÇA ---
 function checkAuth(req, res, next) {
   if (req.session.isAuthenticated) return next();
   res.status(401).json({ error: 'Unauthorized' });
@@ -55,6 +57,11 @@ app.post('/api/login', (req, res) => {
   } else {
     res.status(401).json({ ok: false });
   }
+});
+
+// FIX: rota de logout que destrói a sessão no servidor
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
 });
 
 app.get('/api/status', (req, res) => {
@@ -70,230 +77,323 @@ app.get('/auth/:slot', checkAuth, (req, res) => {
     'https://www.googleapis.com/auth/yt-analytics-monetary.readonly',
     'https://www.googleapis.com/auth/userinfo.email'
   ].join(' ');
+
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=${slot}`;
   res.redirect(url);
 });
 
 app.get('/callback', async (req, res) => {
-  const { code, state: slot, error } = req.query;
-  if (error) return res.redirect('/?error=' + error);
-  if (!code || !slot) return res.redirect('/?error=missing_params');
+  const { code, state: slot } = req.query;
+  // FIX: protege o callback se o banco estiver fora
+  if (!db) return res.redirect('/?error=db_unavailable');
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ code, client_id: CLIENT_ID, client_secret: CLIENT_SECRET, redirect_uri: REDIRECT_URI, grant_type: 'authorization_code' })
+      body: new URLSearchParams({
+        code, client_id: CLIENT_ID, client_secret: CLIENT_SECRET,
+        redirect_uri: REDIRECT_URI, grant_type: 'authorization_code'
+      })
     });
     const tokens = await tokenRes.json();
-    if (!tokens.access_token) return res.redirect('/?error=token_failed');
-    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${tokens.access_token}` } });
+
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
     const userInfo = await userRes.json();
+
     await db.collection('accounts').updateOne(
       { slot },
-      { $set: { email: userInfo.email || 'desconhecido', accessToken: tokens.access_token, refreshToken: tokens.refresh_token, expiresAt: Date.now() + (tokens.expires_in * 1000) } },
+      {
+        $set: {
+          email: userInfo.email,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expiresAt: Date.now() + (tokens.expires_in * 1000)
+        }
+      },
       { upsert: true }
     );
+
     res.redirect('/?connected=' + slot);
   } catch (err) {
     res.redirect('/?error=auth_failed');
   }
 });
 
-// --- TOKEN HELPER ---
+// --- TOKEN HELPERS ---
 async function getValidToken(slot) {
+  if (!db) return null;
   const acc = await db.collection('accounts').findOne({ slot });
   if (!acc) return null;
-  if (acc.accessToken && acc.expiresAt > Date.now() + 300000) return acc.accessToken;
+
+  if (acc.accessToken && acc.expiresAt > Date.now() + 300000) {
+    return acc.accessToken;
+  }
+
   if (!acc.refreshToken) return null;
   try {
     const res = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET, refresh_token: acc.refreshToken, grant_type: 'refresh_token' })
+      body: new URLSearchParams({
+        client_id: CLIENT_ID, client_secret: CLIENT_SECRET,
+        refresh_token: acc.refreshToken, grant_type: 'refresh_token'
+      })
     });
     const data = await res.json();
+    // FIX: verifica se o refresh realmente retornou um token
     if (!data.access_token) return null;
-    await db.collection('accounts').updateOne({ slot }, { $set: { accessToken: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) } });
+
+    await db.collection('accounts').updateOne(
+      { slot },
+      { $set: { accessToken: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) } }
+    );
     return data.access_token;
-  } catch (e) { return null; }
+  } catch (e) {
+    return null;
+  }
 }
 
-// --- ACCOUNTS ---
-app.get('/api/accounts', checkAuth, async (req, res) => {
+// FIX: helper centralizado — retorna o primeiro token válido entre todas as contas
+// Evita duplicar o loop for..of em cada rota
+async function getAnyToken() {
+  if (!db) return null;
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (token) return token;
+  }
+  return null;
+}
+
+// --- API DATA ---
+app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
   try {
     const docs = await db.collection('accounts').find().toArray();
     const accounts = {};
-    docs.forEach(doc => { accounts[doc.slot] = { email: doc.email, connected: true }; });
+    docs.forEach(doc => {
+      accounts[doc.slot] = { email: doc.email, connected: true };
+    });
     res.json(accounts);
-  } catch (e) { res.json({}); }
-});
-
-// --- CHANNEL THUMBS ---
-app.get('/api/channel-thumbs', checkAuth, async (req, res) => {
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.query.ids}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await r.json();
-      if (data.items) {
-        const thumbs = {};
-        data.items.forEach(i => thumbs[i.id] = i.snippet.thumbnails.default.url);
-        return res.json({ ok: true, thumbs });
-      }
-    } catch (e) {}
+  } catch (e) {
+    res.json({});
   }
-  res.json({ ok: false });
 });
 
-// --- ANALYTICS PRINCIPAL ---
-app.get('/api/analytics', checkAuth, async (req, res) => {
+// FIX: usa getAnyToken, adiciona encodeURIComponent nos IDs, trata thumbnail ausente
+app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
+  if (!req.query.ids) return res.json({ ok: false });
+  const token = await getAnyToken();
+  if (!token) return res.json({ ok: false });
+  try {
+    const r = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${encodeURIComponent(req.query.ids)}&maxResults=50`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await r.json();
+    if (!data.items) return res.json({ ok: false });
+    const thumbs = {};
+    data.items.forEach(i => {
+      thumbs[i.id] = i.snippet.thumbnails?.default?.url || '';
+    });
+    return res.json({ ok: true, thumbs });
+  } catch (e) {
+    return res.json({ ok: false });
+  }
+});
+
+// FIX: usa getAnyToken, valida parâmetros, adiciona sort=day para consistência
+app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=estimatedRevenue,views&dimensions=day`;
-      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) continue;
-      const data = await r.json();
-      return res.json({ ok: true, rows: data.rows || [] });
-    } catch (e) {}
+  if (!channelId || !startDate || !endDate) return res.json({ ok: false });
+  const token = await getAnyToken();
+  if (!token) return res.json({ ok: false });
+  try {
+    const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=estimatedRevenue,views&dimensions=day&sort=day`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return res.json({ ok: false });
+    const data = await r.json();
+    return res.json({ ok: true, rows: data.rows || [] });
+  } catch (e) {
+    return res.json({ ok: false });
   }
-  res.json({ ok: false });
 });
 
-// --- VÍDEOS DO CANAL COM PAGINAÇÃO E MÉTRICAS ---
-app.get('/api/recent-videos', checkAuth, async (req, res) => {
+// NOVO: analytics detalhado por dia — views, minutos assistidos, receita
+// Usado pelo gráfico dentro do detalhe de cada canal
+app.get('/api/analytics-detail', checkAuth, checkDB, async (req, res) => {
+  const { channelId, startDate, endDate } = req.query;
+  if (!channelId || !startDate || !endDate) return res.json({ ok: false });
+  const token = await getAnyToken();
+  if (!token) return res.json({ ok: false });
+  try {
+    // rows: [date, views, estimatedMinutesWatched, estimatedRevenue]
+    const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue&dimensions=day&sort=day`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return res.json({ ok: false });
+    const data = await r.json();
+    return res.json({ ok: true, rows: data.rows || [] });
+  } catch (e) {
+    return res.json({ ok: false });
+  }
+});
+
+// NOVO: top vídeos por receita no período, com metadados (título, thumb, likes, comentários)
+app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
+  const { channelId, startDate, endDate } = req.query;
+  if (!channelId || !startDate || !endDate) return res.json({ ok: false, videos: [] });
+  const token = await getAnyToken();
+  if (!token) return res.json({ ok: false, videos: [] });
+  try {
+    // Passo 1: analytics por vídeo (views + receita no período)
+    const analyticsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue&dimensions=video&sort=-estimatedRevenue&maxResults=10`;
+    const ar = await fetch(analyticsUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (!ar.ok) return res.json({ ok: false, videos: [] });
+    const aData = await ar.json();
+    const analyticsRows = aData.rows || [];
+    if (!analyticsRows.length) return res.json({ ok: true, videos: [] });
+
+    // Passo 2: metadados e estatísticas via Data API
+    const videoIds = analyticsRows.map(r => r[0]).join(',');
+    const dr = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${encodeURIComponent(videoIds)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!dr.ok) return res.json({ ok: false, videos: [] });
+    const dData = await dr.json();
+
+    const metaMap = {};
+    (dData.items || []).forEach(v => {
+      metaMap[v.id] = {
+        title: v.snippet.title,
+        thumb: v.snippet.thumbnails?.medium?.url || v.snippet.thumbnails?.default?.url || '',
+        likes: parseInt(v.statistics.likeCount || 0),
+        comments: parseInt(v.statistics.commentCount || 0)
+      };
+    });
+
+    const videos = analyticsRows.map(r => ({
+      id: r[0],
+      views: r[1],
+      revenue: r[2],
+      title: metaMap[r[0]]?.title || '',
+      thumb: metaMap[r[0]]?.thumb || '',
+      likes: metaMap[r[0]]?.likes || 0,
+      comments: metaMap[r[0]]?.comments || 0
+    }));
+
+    return res.json({ ok: true, videos });
+  } catch (e) {
+    return res.json({ ok: false, videos: [] });
+  }
+});
+
+// NOVO: vídeos recentes paginados, com estatísticas (views, likes, comentários)
+app.get('/api/recent-videos', checkAuth, checkDB, async (req, res) => {
   const { channelId, pageToken } = req.query;
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&maxResults=50&type=video`;
-      if (pageToken) searchUrl += `&pageToken=${encodeURIComponent(pageToken)}`;
-      const r = await fetch(searchUrl, { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (!data.items?.length) return res.json({ ok: true, videos: [], nextPageToken: null, prevPageToken: null, totalResults: 0 });
+  if (!channelId) return res.json({ ok: false, videos: [] });
+  const token = await getAnyToken();
+  if (!token) return res.json({ ok: false, videos: [] });
+  try {
+    // Passo 1: lista de vídeos recentes via Search API
+    let searchUrl = `https://www.googleapis.com/youtube/v3/search?channelId=${channelId}&type=video&order=date&part=snippet&maxResults=20`;
+    if (pageToken) searchUrl += `&pageToken=${encodeURIComponent(pageToken)}`;
+    const sr = await fetch(searchUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (!sr.ok) return res.json({ ok: false, videos: [] });
+    const sData = await sr.json();
+    const items = sData.items || [];
+    if (!items.length) return res.json({ ok: true, videos: [], nextPageToken: null, totalResults: 0 });
 
-      const videoIds = data.items.map(v => v.id.videoId).join(',');
-      const statsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}`, { headers: { Authorization: `Bearer ${token}` } });
-      const statsData = await statsRes.json();
-      const statsMap = {};
-      (statsData.items || []).forEach(v => { statsMap[v.id] = v.statistics; });
+    // Passo 2: estatísticas dos vídeos via Data API
+    const videoIds = items.map(v => v.id.videoId).join(',');
+    const statsRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${encodeURIComponent(videoIds)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const statsData = statsRes.ok ? await statsRes.json() : { items: [] };
+    const statsMap = {};
+    (statsData.items || []).forEach(v => {
+      statsMap[v.id] = {
+        views: parseInt(v.statistics.viewCount || 0),
+        likes: parseInt(v.statistics.likeCount || 0),
+        comments: parseInt(v.statistics.commentCount || 0)
+      };
+    });
 
-      const videos = data.items.map(v => {
-        const stats = statsMap[v.id.videoId] || {};
-        return {
-          id: v.id.videoId,
-          title: v.snippet.title,
-          thumb: v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url,
-          publishedAt: v.snippet.publishedAt,
-          views: parseInt(stats.viewCount) || 0,
-          likes: parseInt(stats.likeCount) || 0,
-          comments: parseInt(stats.commentCount) || 0
-        };
-      });
+    const videos = items.map(v => ({
+      id: v.id.videoId,
+      title: v.snippet.title,
+      thumb: v.snippet.thumbnails?.medium?.url || v.snippet.thumbnails?.default?.url || '',
+      publishedAt: v.snippet.publishedAt,
+      views: statsMap[v.id.videoId]?.views || 0,
+      likes: statsMap[v.id.videoId]?.likes || 0,
+      comments: statsMap[v.id.videoId]?.comments || 0
+    }));
 
-      return res.json({ ok: true, videos, nextPageToken: data.nextPageToken || null, prevPageToken: data.prevPageToken || null, totalResults: data.pageInfo?.totalResults || 0 });
-    } catch (e) {}
+    return res.json({
+      ok: true,
+      videos,
+      nextPageToken: sData.nextPageToken || null,
+      totalResults: sData.pageInfo?.totalResults || 0
+    });
+  } catch (e) {
+    return res.json({ ok: false, videos: [] });
   }
-  res.json({ ok: false, videos: [], nextPageToken: null, prevPageToken: null, totalResults: 0 });
 });
 
-// --- TOP VÍDEOS POR VIEWS NO PERÍODO ---
-app.get('/api/top-videos', checkAuth, async (req, res) => {
-  const { channelId, startDate, endDate } = req.query;
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue&dimensions=video&sort=-views&maxResults=50`;
-      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (!data.rows?.length) return res.json({ ok: true, videos: [] });
-
-      const videoIds = data.rows.map(row => row[0]).join(',');
-      const detailRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}`, { headers: { Authorization: `Bearer ${token}` } });
-      const detailData = await detailRes.json();
-      const details = {};
-      (detailData.items || []).forEach(v => {
-        details[v.id] = {
-          title: v.snippet.title,
-          thumb: v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url,
-          publishedAt: v.snippet.publishedAt,
-          likes: parseInt(v.statistics?.likeCount) || 0,
-          comments: parseInt(v.statistics?.commentCount) || 0
-        };
-      });
-
-      const videos = data.rows.map(row => ({
-        id: row[0],
-        views: row[1],
-        revenue: row[2],
-        title: details[row[0]]?.title || 'Sem título',
-        thumb: details[row[0]]?.thumb || '',
-        publishedAt: details[row[0]]?.publishedAt || null,
-        likes: details[row[0]]?.likes || 0,
-        comments: details[row[0]]?.comments || 0
-      }));
-      return res.json({ ok: true, videos });
-    } catch (e) {}
-  }
-  res.json({ ok: false, videos: [] });
-});
-
-// --- MÉTRICAS DETALHADAS DE UM VÍDEO ---
-app.get('/api/video-metrics', checkAuth, async (req, res) => {
+// NOVO: métricas de um vídeo específico no período (receita, retenção, taxa de likes, etc.)
+// Usado no popup de detalhe de vídeo
+app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   const { videoId, channelId, startDate, endDate } = req.query;
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      const analyticsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue,averageViewPercentage&filters=video==${videoId}`;
-      const analyticsRes = await fetch(analyticsUrl, { headers: { Authorization: `Bearer ${token}` } });
-      if (!analyticsRes.ok) continue;
-      const analyticsData = await analyticsRes.json();
-      const statsRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`, { headers: { Authorization: `Bearer ${token}` } });
-      const statsData = await statsRes.json();
-      const stats = statsData.items?.[0]?.statistics || {};
-      const row = analyticsData.rows?.[0] || [0, 0, 0, 0];
-      const views = parseInt(row[0]) || 0;
-      const minutes = parseInt(row[1]) || 0;
-      const revenue = parseFloat(row[2]) || 0;
-      const retention = row[3] ? row[3].toFixed(1) + '%' : '—';
-      const likes = parseInt(stats.likeCount) || 0;
-      const comments = parseInt(stats.commentCount) || 0;
-      const likeRate = views > 0 ? ((likes / views) * 1000).toFixed(1) : '—';
-      return res.json({ ok: true, views, minutes, revenue, retention, likes, comments, likeRate });
-    } catch (e) {}
-  }
-  res.json({ ok: false, views: 0, minutes: 0, revenue: 0, retention: '—', likes: 0, comments: 0, likeRate: '—' });
-});
+  if (!videoId || !channelId || !startDate || !endDate) return res.json({ ok: false });
+  const token = await getAnyToken();
+  if (!token) return res.json({ ok: false });
+  try {
+    // Analytics do vídeo no período: views, receita, minutos, retenção média
+    const analyticsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue,estimatedMinutesWatched,averageViewPercentage&dimensions=video&filters=video==${videoId}`;
+    const ar = await fetch(analyticsUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (!ar.ok) return res.json({ ok: false });
+    const aData = await ar.json();
+    const row = (aData.rows || [])[0];
 
-// --- ANALYTICS DETALHADO DO CANAL ---
-app.get('/api/analytics-detail', checkAuth, async (req, res) => {
-  const { channelId, startDate, endDate } = req.query;
-  const accounts = await db.collection('accounts').find().toArray();
-  for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
-    try {
-      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue&dimensions=day`;
-      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) continue;
-      const data = await r.json();
-      return res.json({ ok: true, rows: data.rows || [] });
-    } catch (e) {}
+    // Estatísticas gerais do vídeo (likes, comentários) via Data API
+    const dr = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${encodeURIComponent(videoId)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const dData = dr.ok ? await dr.json() : { items: [] };
+    const stats = dData.items?.[0]?.statistics || {};
+    const likeCount = parseInt(stats.likeCount || 0);
+    const commentCount = parseInt(stats.commentCount || 0);
+
+    if (!row) {
+      return res.json({
+        ok: true,
+        views: 0, revenue: null, minutes: 0, retention: null,
+        likeRate: '—', comments: commentCount
+      });
+    }
+
+    const views = row[1] || 0;
+    const revenue = row[2];
+    const minutes = row[3] || 0;
+    const avgViewPct = row[4];
+    // Taxa de likes: likes totais / views do período * 1000
+    const likeRate = views > 0 ? ((likeCount / views) * 1000).toFixed(1) : '—';
+
+    return res.json({
+      ok: true,
+      views,
+      revenue,
+      minutes,
+      retention: avgViewPct != null ? avgViewPct.toFixed(1) + '%' : null,
+      likeRate,
+      comments: commentCount
+    });
+  } catch (e) {
+    return res.json({ ok: false });
   }
-  res.json({ ok: false, rows: [] });
 });
 
 app.listen(PORT, () => console.log(`Server ON: ${PORT}`));
