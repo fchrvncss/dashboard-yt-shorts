@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const fetch = require('node-fetch');
 const path = require('path');
 const { MongoClient } = require('mongodb');
@@ -35,11 +36,13 @@ function checkDB(req, res, next) {
   next();
 }
 
+// Sessão persistida no MongoDB — sobrevive a restarts do servidor
 app.use(session({
   secret: process.env.SESSION_SECRET || 'automata-secure-session',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
+  store: MongoStore.create({ mongoUrl: MONGODB_URI }),
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // padrão: 30 dias
 }));
 
 app.use(express.json());
@@ -53,6 +56,11 @@ function checkAuth(req, res, next) {
 app.post('/api/login', (req, res) => {
   if (req.body.password === DASHBOARD_PASSWORD) {
     req.session.isAuthenticated = true;
+    // Se "manter conectado" NÃO marcado: sessão expira ao fechar o browser
+    if (!req.body.remember) {
+      req.session.cookie.expires = false;
+      req.session.cookie.maxAge = undefined;
+    }
     res.json({ ok: true });
   } else {
     res.status(401).json({ ok: false });
