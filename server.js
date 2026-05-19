@@ -155,14 +155,30 @@ async function getValidToken(slot) {
   }
 }
 
-// FIX: helper centralizado — retorna o primeiro token válido entre todas as contas
-// Evita duplicar o loop for..of em cada rota
+// Para chamadas à Data API (thumbnails, metadados): qualquer token serve
 async function getAnyToken() {
   if (!db) return null;
   const accounts = await db.collection('accounts').find().toArray();
   for (const acc of accounts) {
     const token = await getValidToken(acc.slot);
     if (token) return token;
+  }
+  return null;
+}
+
+// Para Analytics API: cada canal só responde ao token do seu dono.
+// Tenta cada conta até uma retornar dados válidos.
+// apiCallFn(token) retorna null para "tente a próxima", qualquer outro valor para "sucesso".
+async function tryAllTokens(apiCallFn) {
+  if (!db) return null;
+  const accounts = await db.collection('accounts').find().toArray();
+  for (const acc of accounts) {
+    const token = await getValidToken(acc.slot);
+    if (!token) continue;
+    try {
+      const result = await apiCallFn(token);
+      if (result !== null) return result;
+    } catch (e) {}
   }
   return null;
 }
@@ -203,58 +219,58 @@ app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
   }
 });
 
-// FIX: usa getAnyToken, valida parâmetros, adiciona sort=day para consistência
+// tryAllTokens: a Analytics API exige token do dono do canal
 app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
   if (!channelId || !startDate || !endDate) return res.json({ ok: false });
-  const token = await getAnyToken();
-  if (!token) return res.json({ ok: false });
-  try {
+  const rows = await tryAllTokens(async (token) => {
     const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=estimatedRevenue,views&dimensions=day&sort=day`;
     const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) return res.json({ ok: false });
+    if (!r.ok) return null; // este token não tem acesso, tenta o próximo
     const data = await r.json();
-    return res.json({ ok: true, rows: data.rows || [] });
-  } catch (e) {
-    return res.json({ ok: false });
-  }
+    if (data.error) return null;
+    return data.rows || [];
+  });
+  if (rows === null) return res.json({ ok: false });
+  return res.json({ ok: true, rows });
 });
 
-// NOVO: analytics detalhado por dia — views, minutos assistidos, receita
-// Usado pelo gráfico dentro do detalhe de cada canal
 app.get('/api/analytics-detail', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
   if (!channelId || !startDate || !endDate) return res.json({ ok: false });
-  const token = await getAnyToken();
-  if (!token) return res.json({ ok: false });
-  try {
-    // rows: [date, views, estimatedMinutesWatched, estimatedRevenue]
+  const rows = await tryAllTokens(async (token) => {
     const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue&dimensions=day&sort=day`;
     const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) return res.json({ ok: false });
+    if (!r.ok) return null;
     const data = await r.json();
-    return res.json({ ok: true, rows: data.rows || [] });
-  } catch (e) {
-    return res.json({ ok: false });
-  }
+    if (data.error) return null;
+    return data.rows || [];
+  });
+  if (rows === null) return res.json({ ok: false });
+  return res.json({ ok: true, rows });
 });
 
-// NOVO: top vídeos por receita no período, com metadados (título, thumb, likes, comentários)
 app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
   if (!channelId || !startDate || !endDate) return res.json({ ok: false, videos: [] });
+
+  // Analytics: precisa do token do dono do canal
+  const analyticsRows = await tryAllTokens(async (token) => {
+    const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue&dimensions=video&sort=-estimatedRevenue&maxResults=10`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (data.error) return null;
+    return data.rows || [];
+  });
+
+  if (analyticsRows === null) return res.json({ ok: false, videos: [] });
+  if (!analyticsRows.length) return res.json({ ok: true, videos: [] });
+
+  // Metadados: qualquer token serve (Data API)
   const token = await getAnyToken();
   if (!token) return res.json({ ok: false, videos: [] });
   try {
-    // Passo 1: analytics por vídeo (views + receita no período)
-    const analyticsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue&dimensions=video&sort=-estimatedRevenue&maxResults=10`;
-    const ar = await fetch(analyticsUrl, { headers: { Authorization: `Bearer ${token}` } });
-    if (!ar.ok) return res.json({ ok: false, videos: [] });
-    const aData = await ar.json();
-    const analyticsRows = aData.rows || [];
-    if (!analyticsRows.length) return res.json({ ok: true, videos: [] });
-
-    // Passo 2: metadados e estatísticas via Data API
     const videoIds = analyticsRows.map(r => r[0]).join(',');
     const dr = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${encodeURIComponent(videoIds)}`,
@@ -342,58 +358,49 @@ app.get('/api/recent-videos', checkAuth, checkDB, async (req, res) => {
   }
 });
 
-// NOVO: métricas de um vídeo específico no período (receita, retenção, taxa de likes, etc.)
-// Usado no popup de detalhe de vídeo
 app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   const { videoId, channelId, startDate, endDate } = req.query;
   if (!videoId || !channelId || !startDate || !endDate) return res.json({ ok: false });
+
+  // Analytics do vídeo: precisa do token do dono do canal
+  const analyticsRow = await tryAllTokens(async (token) => {
+    const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue,estimatedMinutesWatched,averageViewPercentage&dimensions=video&filters=video==${videoId}`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (data.error) return null;
+    // rows[0] ou array vazio — ambos são "sucesso" (canal respondeu)
+    return data.rows || [];
+  });
+
+  // Estatísticas do vídeo: qualquer token serve (Data API)
   const token = await getAnyToken();
-  if (!token) return res.json({ ok: false });
-  try {
-    // Analytics do vídeo no período: views, receita, minutos, retenção média
-    const analyticsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedRevenue,estimatedMinutesWatched,averageViewPercentage&dimensions=video&filters=video==${videoId}`;
-    const ar = await fetch(analyticsUrl, { headers: { Authorization: `Bearer ${token}` } });
-    if (!ar.ok) return res.json({ ok: false });
-    const aData = await ar.json();
-    const row = (aData.rows || [])[0];
-
-    // Estatísticas gerais do vídeo (likes, comentários) via Data API
-    const dr = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${encodeURIComponent(videoId)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const dData = dr.ok ? await dr.json() : { items: [] };
-    const stats = dData.items?.[0]?.statistics || {};
-    const likeCount = parseInt(stats.likeCount || 0);
-    const commentCount = parseInt(stats.commentCount || 0);
-
-    if (!row) {
-      return res.json({
-        ok: true,
-        views: 0, revenue: null, minutes: 0, retention: null,
-        likeRate: '—', comments: commentCount
-      });
-    }
-
-    const views = row[1] || 0;
-    const revenue = row[2];
-    const minutes = row[3] || 0;
-    const avgViewPct = row[4];
-    // Taxa de likes: likes totais / views do período * 1000
-    const likeRate = views > 0 ? ((likeCount / views) * 1000).toFixed(1) : '—';
-
-    return res.json({
-      ok: true,
-      views,
-      revenue,
-      minutes,
-      retention: avgViewPct != null ? avgViewPct.toFixed(1) + '%' : null,
-      likeRate,
-      comments: commentCount
-    });
-  } catch (e) {
-    return res.json({ ok: false });
+  let likeCount = 0, commentCount = 0;
+  if (token) {
+    try {
+      const dr = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${encodeURIComponent(videoId)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const dData = dr.ok ? await dr.json() : { items: [] };
+      const stats = dData.items?.[0]?.statistics || {};
+      likeCount = parseInt(stats.likeCount || 0);
+      commentCount = parseInt(stats.commentCount || 0);
+    } catch (e) {}
   }
+
+  if (!analyticsRow || !analyticsRow.length) {
+    return res.json({ ok: true, views: 0, revenue: null, minutes: 0, retention: null, likeRate: '—', comments: commentCount });
+  }
+
+  const row = analyticsRow[0];
+  const views = row[1] || 0;
+  const revenue = row[2];
+  const minutes = row[3] || 0;
+  const avgViewPct = row[4];
+  const likeRate = views > 0 ? ((likeCount / views) * 1000).toFixed(1) : '—';
+
+  return res.json({ ok: true, views, revenue, minutes, retention: avgViewPct != null ? avgViewPct.toFixed(1) + '%' : null, likeRate, comments: commentCount });
 });
 
 app.listen(PORT, () => console.log(`Server ON: ${PORT}`));
