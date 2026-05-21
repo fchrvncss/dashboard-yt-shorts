@@ -224,14 +224,26 @@ async function getAnyToken() {
 async function tryAllTokens(apiCallFn) {
   if (!db) return null;
   const accounts = await db.collection('accounts').find().toArray();
+  console.log(`🔄 tryAllTokens: tentando ${accounts.length} conta(s)`);
   for (const acc of accounts) {
+    console.log(`  ├─ Tentando slot=${acc.slot}, email=${acc.email}`);
     const token = await getValidToken(acc.slot);
-    if (!token) continue;
+    if (!token) {
+      console.log(`  │  ⚠️ Token inválido/expirado`);
+      continue;
+    }
     try {
       const result = await apiCallFn(token);
-      if (result !== null) return result;
-    } catch (e) {}
+      if (result !== null) {
+        console.log(`  └─ ✅ Sucesso com ${acc.slot}`);
+        return result;
+      }
+      console.log(`  │  ⚠️ Retornou null`);
+    } catch (e) {
+      console.log(`  │  ❌ Erro: ${e.message}`);
+    }
   }
+  console.log(`❌ Nenhum token funcionou`);
   return null;
 }
 
@@ -276,16 +288,30 @@ app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
 // tryAllTokens: a Analytics API exige token do dono do canal
 app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
-  if (!channelId || !startDate || !endDate) return res.json({ ok: false });
+  console.log(`📊 /api/analytics: channelId=${channelId}, período=${startDate} até ${endDate}`);
+  if (!channelId || !startDate || !endDate) {
+    console.log('⚠️ Parâmetros inválidos');
+    return res.json({ ok: false });
+  }
   const rows = await tryAllTokens(async (token) => {
     const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=estimatedRevenue,views&dimensions=day&sort=day`;
     const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) return null; // este token não tem acesso, tenta o próximo
+    if (!r.ok) {
+      console.log(`⚠️ Token falhou, tentando próximo (status ${r.status})`);
+      return null;
+    }
     const data = await r.json();
-    if (data.error) return null;
+    if (data.error) {
+      console.log(`⚠️ API retornou erro: ${data.error.message}`);
+      return null;
+    }
+    console.log(`✅ Sucesso! ${data.rows?.length || 0} linhas`);
     return data.rows || [];
   });
-  if (rows === null) return res.json({ ok: false });
+  if (rows === null) {
+    console.log('❌ Nenhum token funcionou');
+    return res.json({ ok: false });
+  }
   return res.json({ ok: true, rows });
 });
 
