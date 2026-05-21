@@ -133,6 +133,7 @@ app.get('/auth/:slot', checkAuth, (req, res) => {
 
 app.get('/callback', async (req, res) => {
   const { code, state: slot } = req.query;
+  console.log(`🔐 OAuth callback recebido para slot: ${slot}`);
   // FIX: protege o callback se o banco estiver fora
   if (!db) return res.redirect('/?error=db_unavailable');
   try {
@@ -163,9 +164,11 @@ app.get('/callback', async (req, res) => {
       },
       { upsert: true }
     );
+    console.log(`✅ Conta salva em MongoDB: slot=${slot}, email=${userInfo.email}`);
 
     res.redirect('/?connected=' + slot);
   } catch (err) {
+    console.error('❌ Erro no callback:', err);
     res.redirect('/?error=auth_failed');
   }
 });
@@ -236,12 +239,14 @@ async function tryAllTokens(apiCallFn) {
 app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
   try {
     const docs = await db.collection('accounts').find().toArray();
+    console.log(`📊 Accounts na DB: ${docs.length} documento(s)`, docs.map(d=>({slot:d.slot,email:d.email})));
     const accounts = {};
     docs.forEach(doc => {
       accounts[doc.slot] = { email: doc.email, connected: true };
     });
     res.json(accounts);
   } catch (e) {
+    console.error('❌ Erro ao buscar accounts:', e);
     res.json({});
   }
 });
