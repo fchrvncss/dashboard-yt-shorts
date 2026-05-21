@@ -642,18 +642,30 @@ async function login(){
     if(d.authenticated){
       document.getElementById('authOverlay').classList.add('hidden');
       document.getElementById('app').style.display='block';
-      init();
+      // FIX: Don't call init() here if we're handling an OAuth callback
+      const params=new URLSearchParams(location.search);
+      if(!params.has('connected') && !params.has('error')){
+        init();
+      }
     }
   }catch(err){console.warn('Erro ao verificar sessão:',err);}
 })();
 
-// FIX: Handle OAuth callback — when a new channel is connected, reload accounts & data
+// FIX: Handle OAuth callback — when a new channel is connected, reload everything
 const params=new URLSearchParams(location.search);
 if(params.has('connected')){
   (async()=>{
-    await loadAcc();  // Refetch connected accounts
-    fetchAll();       // Refetch analytics data for all channels
-    window.history.replaceState({},document.title,location.pathname);  // Clean URL
+    try{
+      await loadAcc();            // Load all connected accounts
+      await loadThumbs();         // Load channel thumbnails
+      loadPartials();             // Load partial revenue settings
+      renderCanais();             // Render channel filter
+      renderMonths();             // Render month filter
+      renderSidebar();            // Render sidebar
+      initMainChart();            // Initialize main chart
+      fetchAll();                 // Fetch analytics data
+      window.history.replaceState({},document.title,location.pathname);  // Clean URL
+    }catch(err){console.error('Erro ao processar callback:',err);}
   })();
 }else if(params.has('error')){
   const err=params.get('error');
@@ -1199,7 +1211,7 @@ document.getElementById('sidebarOverlay').addEventListener('click',()=>{
   toggleConexoes(false);
 });
 function linkNewChannel(){
-  window.location.href=`/auth/${CHANNELS.length+1}`;
+  toggleConexoes(true);  // Open connections sidebar to select a channel
 }
 
 // MAIN CHART
