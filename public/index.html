@@ -656,16 +656,28 @@ const params=new URLSearchParams(location.search);
 if(params.has('connected')){
   (async()=>{
     try{
-      await loadAcc();            // Load all connected accounts
-      await loadThumbs();         // Load channel thumbnails
-      loadPartials();             // Load partial revenue settings
-      renderCanais();             // Render channel filter
-      renderMonths();             // Render month filter
-      renderSidebar();            // Render sidebar
-      initMainChart();            // Initialize main chart
-      fetchAll();                 // Fetch analytics data
-      window.history.replaceState({},document.title,location.pathname);  // Clean URL
-    }catch(err){console.error('Erro ao processar callback:',err);}
+      console.log('🔄 OAuth callback detectado:', params.get('connected'));
+      
+      await loadAcc();
+      console.log('✅ Accounts carregadas:', accounts);
+      
+      await loadThumbs();
+      console.log('✅ Thumbnails carregadas');
+      
+      loadPartials();
+      renderCanais();
+      renderMonths();
+      renderSidebar();
+      initMainChart();
+      
+      await fetchAll();
+      console.log('✅ Analytics recarregados. Canais com dados:', Object.keys(results).filter(k=>results[k].length>0));
+      
+      window.history.replaceState({},document.title,location.pathname);
+      console.log('✅ URL limpa');
+    }catch(err){
+      console.error('❌ Erro ao processar callback:', err);
+    }
   })();
 }else if(params.has('error')){
   const err=params.get('error');
@@ -676,7 +688,15 @@ if(params.has('connected')){
 }
 
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
-async function loadAcc(){try{const r=await fetch('/api/accounts');accounts=await r.json();}catch{}}
+async function loadAcc(){
+  try{
+    const r=await fetch('/api/accounts');
+    accounts=await r.json();
+    console.log('📋 /api/accounts retornou:', accounts);
+  }catch(e){
+    console.warn('⚠️ Erro ao buscar accounts:', e);
+  }
+}
 async function loadThumbs(){
   const ids=Object.values(CID).join(',');
   const d=await fetch('/api/channel-thumbs?ids='+ids).then(r=>r.json()).catch(()=>({ok:false}));
