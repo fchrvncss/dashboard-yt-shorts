@@ -778,16 +778,35 @@ async function fetchAll(cs,ce){
   let start,end=new Date().toISOString().split('T')[0];
   if(cs){start=cs;end=ce;}else{const d=new Date();d.setDate(d.getDate()-(activePeriod===1?5:activePeriod));start=d.toISOString().split('T')[0];}
   const key=start+'_'+end;
-  if(cache[key]){results=cache[key];updateUI();return;}
+  console.log(`🔄 fetchAll iniciado: período ${start} até ${end}`);
+  if(cache[key]){
+    console.log('💾 Dados em cache, usando dados antigos');
+    results=cache[key];
+    updateUI();
+    return;
+  }
+  console.log(`📡 Buscando dados de ${CHANNELS.length} canais...`);
   await Promise.all(CHANNELS.map(ch=>fetchCh(ch,start,end)));
-  cache[key]=JSON.parse(JSON.stringify(results));updateUI();
+  console.log('📊 Dados dos canais:', Object.keys(results).map(k=>({ch:k, rows: results[k].length})));
+  cache[key]=JSON.parse(JSON.stringify(results));
+  updateUI();
 }
 async function fetchCh(ch,s,e){
-  try{const r=await fetch(`/api/analytics?channelId=${CID[ch.id]}&startDate=${s}&endDate=${e}`);const d=await r.json();results[ch.id]=d.ok?d.rows:[];}
-  catch(err){console.warn(`Erro ao buscar dados de ${ch.name}:`,err);results[ch.id]=[];}
+  try{
+    const url=`/api/analytics?channelId=${CID[ch.id]}&startDate=${s}&endDate=${e}`;
+    const r=await fetch(url);
+    const d=await r.json();
+    results[ch.id]=d.ok?d.rows:[];
+    console.log(`  ├─ ${ch.name}: ${d.ok?results[ch.id].length:'0 (erro)'} linhas`);
+  }
+  catch(err){
+    console.warn(`  ├─ ${ch.name}: erro - ${err.message}`);
+    results[ch.id]=[];
+  }
 }
 
 function updateUI(){
+  console.log('🎨 updateUI() chamado');
   openId=null;
   let tR=0,tV=0,dD={},maxDate=null;
   if(activePeriod===1){
@@ -798,14 +817,18 @@ function updateUI(){
   }else document.getElementById('lRev').innerText=(LANGS[currentLang]||LANGS.pt).receita;
 
   tableDataCache=[];
+  let processed=0;
   CHANNELS.forEach(ch=>{
     if(!sel.has(ch.id))return;
+    processed++;
     let rows=results[ch.id]||[];
     if(activePeriod===1)rows=rows.filter(r=>r[0]===maxDate);
     const rS=rows.reduce((a,b)=>a+b[1],0),vS=rows.reduce((a,b)=>a+b[2],0),rpm=vS>0?(rS/vS)*1000:0;
     tR+=rS;tV+=vS;rows.forEach(r=>dD[r[0]]=(dD[r[0]]||0)+r[1]);
     tableDataCache.push({id:ch.id,name:ch.name,thumb:thumbs[ch.id]||'',rev:rS,views:vS,rpm});
   });
+  
+  console.log(`✅ updateUI processou ${processed} canais, totais: receita=$${tR.toFixed(2)}, views=${tV}`);
 
   const thEl=document.getElementById('th-'+sortCol);
   if(thEl){document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));thEl.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');}
@@ -817,6 +840,7 @@ function updateUI(){
   document.getElementById('vRPM').innerText=tV>0?`$${((tR/tV)*1000).toFixed(2)}`:'$0.00';
   updateMainChart(dD);
   updatePartialCard();
+  console.log('✅ UI renderizada com sucesso');
 }
 
 // DETAIL
