@@ -131,7 +131,18 @@ app.get('/auth/:slot', checkAuth, (req, res) => {
   res.redirect(url);
 });
 
-// Endpoint para ADMIN deletar contas inválidas (APENAS para desenvolvimento)
+// ADMIN: Deletar TODAS as contas (para limpar DB completamente)
+app.post('/api/admin/reset-all-accounts', checkAuth, checkDB, async (req, res) => {
+  try {
+    const result = await db.collection('accounts').deleteMany({});
+    console.log(`🗑️ RESET TOTAL: deletados ${result.deletedCount} documentos`);
+    res.json({ ok: true, deleted: result.deletedCount });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// ADMIN: Deletar uma conta específica
 app.post('/api/admin/delete-account', checkAuth, checkDB, async (req, res) => {
   const { slot } = req.body;
   if (!slot) return res.json({ ok: false, error: 'slot required' });
