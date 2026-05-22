@@ -584,22 +584,10 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 </div>
 
 <script>
-const CHANNELS=[
-  {id:'UC_RatoFIT',name:'RatoFIT'},{id:'UC_ZeroHora',name:'Rato Malhado'},
-  {id:'UC_VelozCuriosos',name:'Velozes & Curiosos'},{id:'UC_ComptonKings',name:'Compton Kings'},
-  {id:'UC_Pixelando',name:'Pixelando 165'},{id:'UC_McQueeeen',name:'McQueeeen'},
-  {id:'UC_RatoMaromba',name:'Rato Maromba'},{id:'UC_GroveStreet',name:'Grove Street Style'},
-  {id:'UC_BerserkMode',name:'Berserk Mode'},
-  {id:'UC_UltimoPeao',name:'O Último Peão'},{id:'UC_EcosDaMente',name:'Ecos da Mente'}
-];
-const CID={
-  'UC_RatoFIT':'UCR61DCrMZx-g3irgqgoT5JA','UC_ZeroHora':'UC6sh-Qiz2gj_uqUdYfYnX6w',
-  'UC_VelozCuriosos':'UCXMwjsceXKA5dqbWSWE-_7Q','UC_ComptonKings':'UCGqLCGdh5xUJiQW416DQWjA',
-  'UC_Pixelando':'UCzE6ujftVmVmEvGJW0MArlw','UC_McQueeeen':'UCMNvTCr-RwLVRW-jDIQVnBw',
-  'UC_RatoMaromba':'UCxslmo0asWXgdWObPO8BFrQ','UC_GroveStreet':'UChQfM3wIfo84Ab0WeW9CwCA',
-  'UC_BerserkMode':'UCzkne80zh104CdG3kDrTQ1w',
-  'UC_UltimoPeao':'UCkdnxxobb7NvO6EX2kLqv4A','UC_EcosDaMente':'UCpCEVQUoScH3SNPZjEcAWpg'
-};
+// APP GENÉRICO: Sem canais hardcoded
+// Os canais são adicionados dinamicamente pelo usuário
+const CHANNELS = [];  // Vazio — será preenchido dinamicamente
+const CID = {};  // Vazio — usaremos channelId direto
 
 // Helper: loading dots HTML
 const LD=()=>`<div class="ld-wrap"><div class="ld-dots"><span></span><span></span><span></span></div></div>`;
@@ -688,6 +676,30 @@ if(params.has('connected')){
 }
 
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
+
+async function loadAcc(){
+  try{
+    const r=await fetch('/api/accounts');
+    accounts=await r.json();
+    console.log('📋 /api/accounts retornou:', accounts);
+    
+    // Atualizar CHANNELS dinamicamente com os canais conectados
+    CHANNELS.length = 0;  // Limpar array
+    Object.entries(accounts).forEach(([channelId, info]) => {
+      CHANNELS.push({
+        id: channelId,
+        name: info.name || 'Sem nome',
+        thumb: info.thumb || ''
+      });
+    });
+    console.log(`✅ ${CHANNELS.length} canal(is) carregado(s)`, CHANNELS);
+    
+    // Atualizar sel com os canais atuais
+    sel = new Set(CHANNELS.map(c => c.id));
+  }catch(e){
+    console.warn('⚠️ Erro ao buscar accounts:', e);
+  }
+}
 // DEBUG: Resetar TUDO — deletar todos os accounts da DB
 async function resetAllAccounts(){
   if(!confirm('⚠️ CUIDADO! Vai deletar TODOS os canais conectados!\n\nVocê terá que reconectar cada um do zero.\n\nTem certeza?')) return;
@@ -722,9 +734,7 @@ async function deleteAccount(slot){
   }
 }
 async function loadThumbs(){
-  const ids=Object.values(CID).join(',');
-  const d=await fetch('/api/channel-thumbs?ids='+ids).then(r=>r.json()).catch(()=>({ok:false}));
-  if(d.ok)Object.keys(CID).forEach(k=>{thumbs[k]=d.thumbs[CID[k]];});
+  // Thumbnails agora vêm do /api/accounts, não precisamos fazer fetch aqui
 }
 
 function toggleDrop(id){
@@ -817,7 +827,7 @@ async function fetchAll(cs,ce){
 }
 async function fetchCh(ch,s,e){
   try{
-    const url=`/api/analytics?channelId=${CID[ch.id]}&startDate=${s}&endDate=${e}`;
+    const url=`/api/analytics?channelId=${ch.id}&startDate=${s}&endDate=${e}`;
     const r=await fetch(url);
     const d=await r.json();
     results[ch.id]=d.ok?d.rows:[];
@@ -1261,14 +1271,43 @@ function toggleConexoes(open){
 function renderConexoes(){
   const c=document.getElementById('conexoesContent');c.innerHTML='';
   const t=T();
-  if(!CHANNELS.length){c.innerHTML=`<div style="color:var(--t3);font-size:0.78rem;text-align:center;padding:20px">${t.semConexoes}</div>`;return;}
-  CHANNELS.forEach(ch=>{
-    const isC=!!accounts[ch.id];
-    const card=document.createElement('div');card.className='side-card';
-    card.onclick=()=>{if(!isC)window.location.href=`/auth/${ch.id}`;};
-    card.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><img src="${thumbs[ch.id]||''}" class="av"><span style="font-size:0.82rem;font-weight:600">${ch.name}</span></div><div class="sball${isC?' on':''}"></div>`;
-    c.appendChild(card);
-  });
+  
+  // Se não há canais, mostrar apenas botão para vincular o primeiro
+  if(!CHANNELS.length){
+    c.innerHTML=`
+      <div style="color:var(--t3);font-size:0.78rem;text-align:center;padding:20px;margin-bottom:10px">
+        Nenhum canal conectado ainda
+      </div>
+    `;
+  } else {
+    // Listar canais conectados
+    CHANNELS.forEach(ch=>{
+      const card=document.createElement('div');
+      card.className='side-card';
+      card.style.cursor='default';
+      card.innerHTML=`
+        <div style="display:flex;align-items:center;gap:10px">
+          <img src="${ch.thumb||''}" class="av" style="width:32px;height:32px;border-radius:50%">
+          <span style="font-size:0.82rem;font-weight:600">${ch.name}</span>
+        </div>
+        <div style="color:var(--accent);font-size:0.7rem;font-weight:600">✓ Conectado</div>
+      `;
+      c.appendChild(card);
+    });
+  }
+  
+  // Botão para vincular novo canal (sempre visível)
+  const btnWrapper = document.createElement('div');
+  btnWrapper.style.marginTop = CHANNELS.length ? '8px' : '0';
+  const btn = document.createElement('button');
+  btn.style.cssText = 'width:100%;margin-top:14px;padding:11px;border-radius:12px;background:var(--accent);color:#000;border:none;font-weight:700;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s';
+  btn.onmouseover = () => btn.style.opacity = '0.85';
+  btn.onmouseout = () => btn.style.opacity = '1';
+  btn.onclick = () => window.location.href = '/auth/new';
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 01.5.5V7.5H14a.5.5 0 010 1H8.5V14a.5.5 0 01-1 0V8.5H2a.5.5 0 010-1H7.5V1.5A.5.5 0 018 1z"/></svg>
+    ${CHANNELS.length ? 'Vincular Novo Canal' : 'Vincular Primeiro Canal'}`;
+  btnWrapper.appendChild(btn);
+  c.appendChild(btnWrapper);
 }
 function renderSidebar(){
   const c=document.getElementById('sidebarContent');
