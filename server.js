@@ -342,7 +342,8 @@ app.get('/api/pending-channels', async (req, res) => {
 // --- TOKEN HELPERS ---
 async function getValidToken(channelId, userId) {
   if (!db || !channelId) return null;
-  const acc = await db.collection('accounts').findOne({ channelId, userId });
+  // userId agora é dashboardUserId
+  const acc = await db.collection('accounts').findOne({ channelId, dashboardUserId: userId });
   if (!acc) return null;
 
   if (acc.accessToken && acc.expiresAt > Date.now() + 300000) {
@@ -363,7 +364,7 @@ async function getValidToken(channelId, userId) {
     if (!data.access_token) return null;
 
     await db.collection('accounts').updateOne(
-      { channelId, userId },
+      { channelId, dashboardUserId: userId },
       { $set: { accessToken: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) } }
     );
     return data.access_token;
@@ -706,11 +707,11 @@ app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
 
 // DEBUG: Listar todos os canais do usuário
 app.get('/api/debug-channels', checkAuth, checkDB, async (req, res) => {
-  const userId = req.session.userEmail;
-  const allChannels = await db.collection('accounts').find({ userId }).toArray();
-  console.log(`🔍 DEBUG: Usuário ${userId} tem ${allChannels.length} canal(is)`);
+  const dashboardUserId = req.session.dashboardUserId;
+  const allChannels = await db.collection('accounts').find({ dashboardUserId }).toArray();
+  console.log(`🔍 DEBUG: Dashboard ${dashboardUserId} tem ${allChannels.length} canal(is)`);
   res.json({
-    userId,
+    dashboardUserId,
     totalChannels: allChannels.length,
     channels: allChannels.map(c => ({
       channelId: c.channelId,
