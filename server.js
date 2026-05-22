@@ -179,10 +179,14 @@ app.get('/callback', async (req, res) => {
     // Usar EMAIL como userId permanente (não muda entre sessões)
     const userId = userInfo.email;
     
-    // Salvar no MongoDB com userId (email) para rastrear qual usuário conectou
-    // Filtro: userId + channelId = combinação única (cada usuário pode ter múltiplos canais)
-    await db.collection('accounts').updateOne(
-      { userId, channelId },  // Identificador único: usuário + canal
+    // Criar _id explícito que garante: 1 documento por (usuário + canal)
+    const docId = `${userId}::${channelId}`;
+    
+    // Salvar no MongoDB com _id único
+    console.log(`🔍 Tentando salvar: docId=${docId}`);
+    
+    const result = await db.collection('accounts').updateOne(
+      { _id: docId },  // ID explícito = userId::channelId
       {
         $set: {
           channelId,
@@ -199,6 +203,12 @@ app.get('/callback', async (req, res) => {
       },
       { upsert: true }
     );
+    console.log(`📊 updateOne resultado:`, { matched: result.matchedCount, modified: result.modifiedCount, upserted: result.upsertedId });
+    
+    // Verificar quantos canais esse usuário tem AGORA
+    const allChannels = await db.collection('accounts').find({ userId }).toArray();
+    console.log(`✅ Usuário ${userId} agora tem ${allChannels.length} canal(is):`, allChannels.map(c => c.channelName).join(', '));
+    
     console.log(`✅ Conta salva: ${channelName} (${channelId}), userId=${userId}`);
 
     // Salvar email na sessão para fins de autenticação
@@ -544,6 +554,22 @@ app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   const likeRate = views > 0 ? ((likeCount / views) * 1000).toFixed(1) : '—';
 
   return res.json({ ok: true, views, revenue, minutes, retention: avgViewPct != null ? avgViewPct.toFixed(1) + '%' : null, likeRate, comments: commentCount });
+});
+
+// DEBUG: Listar todos os canais do usuário
+app.get('/api/debug-channels', checkAuth, checkDB, async (req, res) => {
+  const userId = req.session.userEmail;
+  const allChannels = await db.collection('accounts').find({ userId }).toArray();
+  console.log(`🔍 DEBUG: Usuário ${userId} tem ${allChannels.length} canal(is)`);
+  res.json({
+    userId,
+    totalChannels: allChannels.length,
+    channels: allChannels.map(c => ({
+      channelId: c.channelId,
+      channelName: c.channelName,
+      connectedAt: c.connectedAt
+    }))
+  });
 });
 
 app.listen(PORT, () => console.log(`Server ON: ${PORT}`));
