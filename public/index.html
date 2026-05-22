@@ -204,11 +204,11 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .sli:hover{background:var(--accent-glow);border-color:rgba(255,77,0,0.15);transform:scale(1.02);}
 .sli-thumb{width:64px;height:36px;border-radius:6px;object-fit:cover;background:#333;flex-shrink:0;}
 .sli-info{flex:1;min-width:0;}
-.sli-title{font-size:0.67rem;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-bottom:5px;}
+.sli-title{font-size:0.67rem;font-weight:400;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-bottom:5px;}
 .sli-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
 .sstat{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.sstat svg{width:9px;height:9px;fill:var(--t3);}
-.sstat span{font-size:0.53rem;color:var(--t3);white-space:nowrap;}
+.sstat svg{width:13px;height:13px;fill:var(--t3);}
+.sstat span{font-size:0.6rem;color:var(--t3);white-space:nowrap;}
 
 /* expand-btn */
 .expand-btn{margin-top:auto;padding-top:10px;width:100%;padding:7px 0;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--t3);font-size:0.67rem;font-weight:600;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
@@ -227,11 +227,11 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .tli:hover{background:var(--accent-glow);border-color:rgba(255,77,0,0.15);transform:scale(1.02);}
 .tli-thumb{width:64px;height:36px;border-radius:6px;object-fit:cover;background:#333;flex-shrink:0;}
 .tli-info{flex:1;min-width:0;}
-.tli-title{font-size:0.67rem;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-bottom:5px;}
+.tli-title{font-size:0.67rem;font-weight:400;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-bottom:5px;}
 .tli-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
 .tli-stats .sstat{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.tli-stats .sstat svg{width:9px;height:9px;fill:var(--t3);}
-.tli-stats .sstat span{font-size:0.53rem;color:var(--t3);white-space:nowrap;}
+.tli-stats .sstat svg{width:13px;height:13px;fill:var(--t3);}
+.tli-stats .sstat span{font-size:0.6rem;color:var(--t3);white-space:nowrap;}
 
 /* ── CHART BLOCK ── */
 .chart-blk{display:flex;flex-direction:column;}
@@ -401,24 +401,24 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
       <svg width="32" height="32" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="4" fill="none"/><rect x="35" y="32" width="10" height="10" fill="#ff4d00"/><rect x="35" y="45" width="10" height="10" fill="#ff4d00"/><rect x="35" y="58" width="10" height="10" fill="#ff4d00"/><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00"/><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00"/><rect x="61" y="45" width="10" height="10" fill="#ff4d00"/></svg>
       <span class="auth-brand">Automata</span>
     </div>
-    <div class="auth-heading">Bem-vindo de volta</div>
-    <div class="auth-sub">Faça login para continuar</div>
+    <div class="auth-heading" id="authWelcome">Bem-vindo de volta</div>
+    <div class="auth-sub" id="authSub">Faça login para continuar</div>
     <a href="/auth/google-login" class="auth-social-btn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-      <span>Continuar com Google</span>
+      <span id="authGoogle">Continuar com Google</span>
     </a>
     <button class="auth-social-btn" disabled>
       <svg width="18" height="18" viewBox="0 0 814 1000" fill="currentColor"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.5-155.5-127.4C46.7 790.7 0 663 0 541.8c0-207.5 135.4-317.1 268.1-317.1 96.9 0 167.7 63.6 224.7 63.6 54.5 0 140.4-67.4 250.3-67.4zm-220.3-293.8c12.5-64.5 44.4-133.8 97.7-176.8 53.3-43 116-65.3 172.7-65.3 1.7 0 3.3.1 5 .2-2.1 68.4-28.1 134.5-76.4 183.9-48.3 49.4-108.8 75.4-173.7 75.4-9 0-17.9-.6-25.3-2.4v-15z"/></svg>
-      <span>Continuar com Apple</span>
+      <span id="authApple">Continuar com Apple</span>
     </button>
-    <div class="auth-divider"><span>ou</span></div>
+    <div class="auth-divider"><span id="authOr">ou</span></div>
     <input type="password" id="pwInput" class="auth-input" placeholder="Senha" autocomplete="current-password" onkeypress="if(event.key==='Enter')login()">
     <label class="auth-check-row">
       <input type="checkbox" id="keepMe" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
-      <span>Manter conectado</span>
+      <span id="authKeep">Manter conectado</span>
     </label>
-    <button class="auth-btn" onclick="login()">Entrar</button>
-    <div class="auth-hint">Acesso restrito — credenciais necessárias</div>
+    <button class="auth-btn" onclick="login()" id="authEnter">Entrar</button>
+    <div class="auth-hint" id="authHint">Acesso restrito — credenciais necessárias</div>
   </div>
 </div>
 
@@ -699,18 +699,19 @@ else if(params.has('connected')){
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
 
 function showChannelSelector(channels){
+  const tr=T();
   const html=`
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999">
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:500px;width:90%">
-        <h2 style="margin:0 0 16px 0;font-size:1.4rem">Selecione um canal</h2>
-        <p style="color:var(--t3);margin:0 0 20px 0;font-size:0.9rem">Escolha qual canal você quer conectar</p>
+        <h2 style="margin:0 0 16px 0;font-size:1.4rem">${tr.selectChannelTitle}</h2>
+        <p style="color:var(--t3);margin:0 0 20px 0;font-size:0.9rem">${tr.selectChannelSub}</p>
         <div style="display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto">
           ${channels.map(ch=>`
             <button onclick="selectChannel('${ch.id}')" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--s1);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;color:var(--t1)">
               <img src="${ch.thumb}" style="width:48px;height:48px;border-radius:50%;object-fit:cover">
               <div style="flex:1;text-align:left">
                 <div style="font-weight:600;font-size:0.95rem">${ch.name}</div>
-                <div style="color:var(--t3);font-size:0.8rem">${ch.subscribers} inscritos</div>
+                <div style="color:var(--t3);font-size:0.8rem">${ch.subscribers} ${tr.inscritos}</div>
               </div>
             </button>
           `).join('')}
@@ -729,7 +730,7 @@ async function selectChannel(channelId){
     console.log('✅ Canal conectado!');
     window.location.href='/?connected='+channelId;
   }else{
-    alert('Erro ao conectar canal: '+data.error);
+    alert(T().errConnect+': '+data.error);
   }
 }
 
@@ -839,11 +840,11 @@ async function disconnectChannel(channelId){
       updateUI();
       fetchAll();
     }else{
-      alert('Erro ao desconectar: '+data.error);
+      alert(T().errDisconnect+': '+data.error);
     }
   }catch(e){
     console.error('❌ Erro:',e);
-    alert('Erro ao desconectar');
+    alert(T().errDisconnect);
   }
 }
 function renderMonths(){
@@ -927,7 +928,7 @@ function updateUI(){
     let ad=[];Object.values(results).forEach(rows=>rows.forEach(r=>{if(r[1]>0)ad.push(r[0]);}));
     const y=new Date();y.setDate(y.getDate()-1);
     maxDate=ad.length?ad.sort().reverse()[0]:y.toISOString().split('T')[0];
-    document.getElementById('lRev').innerText='Receita ('+maxDate.split('-').reverse().join('/')+')';
+    document.getElementById('lRev').innerText=(LANGS[currentLang]||LANGS.pt).receita2+' ('+maxDate.split('-').reverse().join('/')+')';
   }else document.getElementById('lRev').innerText=(LANGS[currentLang]||LANGS.pt).receita;
 
   tableDataCache=[];
@@ -1015,9 +1016,9 @@ function renderDetail(chId){
           <div class="feat-title" onclick="window.open('https://youtube.com/watch?v=${feat.id}','_blank')">${feat.title||''}</div>
           <div class="feat-stats">
             <div class="fstat"><div class="fstat-l">${t.metViews}</div><div class="fstat-v">${N(feat.views)}</div></div>
-            <div class="fstat"><div class="fstat-l">Likes</div><div class="fstat-v">${N(feat.likes)}</div></div>
+            <div class="fstat"><div class="fstat-l">${t.likesLabel}</div><div class="fstat-v">${N(feat.likes)}</div></div>
             <div class="fstat"><div class="fstat-l">${t.metComents}</div><div class="fstat-v">${N(feat.comments)}</div></div>
-            <div class="fstat"><div class="fstat-l">Data</div><div class="fstat-v" style="font-size:0.75rem">${D(feat.publishedAt)}</div></div>
+            <div class="fstat"><div class="fstat-l">${t.dataLabel}</div><div class="fstat-v" style="font-size:0.75rem">${D(feat.publishedAt)}</div></div>
             <div class="fstat"><div class="fstat-l">${t.metReceita}</div><div class="fstat-v dim" id="frev-${chId}">...</div></div>
             <div class="fstat"><div class="fstat-l">${t.metRetencao}</div><div class="fstat-v dim" id="fret-${chId}">...</div></div>
           </div>`:`<div style="color:var(--t3);font-size:0.72rem">${t.semVideos}</div>`}
@@ -1129,7 +1130,7 @@ function togglePDrop(chId,e){
 }
 async function setPeriod(chId,p){
   dd[chId].period=p;document.getElementById('pd-'+chId).classList.remove('open');
-  const btn=document.querySelector(`#dgrid-${chId} .pbtn`);if(btn)btn.textContent={7:'7 Dias',28:'28 Dias',90:'90 Dias'}[p]+' ▾';
+  const btn=document.querySelector(`#dgrid-${chId} .pbtn`);if(btn)btn.textContent=p+' '+T().periodDays+' ▾';
   document.querySelectorAll(`#pd-${chId} .popt`).forEach(o=>o.classList.toggle('on',o.textContent.trim().startsWith(String(p))));
   const{start,end}=getPeriod(chId);
 
@@ -1366,7 +1367,7 @@ function renderConexoes(){
       left.innerHTML=`
         <img src="${ch.thumb||''}" style="width:32px;height:32px;border-radius:50%">
         <span style="font-size:0.82rem;font-weight:600">${ch.name}</span>
-        <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block" title="Conectado"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block" title="${T().connected}"></span>
       `;
       div.appendChild(left);
       
@@ -1377,7 +1378,7 @@ function renderConexoes(){
       btnX.onmouseover=()=>btnX.style.opacity='1';
       btnX.onmouseout=()=>btnX.style.opacity='0.6';
       btnX.onclick=()=>{
-        if(confirm(`Desconectar "${ch.name}"?`)){
+        if(confirm(`${T().confirmDisconnect} "${ch.name}"?`)){
           disconnectChannel(ch.id);
         }
       };
@@ -1390,7 +1391,7 @@ function renderConexoes(){
   // Apenas UM botão
   const btn=document.createElement('button');
   btn.style.cssText='width:100%;margin-top:'+(CHANNELS.length?'8px':'14px')+';padding:11px;border-radius:12px;background:var(--accent);color:#000;border:none;font-weight:700;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px';
-  btn.textContent='+ Vincular Canal';
+  btn.textContent='+ '+T().vincular;
   btn.onclick=()=>window.location.href='/auth/new';
   btn.onmouseover=()=>btn.style.opacity='0.85';
   btn.onmouseout=()=>btn.style.opacity='1';
@@ -1699,37 +1700,44 @@ const LANGS={
     ultimosVideos:'Últimos Vídeos',melhorPerf:'Melhor Performance',desempenho:'Desempenho',verTodos:'Ver todos',viewsBtn:'Views',minutesBtn:'Min.',receitaBtn:'Receita',semVideos:'Sem vídeos',semDados:'Sem dados',carregando:'Carregando...',carregandoMet:'Carregando métricas...',
     metViews:'Views',metReceita:'Receita',metLikes:'Taxa de Likes',metComents:'Comentários',metRetencao:'Retenção',metMin:'Min. Assistidos',metPor1k:'por 1.000 views',metPorc:'% assistido',abrir:'Abrir ↗',voltar:'← Voltar',comparar:'⇄ Comparar',
     pctTitle:'Receita Parcial',pctAdd:'+ Nova Parcial',pctCancel:'Cancelar',pctConfirm:'Adicionar',pctEmpty:'Nenhuma parcial adicionada',pctPadrao:'PADRÃO',pctFixar:'Fixar',pctEditar:'Editar',pctRemover:'Remover',
-    conexoesTitle:'Conexões',semConexoes:'Nenhum canal vinculado',buscarVideo:'Buscar vídeo...'},
+    conexoesTitle:'Conexões',semConexoes:'Nenhum canal vinculado',buscarVideo:'Buscar vídeo...',
+    authWelcome:'Bem-vindo de volta',authSub:'Faça login para continuar',authGoogle:'Continuar com Google',authApple:'Continuar com Apple',authOr:'ou',authPassword:'Senha',authKeep:'Manter conectado',authEnter:'Entrar',authHint:'Acesso restrito — credenciais necessárias',videosTitle:'Vídeos',selectChannelTitle:'Selecione um canal',selectChannelSub:'Escolha qual canal você quer conectar',inscritos:'inscritos',errConnect:'Erro ao conectar canal',errDisconnect:'Erro ao desconectar',confirmDisconnect:'Desconectar',connected:'Conectado',semNome:'Sem nome',dataLabel:'Data',likesLabel:'Likes'},
   en:{filterCanais:'Filter Channels',conexoes:'Connections',receita:'Total Revenue',parcial:'Partial Revenue',views:'Total Views',rpm:'Avg RPM',canal:'Channel',receita2:'Revenue',aplicar:'Apply',vincular:'Link Channel',gerir:'Click to manage',lastDay:'Last Day',last7:'Last 7 Days',last28:'Last 28 Days',last90:'Last 90 Days',idioma:'Language',themeDark:'Dark',themeLight:'Light',tema:'Theme',menu:'Menu',emBreve:'Coming soon',periodo:'28 Days',limpar:'Clear',logoutLabel:'Logout',selectCompare:'Select a video to compare',comparandoCom:'Comparing with',periodMax:'Max',periodCustom:'Custom',periodDays:'Days',periodMonths:'Months',calTitle:'Custom Range',calFrom:'From',calTo:'To',calApply:'Apply',calCancel:'Cancel',
     ultimosVideos:'Latest Videos',melhorPerf:'Best Performance',desempenho:'Performance',verTodos:'See all',viewsBtn:'Views',minutesBtn:'Min.',receitaBtn:'Revenue',semVideos:'No videos',semDados:'No data',carregando:'Loading...',carregandoMet:'Loading metrics...',
     metViews:'Views',metReceita:'Revenue',metLikes:'Like Rate',metComents:'Comments',metRetencao:'Retention',metMin:'Watch Minutes',metPor1k:'per 1,000 views',metPorc:'% watched',abrir:'Open ↗',voltar:'← Back',comparar:'⇄ Compare',
     pctTitle:'Partial Revenue',pctAdd:'+ New Partial',pctCancel:'Cancel',pctConfirm:'Add',pctEmpty:'No partials added',pctPadrao:'DEFAULT',pctFixar:'Pin',pctEditar:'Edit',pctRemover:'Remove',
-    conexoesTitle:'Connections',semConexoes:'No channels linked',buscarVideo:'Search video...'},
+    conexoesTitle:'Connections',semConexoes:'No channels linked',buscarVideo:'Search video...',
+    authWelcome:'Welcome back',authSub:'Sign in to continue',authGoogle:'Continue with Google',authApple:'Continue with Apple',authOr:'or',authPassword:'Password',authKeep:'Keep me signed in',authEnter:'Sign in',authHint:'Restricted access — credentials required',videosTitle:'Videos',selectChannelTitle:'Select a channel',selectChannelSub:'Choose which channel to connect',inscritos:'subscribers',errConnect:'Error connecting channel',errDisconnect:'Error disconnecting',confirmDisconnect:'Disconnect',connected:'Connected',semNome:'No name',dataLabel:'Date',likesLabel:'Likes'},
   es:{filterCanais:'Filtrar Canales',conexoes:'Conexiones',receita:'Ingresos Totales',parcial:'Ingresos Parciales',views:'Vistas Totales',rpm:'RPM Medio',canal:'Canal',receita2:'Ingresos',aplicar:'Aplicar',vincular:'Vincular Canal',gerir:'Clic para gestionar',lastDay:'Último Día',last7:'Últimos 7 Días',last28:'Últimos 28 Días',last90:'Últimos 90 Días',idioma:'Idioma',themeDark:'Oscuro',themeLight:'Claro',tema:'Tema',menu:'Menú',emBreve:'Próximamente',periodo:'28 Días',limpar:'Limpiar',logoutLabel:'Cerrar sesión',selectCompare:'Selecciona un vídeo para comparar',comparandoCom:'Comparando con',periodMax:'Máx',periodCustom:'Personalizado',periodDays:'Días',periodMonths:'Meses',calTitle:'Personalizado',calFrom:'Desde',calTo:'Hasta',calApply:'Aplicar',calCancel:'Cancelar',
     ultimosVideos:'Últimos Vídeos',melhorPerf:'Mejor Performance',desempenho:'Rendimiento',verTodos:'Ver todos',viewsBtn:'Vistas',minutesBtn:'Min.',receitaBtn:'Ingresos',semVideos:'Sin vídeos',semDados:'Sin datos',carregando:'Cargando...',carregandoMet:'Cargando métricas...',
     metViews:'Vistas',metReceita:'Ingresos',metLikes:'Tasa de Likes',metComents:'Comentarios',metRetencao:'Retención',metMin:'Min. Vistos',metPor1k:'por 1.000 vistas',metPorc:'% visto',abrir:'Abrir ↗',voltar:'← Volver',comparar:'⇄ Comparar',
     pctTitle:'Ingresos Parciales',pctAdd:'+ Nueva Parcial',pctCancel:'Cancelar',pctConfirm:'Agregar',pctEmpty:'Sin parciales agregadas',pctPadrao:'PREDETER.',pctFixar:'Fijar',pctEditar:'Editar',pctRemover:'Eliminar',
-    conexoesTitle:'Conexiones',semConexoes:'Sin canales vinculados',buscarVideo:'Buscar vídeo...'},
+    conexoesTitle:'Conexiones',semConexoes:'Sin canales vinculados',buscarVideo:'Buscar vídeo...',
+    authWelcome:'Bienvenido de nuevo',authSub:'Inicia sesión para continuar',authGoogle:'Continuar con Google',authApple:'Continuar con Apple',authOr:'o',authPassword:'Contraseña',authKeep:'Mantener sesión iniciada',authEnter:'Entrar',authHint:'Acceso restringido — credenciales necesarias',videosTitle:'Vídeos',selectChannelTitle:'Selecciona un canal',selectChannelSub:'Elige qué canal conectar',inscritos:'suscriptores',errConnect:'Error al conectar canal',errDisconnect:'Error al desconectar',confirmDisconnect:'Desconectar',connected:'Conectado',semNome:'Sin nombre',dataLabel:'Fecha',likesLabel:'Me gusta'},
   fr:{filterCanais:'Filtrer Chaînes',conexoes:'Connexions',receita:'Revenu Total',parcial:'Revenu Partiel',views:'Vues Totales',rpm:'RPM Moyen',canal:'Chaîne',receita2:'Revenu',aplicar:'Appliquer',vincular:'Lier Chaîne',gerir:'Cliquez pour gérer',lastDay:'Dernier Jour',last7:'7 Derniers Jours',last28:'28 Derniers Jours',last90:'90 Derniers Jours',idioma:'Langue',themeDark:'Sombre',themeLight:'Clair',tema:'Thème',menu:'Menu',emBreve:'Bientôt',periodo:'28 Jours',limpar:'Effacer',logoutLabel:'Déconnexion',selectCompare:'Sélectionnez une vidéo à comparer',comparandoCom:'Comparaison avec',periodMax:'Max',periodCustom:'Personnalisé',periodDays:'Jours',periodMonths:'Mois',calTitle:'Personnalisé',calFrom:'Du',calTo:'Au',calApply:'Appliquer',calCancel:'Annuler',
     ultimosVideos:'Dernières Vidéos',melhorPerf:'Meilleures Performances',desempenho:'Performance',verTodos:'Voir tout',viewsBtn:'Vues',minutesBtn:'Min.',receitaBtn:'Revenu',semVideos:'Aucune vidéo',semDados:'Aucune donnée',carregando:'Chargement...',carregandoMet:'Chargement des métriques...',
     metViews:'Vues',metReceita:'Revenu',metLikes:'Taux de Likes',metComents:'Commentaires',metRetencao:'Rétention',metMin:'Min. Regardés',metPor1k:'pour 1 000 vues',metPorc:'% regardé',abrir:'Ouvrir ↗',voltar:'← Retour',comparar:'⇄ Comparer',
     pctTitle:'Revenu Partiel',pctAdd:'+ Nouveau Partiel',pctCancel:'Annuler',pctConfirm:'Ajouter',pctEmpty:'Aucun partiel ajouté',pctPadrao:'DÉFAUT',pctFixar:'Épingler',pctEditar:'Modifier',pctRemover:'Supprimer',
-    conexoesTitle:'Connexions',semConexoes:'Aucune chaîne liée',buscarVideo:'Rechercher vidéo...'},
+    conexoesTitle:'Connexions',semConexoes:'Aucune chaîne liée',buscarVideo:'Rechercher vidéo...',
+    authWelcome:'Bon retour',authSub:'Connectez-vous pour continuer',authGoogle:'Continuer avec Google',authApple:'Continuer avec Apple',authOr:'ou',authPassword:'Mot de passe',authKeep:'Rester connecté',authEnter:'Se connecter',authHint:'Accès restreint — identifiants requis',videosTitle:'Vidéos',selectChannelTitle:'Sélectionnez une chaîne',selectChannelSub:'Choisissez la chaîne à connecter',inscritos:'abonnés',errConnect:'Erreur de connexion de la chaîne',errDisconnect:'Erreur de déconnexion',confirmDisconnect:'Déconnecter',connected:'Connecté',semNome:'Sans nom',dataLabel:'Date',likesLabel:"J'aime"},
   de:{filterCanais:'Kanäle Filtern',conexoes:'Verbindungen',receita:'Gesamteinnahmen',parcial:'Teileinnahmen',views:'Gesamtaufrufe',rpm:'Durchschn. RPM',canal:'Kanal',receita2:'Einnahmen',aplicar:'Anwenden',vincular:'Kanal verknüpfen',gerir:'Klicken verwalten',lastDay:'Letzter Tag',last7:'Letzte 7 Tage',last28:'Letzte 28 Tage',last90:'Letzte 90 Tage',idioma:'Sprache',themeDark:'Dunkel',themeLight:'Hell',tema:'Thema',menu:'Menü',emBreve:'Demnächst',periodo:'28 Tage',limpar:'Löschen',logoutLabel:'Abmelden',selectCompare:'Video zum Vergleichen auswählen',comparandoCom:'Vergleich mit',periodMax:'Max',periodCustom:'Benutzerdefiniert',periodDays:'Tage',periodMonths:'Monate',calTitle:'Benutzerdefiniert',calFrom:'Von',calTo:'Bis',calApply:'Anwenden',calCancel:'Abbrechen',
     ultimosVideos:'Letzte Videos',melhorPerf:'Beste Leistung',desempenho:'Leistung',verTodos:'Alle anzeigen',viewsBtn:'Aufrufe',minutesBtn:'Min.',receitaBtn:'Einnahmen',semVideos:'Keine Videos',semDados:'Keine Daten',carregando:'Laden...',carregandoMet:'Metriken laden...',
     metViews:'Aufrufe',metReceita:'Einnahmen',metLikes:'Like-Rate',metComents:'Kommentare',metRetencao:'Retention',metMin:'Gesehene Min.',metPor1k:'pro 1.000 Aufrufe',metPorc:'% gesehen',abrir:'Öffnen ↗',voltar:'← Zurück',comparar:'⇄ Vergleichen',
     pctTitle:'Teileinnahmen',pctAdd:'+ Neue Teilung',pctCancel:'Abbrechen',pctConfirm:'Hinzufügen',pctEmpty:'Keine Teilungen',pctPadrao:'STANDARD',pctFixar:'Anheften',pctEditar:'Bearbeiten',pctRemover:'Entfernen',
-    conexoesTitle:'Verbindungen',semConexoes:'Keine Kanäle verknüpft',buscarVideo:'Video suchen...'},
+    conexoesTitle:'Verbindungen',semConexoes:'Keine Kanäle verknüpft',buscarVideo:'Video suchen...',
+    authWelcome:'Willkommen zurück',authSub:'Anmelden zum Fortfahren',authGoogle:'Mit Google fortfahren',authApple:'Mit Apple fortfahren',authOr:'oder',authPassword:'Passwort',authKeep:'Angemeldet bleiben',authEnter:'Anmelden',authHint:'Eingeschränkter Zugang — Anmeldedaten erforderlich',videosTitle:'Videos',selectChannelTitle:'Kanal auswählen',selectChannelSub:'Wählen Sie den zu verbindenden Kanal',inscritos:'Abonnenten',errConnect:'Fehler beim Verbinden des Kanals',errDisconnect:'Fehler beim Trennen',confirmDisconnect:'Trennen',connected:'Verbunden',semNome:'Kein Name',dataLabel:'Datum',likesLabel:'Likes'},
   ja:{filterCanais:'チャンネルを絞り込む',conexoes:'接続',receita:'総収益',parcial:'部分収益',views:'総視聴回数',rpm:'平均RPM',canal:'チャンネル',receita2:'収益',aplicar:'適用',vincular:'チャンネルを接続',gerir:'クリックして管理',lastDay:'最終日',last7:'過去7日間',last28:'過去28日間',last90:'過去90日間',idioma:'言語',themeDark:'ダーク',themeLight:'ライト',tema:'テーマ',menu:'メニュー',emBreve:'近日公開',periodo:'28日間',limpar:'クリア',logoutLabel:'ログアウト',selectCompare:'比較する動画を選択',comparandoCom:'比較中',periodMax:'最大',periodCustom:'カスタム',periodDays:'日',periodMonths:'月',calTitle:'カスタム期間',calFrom:'開始',calTo:'終了',calApply:'適用',calCancel:'キャンセル',
     ultimosVideos:'最新動画',melhorPerf:'最高パフォーマンス',desempenho:'パフォーマンス',verTodos:'すべて見る',viewsBtn:'再生数',minutesBtn:'分',receitaBtn:'収益',semVideos:'動画なし',semDados:'データなし',carregando:'読み込み中...',carregandoMet:'指標を読み込み中...',
     metViews:'再生数',metReceita:'収益',metLikes:'いいね率',metComents:'コメント',metRetencao:'視聴維持率',metMin:'視聴分数',metPor1k:'1,000再生あたり',metPorc:'%視聴',abrir:'開く ↗',voltar:'← 戻る',comparar:'⇄ 比較',
     pctTitle:'部分収益',pctAdd:'+ 新しい部分',pctCancel:'キャンセル',pctConfirm:'追加',pctEmpty:'部分が追加されていません',pctPadrao:'デフォルト',pctFixar:'固定',pctEditar:'編集',pctRemover:'削除',
-    conexoesTitle:'接続',semConexoes:'チャンネルが接続されていません',buscarVideo:'動画を検索...'},
+    conexoesTitle:'接続',semConexoes:'チャンネルが接続されていません',buscarVideo:'動画を検索...',
+    authWelcome:'おかえりなさい',authSub:'続行するにはログインしてください',authGoogle:'Googleで続行',authApple:'Appleで続行',authOr:'または',authPassword:'パスワード',authKeep:'ログイン状態を保持',authEnter:'ログイン',authHint:'アクセス制限 — 認証情報が必要です',videosTitle:'動画',selectChannelTitle:'チャンネルを選択',selectChannelSub:'接続するチャンネルを選択してください',inscritos:'登録者',errConnect:'チャンネル接続エラー',errDisconnect:'切断エラー',confirmDisconnect:'切断',connected:'接続済み',semNome:'名前なし',dataLabel:'日付',likesLabel:'高評価'},
   ko:{filterCanais:'채널 필터',conexoes:'연결',receita:'총 수익',parcial:'부분 수익',views:'총 조회수',rpm:'평균 RPM',canal:'채널',receita2:'수익',aplicar:'적용',vincular:'채널 연결',gerir:'클릭하여 관리',lastDay:'마지막 날',last7:'지난 7일',last28:'지난 28일',last90:'지난 90일',idioma:'언어',themeDark:'다크',themeLight:'라이트',tema:'테마',menu:'메뉴',emBreve:'곧 출시',periodo:'28일',limpar:'지우기',logoutLabel:'로그아웃',selectCompare:'비교할 동영상 선택',comparandoCom:'비교 중',periodMax:'최대',periodCustom:'사용자 지정',periodDays:'일',periodMonths:'월',calTitle:'사용자 지정 기간',calFrom:'시작',calTo:'종료',calApply:'적용',calCancel:'취소',
     ultimosVideos:'최신 동영상',melhorPerf:'최고 성과',desempenho:'성과',verTodos:'모두 보기',viewsBtn:'조회수',minutesBtn:'분',receitaBtn:'수익',semVideos:'동영상 없음',semDados:'데이터 없음',carregando:'로딩 중...',carregandoMet:'지표 로딩 중...',
     metViews:'조회수',metReceita:'수익',metLikes:'좋아요율',metComents:'댓글',metRetencao:'시청 유지율',metMin:'시청 분수',metPor1k:'1,000조회당',metPorc:'% 시청',abrir:'열기 ↗',voltar:'← 뒤로',comparar:'⇄ 비교',
     pctTitle:'부분 수익',pctAdd:'+ 새 부분',pctCancel:'취소',pctConfirm:'추가',pctEmpty:'추가된 항목 없음',pctPadrao:'기본값',pctFixar:'고정',pctEditar:'편집',pctRemover:'삭제',
-    conexoesTitle:'연결',semConexoes:'연결된 채널 없음',buscarVideo:'동영상 검색...'}
+    conexoesTitle:'연결',semConexoes:'연결된 채널 없음',buscarVideo:'동영상 검색...',
+    authWelcome:'다시 오신 것을 환영합니다',authSub:'계속하려면 로그인하세요',authGoogle:'Google로 계속',authApple:'Apple로 계속',authOr:'또는',authPassword:'비밀번호',authKeep:'로그인 유지',authEnter:'로그인',authHint:'제한된 접근 — 자격 증명 필요',videosTitle:'동영상',selectChannelTitle:'채널 선택',selectChannelSub:'연결할 채널을 선택하세요',inscritos:'구독자',errConnect:'채널 연결 오류',errDisconnect:'연결 해제 오류',confirmDisconnect:'연결 해제',connected:'연결됨',semNome:'이름 없음',dataLabel:'날짜',likesLabel:'좋아요'}
 };
 let currentLang='pt';
 function setLang(l){
@@ -1787,6 +1795,18 @@ function setLang(l){
   const themeLabel=document.getElementById('settThemeLabel');
   if(themeIcon)themeIcon.innerHTML=isLight?SVG_SUN:SVG_MOON;
   if(themeLabel)themeLabel.textContent=isLight?t.themeLight:t.themeDark;
+  // Tela de login
+  const elW=document.getElementById('authWelcome');if(elW)elW.textContent=t.authWelcome;
+  const elS=document.getElementById('authSub');if(elS)elS.textContent=t.authSub;
+  const elG=document.getElementById('authGoogle');if(elG)elG.textContent=t.authGoogle;
+  const elAp=document.getElementById('authApple');if(elAp)elAp.textContent=t.authApple;
+  const elOr=document.getElementById('authOr');if(elOr)elOr.textContent=t.authOr;
+  const elPw=document.getElementById('pwInput');if(elPw)elPw.placeholder=t.authPassword;
+  const elK=document.getElementById('authKeep');if(elK)elK.textContent=t.authKeep;
+  const elE=document.getElementById('authEnter');if(elE)elE.textContent=t.authEnter;
+  const elH=document.getElementById('authHint');if(elH)elH.textContent=t.authHint;
+  // Popup de vídeos
+  const popTtl=document.getElementById('popupTtl');if(popTtl)popTtl.textContent=t.videosTitle;
 }
 (()=>{
   const l=localStorage.getItem('automata_lang')||'en';
