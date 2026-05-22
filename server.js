@@ -180,8 +180,9 @@ app.get('/callback', async (req, res) => {
     const userId = userInfo.email;
     
     // Salvar no MongoDB com userId (email) para rastrear qual usuário conectou
+    // Filtro: userId + channelId = combinação única (cada usuário pode ter múltiplos canais)
     await db.collection('accounts').updateOne(
-      { channelId },  // Usar channelId como identificador único do canal
+      { userId, channelId },  // Identificador único: usuário + canal
       {
         $set: {
           channelId,
