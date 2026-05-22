@@ -131,6 +131,19 @@ app.get('/auth/:slot', checkAuth, (req, res) => {
   res.redirect(url);
 });
 
+// Endpoint para ADMIN deletar contas inválidas (APENAS para desenvolvimento)
+app.post('/api/admin/delete-account', checkAuth, checkDB, async (req, res) => {
+  const { slot } = req.body;
+  if (!slot) return res.json({ ok: false, error: 'slot required' });
+  try {
+    const result = await db.collection('accounts').deleteOne({ slot });
+    console.log(`🗑️ Deletado slot=${slot}, deletedCount=${result.deletedCount}`);
+    res.json({ ok: result.deletedCount > 0 });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/callback', async (req, res) => {
   const { code, state: slot } = req.query;
   console.log(`🔐 OAuth callback recebido para slot: ${slot}`);
@@ -146,6 +159,16 @@ app.get('/callback', async (req, res) => {
       })
     });
     const tokens = await tokenRes.json();
+    console.log(`📝 Tokens recebidos:`, {
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+      expiresIn: tokens.expires_in
+    });
+
+    if (!tokens.access_token) {
+      console.error('❌ Nenhum access_token recebido:', tokens);
+      return res.redirect('/?error=no_access_token');
+    }
 
     const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${tokens.access_token}` }
@@ -158,13 +181,14 @@ app.get('/callback', async (req, res) => {
         $set: {
           email: userInfo.email,
           accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-          expiresAt: Date.now() + (tokens.expires_in * 1000)
+          refreshToken: tokens.refresh_token || undefined,  // Pode ser undefined em alguns casos
+          expiresAt: Date.now() + (tokens.expires_in * 1000),
+          connectedAt: new Date().toISOString()
         }
       },
       { upsert: true }
     );
-    console.log(`✅ Conta salva em MongoDB: slot=${slot}, email=${userInfo.email}`);
+    console.log(`✅ Conta salva em MongoDB: slot=${slot}, email=${userInfo.email}, refreshToken=${!!tokens.refresh_token}`);
 
     res.redirect('/?connected=' + slot);
   } catch (err) {
