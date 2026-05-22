@@ -688,13 +688,22 @@ if(params.has('connected')){
 }
 
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
-async function loadAcc(){
+// DEBUG: Deletar conta inválida (slot '13')
+async function deleteInvalidSlot(){
+  if(!confirm('Deletar conta inválida (slot 13)?')) return;
   try{
-    const r=await fetch('/api/accounts');
-    accounts=await r.json();
-    console.log('📋 /api/accounts retornou:', accounts);
+    const r=await fetch('/api/admin/delete-account',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({slot:'13'})
+    });
+    const d=await r.json();
+    if(d.ok){
+      alert('✅ Slot 13 deletado');
+      location.reload();
+    }else alert('❌ Erro: '+d.error);
   }catch(e){
-    console.warn('⚠️ Erro ao buscar accounts:', e);
+    alert('❌ Erro: '+e.message);
   }
 }
 async function loadThumbs(){
