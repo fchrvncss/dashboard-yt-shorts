@@ -813,18 +813,53 @@ function renderCanais(){
   CHANNELS.forEach(ch=>{
     const s=all?false:sel.has(ch.id);
     const d=document.createElement('div');d.className='dopt'+(s?' sel':'');
-    d.innerHTML=`<img src="${thumbs[ch.id]||''}" class="av"><span>${ch.name}</span>`;
-    d.onclick=e=>{
+    d.style.display='flex';d.style.alignItems='center';d.style.justifyContent='space-between';
+    d.style.paddingRight='8px';
+    const chDiv=document.createElement('div');chDiv.style.flex='1';chDiv.style.display='flex';chDiv.style.alignItems='center';chDiv.style.gap='8px';
+    chDiv.innerHTML=`<img src="${thumbs[ch.id]||''}" class="av"><span>${ch.name}</span>`;
+    chDiv.onclick=e=>{
       e.stopPropagation();
       if(all){sel.clear();sel.add(ch.id);}
       else{if(sel.has(ch.id)){sel.delete(ch.id);if(!sel.size)sel=new Set(CHANNELS.map(c=>c.id));}else sel.add(ch.id);}
       renderCanais();updateUI();
     };
+    d.appendChild(chDiv);
+    const btnX=document.createElement('button');
+    btnX.innerHTML='✕';
+    btnX.style.cssText='background:none;border:none;color:var(--accent);cursor:pointer;font-size:1rem;padding:4px 8px;opacity:0.6;transition:opacity 0.2s';
+    btnX.onmouseover=()=>btnX.style.opacity='1';
+    btnX.onmouseout=()=>btnX.style.opacity='0.6';
+    btnX.onclick=e=>{
+      e.stopPropagation();
+      if(confirm(`Desconectar "${ch.name}"?`)){
+        disconnectChannel(ch.id);
+      }
+    };
+    d.appendChild(btnX);
     drop.appendChild(d);
   });
   const b=document.createElement('button');b.className='apply-btn';b.innerText=T().aplicar;b.onclick=()=>document.getElementById('dropCanais').classList.remove('open');drop.appendChild(b);
   const fc=(LANGS[currentLang]||LANGS.pt).filterCanais;
   document.getElementById('btnCanais').innerText=all?fc+' ▾':`${sel.size} ${fc} ▾`;
+}
+
+async function disconnectChannel(channelId){
+  try{
+    const r=await fetch('/api/disconnect-channel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channelId})});
+    const data=await r.json();
+    if(data.ok){
+      console.log('✅ Canal desconectado');
+      await loadAcc();
+      renderCanais();
+      updateUI();
+      fetchAll();
+    }else{
+      alert('Erro ao desconectar: '+data.error);
+    }
+  }catch(e){
+    console.error('❌ Erro:',e);
+    alert('Erro ao desconectar');
+  }
 }
 function renderMonths(){
   const mn=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
