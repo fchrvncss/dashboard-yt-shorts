@@ -585,11 +585,11 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 
 <script>
 const CHANNELS=[
-  {id:'UC_RatoFIT',name:'RatoFIT'},{id:'UC_ZeroHora',name:'Zero Hora'},
+  {id:'UC_RatoFIT',name:'RatoFIT'},{id:'UC_ZeroHora',name:'Rato Malhado'},
   {id:'UC_VelozCuriosos',name:'Velozes & Curiosos'},{id:'UC_ComptonKings',name:'Compton Kings'},
   {id:'UC_Pixelando',name:'Pixelando 165'},{id:'UC_McQueeeen',name:'McQueeeen'},
   {id:'UC_RatoMaromba',name:'Rato Maromba'},{id:'UC_GroveStreet',name:'Grove Street Style'},
-  {id:'UC_BerserkMode',name:'Berserk Mode'},{id:'UC_OnePunchFights',name:'One Punch Fights'},
+  {id:'UC_BerserkMode',name:'Berserk Mode'},
   {id:'UC_UltimoPeao',name:'O Último Peão'},{id:'UC_EcosDaMente',name:'Ecos da Mente'}
 ];
 const CID={
@@ -597,7 +597,7 @@ const CID={
   'UC_VelozCuriosos':'UCXMwjsceXKA5dqbWSWE-_7Q','UC_ComptonKings':'UCGqLCGdh5xUJiQW416DQWjA',
   'UC_Pixelando':'UCzE6ujftVmVmEvGJW0MArlw','UC_McQueeeen':'UCMNvTCr-RwLVRW-jDIQVnBw',
   'UC_RatoMaromba':'UCxslmo0asWXgdWObPO8BFrQ','UC_GroveStreet':'UChQfM3wIfo84Ab0WeW9CwCA',
-  'UC_BerserkMode':'UCzkne80zh104CdG3kDrTQ1w','UC_OnePunchFights':'UChdMYJwcBpizC4NLh5dRh4g',
+  'UC_BerserkMode':'UCzkne80zh104CdG3kDrTQ1w',
   'UC_UltimoPeao':'UCkdnxxobb7NvO6EX2kLqv4A','UC_EcosDaMente':'UCpCEVQUoScH3SNPZjEcAWpg'
 };
 
@@ -688,20 +688,35 @@ if(params.has('connected')){
 }
 
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
-// DEBUG: Deletar conta inválida (slot '13')
-async function deleteInvalidSlot(){
-  if(!confirm('Deletar conta inválida (slot 13)?')) return;
+// DEBUG: Resetar TUDO — deletar todos os accounts da DB
+async function resetAllAccounts(){
+  if(!confirm('⚠️ CUIDADO! Vai deletar TODOS os canais conectados!\n\nVocê terá que reconectar cada um do zero.\n\nTem certeza?')) return;
+  try{
+    const r=await fetch('/api/admin/reset-all-accounts',{method:'POST',headers:{'Content-Type':'application/json'}});
+    const d=await r.json();
+    if(d.ok){
+      alert(`✅ ${d.deleted} contas deletadas. Recarregando...`);
+      location.reload();
+    }else alert('❌ Erro: '+d.error);
+  }catch(e){
+    alert('❌ Erro: '+e.message);
+  }
+}
+
+// DEBUG: Deletar conta específica
+async function deleteAccount(slot){
+  if(!confirm(`Deletar ${slot}?`)) return;
   try{
     const r=await fetch('/api/admin/delete-account',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({slot:'13'})
+      body:JSON.stringify({slot})
     });
     const d=await r.json();
     if(d.ok){
-      alert('✅ Slot 13 deletado');
+      alert('✅ Deletado');
       location.reload();
-    }else alert('❌ Erro: '+d.error);
+    }else alert('❌ Erro');
   }catch(e){
     alert('❌ Erro: '+e.message);
   }
