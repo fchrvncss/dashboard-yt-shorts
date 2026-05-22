@@ -676,20 +676,21 @@ async function init(){await loadAcc();await loadThumbs();loadPartials();renderCa
 async function loadAcc(){
   try{
     const r=await fetch('/api/accounts');
-    const arr=await r.json();
-    console.log('📋 /api/accounts retornou:', arr);
+    const accountsObj=await r.json();
+    console.log('📋 /api/accounts retornou:', accountsObj);
     
     // Atualizar CHANNELS dinamicamente com os canais conectados
     CHANNELS.length = 0;
     thumbs = {};
     
-    arr.forEach(ch => {
+    // accountsObj é um dicionário: {channelId: {name, thumb, email, connected}}
+    Object.entries(accountsObj).forEach(([channelId, info]) => {
       CHANNELS.push({
-        id: ch.channelId,
-        name: ch.channelName || 'Sem nome',
-        thumb: ch.channelThumb || ''
+        id: channelId,
+        name: info.name || 'Sem nome',
+        thumb: info.thumb || ''
       });
-      thumbs[ch.channelId] = ch.channelThumb || '';
+      thumbs[channelId] = info.thumb || '';
     });
     console.log(`✅ ${CHANNELS.length} canal(is) carregado(s)`, CHANNELS);
     
