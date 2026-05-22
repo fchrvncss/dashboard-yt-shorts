@@ -568,10 +568,6 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
     <button class="pill" onclick="toggleConexoes(false)" style="border-color:var(--accent);color:var(--accent);padding:0 10px;height:28px;font-size:0.72rem">✕</button>
   </div>
   <div id="conexoesContent"></div>
-  <button onclick="linkNewChannel()" style="width:100%;margin-top:14px;padding:11px;border-radius:12px;background:var(--accent);color:#000;border:none;font-weight:700;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 01.5.5V7.5H14a.5.5 0 010 1H8.5V14a.5.5 0 01-1 0V8.5H2a.5.5 0 010-1H7.5V1.5A.5.5 0 018 1z"/></svg>
-    Vincular Canal
-  </button>
 </div>
 
 <!-- SIDEBAR MENU (futuras opções) -->
@@ -584,22 +580,10 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 </div>
 
 <script>
-const CHANNELS=[
-  {id:'UC_RatoFIT',name:'RatoFIT'},{id:'UC_ZeroHora',name:'Zero Hora'},
-  {id:'UC_VelozCuriosos',name:'Velozes & Curiosos'},{id:'UC_ComptonKings',name:'Compton Kings'},
-  {id:'UC_Pixelando',name:'Pixelando 165'},{id:'UC_McQueeeen',name:'McQueeeen'},
-  {id:'UC_RatoMaromba',name:'Rato Maromba'},{id:'UC_GroveStreet',name:'Grove Street Style'},
-  {id:'UC_BerserkMode',name:'Berserk Mode'},{id:'UC_OnePunchFights',name:'One Punch Fights'},
-  {id:'UC_UltimoPeao',name:'O Último Peão'},{id:'UC_EcosDaMente',name:'Ecos da Mente'}
-];
-const CID={
-  'UC_RatoFIT':'UCR61DCrMZx-g3irgqgoT5JA','UC_ZeroHora':'UC6sh-Qiz2gj_uqUdYfYnX6w',
-  'UC_VelozCuriosos':'UCXMwjsceXKA5dqbWSWE-_7Q','UC_ComptonKings':'UCGqLCGdh5xUJiQW416DQWjA',
-  'UC_Pixelando':'UCzE6ujftVmVmEvGJW0MArlw','UC_McQueeeen':'UCMNvTCr-RwLVRW-jDIQVnBw',
-  'UC_RatoMaromba':'UCxslmo0asWXgdWObPO8BFrQ','UC_GroveStreet':'UChQfM3wIfo84Ab0WeW9CwCA',
-  'UC_BerserkMode':'UCzkne80zh104CdG3kDrTQ1w','UC_OnePunchFights':'UChdMYJwcBpizC4NLh5dRh4g',
-  'UC_UltimoPeao':'UCkdnxxobb7NvO6EX2kLqv4A','UC_EcosDaMente':'UCpCEVQUoScH3SNPZjEcAWpg'
-};
+// APP GENÉRICO: Sem canais hardcoded
+// Os canais são adicionados dinamicamente pelo usuário
+const CHANNELS = [];  // Vazio — será preenchido dinamicamente
+const CID = {};  // Vazio — usaremos channelId direto
 
 // Helper: loading dots HTML
 const LD=()=>`<div class="ld-wrap"><div class="ld-dots"><span></span><span></span><span></span></div></div>`;
@@ -642,16 +626,175 @@ async function login(){
     if(d.authenticated){
       document.getElementById('authOverlay').classList.add('hidden');
       document.getElementById('app').style.display='block';
-      init();
+      // FIX: Don't call init() here if we're handling an OAuth callback
+      const params=new URLSearchParams(location.search);
+      if(!params.has('connected') && !params.has('error')){
+        init();
+      }
     }
   }catch(err){console.warn('Erro ao verificar sessão:',err);}
 })();
+
+// FIX: Handle OAuth callback — when a new channel is connected, reload everything
+const params=new URLSearchParams(location.search);
+
+// Handler para seleção de canal (quando há múltiplos)
+if(params.has('select-channel')){
+  (async()=>{
+    try{
+      console.log('📋 Múltiplos canais encontrados, mostrando seletor');
+      
+      // Buscar lista de canais do servidor
+      const r = await fetch('/api/pending-channels');
+      const data = await r.json();
+      
+      if(!data.ok || !data.channels || data.channels.length === 0){
+        console.error('❌ Nenhum canal pendente encontrado');
+        window.history.replaceState({},document.title,location.pathname);
+        return;
+      }
+      
+      // Mostrar modal com canais para seleção
+      showChannelSelector(data.channels);
+    }catch(err){
+      console.error('❌ Erro ao carregar canais:', err);
+      window.history.replaceState({},document.title,location.pathname);
+    }
+  })();
+}
+else if(params.has('connected')){
+  (async()=>{
+    try{
+      console.log('🔄 OAuth callback detectado:', params.get('connected'));
+      
+      await loadAcc();
+      console.log('✅ Accounts carregadas:', accounts);
+      
+      await loadThumbs();
+      console.log('✅ Thumbnails carregadas');
+      
+      loadPartials();
+      renderCanais();
+      renderMonths();
+      renderSidebar();
+      initMainChart();
+      
+      await fetchAll();
+      console.log('✅ Analytics recarregados. Canais com dados:', Object.keys(results).filter(k=>results[k].length>0));
+      
+      window.history.replaceState({},document.title,location.pathname);
+      console.log('✅ URL limpa');
+    }catch(err){
+      console.error('❌ Erro ao processar callback:', err);
+    }
+  })();
+}else if(params.has('error')){
+  const err=params.get('error');
+  setTimeout(()=>{
+    alert('Erro ao conectar: '+(err==='unauthorized_email'?'E-mail não autorizado':err));
+    window.history.replaceState({},document.title,location.pathname);
+  },500);
+}
+
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
-async function loadAcc(){try{const r=await fetch('/api/accounts');accounts=await r.json();}catch{}}
+
+function showChannelSelector(channels){
+  const html=`
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:500px;width:90%">
+        <h2 style="margin:0 0 16px 0;font-size:1.4rem">Selecione um canal</h2>
+        <p style="color:var(--t3);margin:0 0 20px 0;font-size:0.9rem">Escolha qual canal você quer conectar</p>
+        <div style="display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto">
+          ${channels.map(ch=>`
+            <button onclick="selectChannel('${ch.id}')" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--s1);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;color:var(--t1)">
+              <img src="${ch.thumb}" style="width:48px;height:48px;border-radius:50%;object-fit:cover">
+              <div style="flex:1;text-align:left">
+                <div style="font-weight:600;font-size:0.95rem">${ch.name}</div>
+                <div style="color:var(--t3);font-size:0.8rem">${ch.subscribers} inscritos</div>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+async function selectChannel(channelId){
+  console.log('✅ Canal selecionado:', channelId);
+  const r=await fetch('/api/select-channel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channelId})});
+  const data=await r.json();
+  if(data.ok){
+    console.log('✅ Canal conectado!');
+    window.location.href='/?connected='+channelId;
+  }else{
+    alert('Erro ao conectar canal: '+data.error);
+  }
+}
+
+async function loadAcc(){
+  try{
+    const r=await fetch('/api/accounts');
+    const accountsObj=await r.json();
+    console.log('📋 /api/accounts retornou:', accountsObj);
+    
+    // Atualizar CHANNELS dinamicamente com os canais conectados
+    CHANNELS.length = 0;
+    thumbs = {};
+    
+    // accountsObj é um dicionário: {channelId: {name, thumb, email, connected}}
+    Object.entries(accountsObj).forEach(([channelId, info]) => {
+      CHANNELS.push({
+        id: channelId,
+        name: info.name || 'Sem nome',
+        thumb: info.thumb || ''
+      });
+      thumbs[channelId] = info.thumb || '';
+    });
+    console.log(`✅ ${CHANNELS.length} canal(is) carregado(s)`, CHANNELS);
+    
+    // Atualizar sel com os canais atuais
+    sel = new Set(CHANNELS.map(c => c.id));
+  }catch(e){
+    console.warn('⚠️ Erro ao buscar accounts:', e);
+  }
+}
+// DEBUG: Resetar TUDO — deletar todos os accounts da DB
+async function resetAllAccounts(){
+  if(!confirm('⚠️ CUIDADO! Vai deletar TODOS os canais conectados!\n\nVocê terá que reconectar cada um do zero.\n\nTem certeza?')) return;
+  try{
+    const r=await fetch('/api/admin/reset-all-accounts',{method:'POST',headers:{'Content-Type':'application/json'}});
+    const d=await r.json();
+    if(d.ok){
+      alert(`✅ ${d.deleted} contas deletadas. Recarregando...`);
+      location.reload();
+    }else alert('❌ Erro: '+d.error);
+  }catch(e){
+    alert('❌ Erro: '+e.message);
+  }
+}
+
+// DEBUG: Deletar conta específica
+async function deleteAccount(slot){
+  if(!confirm(`Deletar ${slot}?`)) return;
+  try{
+    const r=await fetch('/api/admin/delete-account',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({slot})
+    });
+    const d=await r.json();
+    if(d.ok){
+      alert('✅ Deletado');
+      location.reload();
+    }else alert('❌ Erro');
+  }catch(e){
+    alert('❌ Erro: '+e.message);
+  }
+}
 async function loadThumbs(){
-  const ids=Object.values(CID).join(',');
-  const d=await fetch('/api/channel-thumbs?ids='+ids).then(r=>r.json()).catch(()=>({ok:false}));
-  if(d.ok)Object.keys(CID).forEach(k=>{thumbs[k]=d.thumbs[CID[k]];});
+  // Thumbnails agora vêm do /api/accounts, não precisamos fazer fetch aqui
 }
 
 function toggleDrop(id){
@@ -729,16 +872,35 @@ async function fetchAll(cs,ce){
   let start,end=new Date().toISOString().split('T')[0];
   if(cs){start=cs;end=ce;}else{const d=new Date();d.setDate(d.getDate()-(activePeriod===1?5:activePeriod));start=d.toISOString().split('T')[0];}
   const key=start+'_'+end;
-  if(cache[key]){results=cache[key];updateUI();return;}
+  console.log(`🔄 fetchAll iniciado: período ${start} até ${end}`);
+  if(cache[key]){
+    console.log('💾 Dados em cache, usando dados antigos');
+    results=cache[key];
+    updateUI();
+    return;
+  }
+  console.log(`📡 Buscando dados de ${CHANNELS.length} canais...`);
   await Promise.all(CHANNELS.map(ch=>fetchCh(ch,start,end)));
-  cache[key]=JSON.parse(JSON.stringify(results));updateUI();
+  console.log('📊 Dados dos canais:', Object.keys(results).map(k=>({ch:k, rows: results[k].length})));
+  cache[key]=JSON.parse(JSON.stringify(results));
+  updateUI();
 }
 async function fetchCh(ch,s,e){
-  try{const r=await fetch(`/api/analytics?channelId=${CID[ch.id]}&startDate=${s}&endDate=${e}`);const d=await r.json();results[ch.id]=d.ok?d.rows:[];}
-  catch(err){console.warn(`Erro ao buscar dados de ${ch.name}:`,err);results[ch.id]=[];}
+  try{
+    const url=`/api/analytics?channelId=${ch.id}&startDate=${s}&endDate=${e}`;
+    const r=await fetch(url);
+    const d=await r.json();
+    results[ch.id]=d.ok?d.rows:[];
+    console.log(`  ├─ ${ch.name}: ${d.ok?results[ch.id].length:'0 (erro)'} linhas`);
+  }
+  catch(err){
+    console.warn(`  ├─ ${ch.name}: erro - ${err.message}`);
+    results[ch.id]=[];
+  }
 }
 
 function updateUI(){
+  console.log('🎨 updateUI() chamado');
   openId=null;
   let tR=0,tV=0,dD={},maxDate=null;
   if(activePeriod===1){
@@ -749,14 +911,18 @@ function updateUI(){
   }else document.getElementById('lRev').innerText=(LANGS[currentLang]||LANGS.pt).receita;
 
   tableDataCache=[];
+  let processed=0;
   CHANNELS.forEach(ch=>{
     if(!sel.has(ch.id))return;
+    processed++;
     let rows=results[ch.id]||[];
     if(activePeriod===1)rows=rows.filter(r=>r[0]===maxDate);
     const rS=rows.reduce((a,b)=>a+b[1],0),vS=rows.reduce((a,b)=>a+b[2],0),rpm=vS>0?(rS/vS)*1000:0;
     tR+=rS;tV+=vS;rows.forEach(r=>dD[r[0]]=(dD[r[0]]||0)+r[1]);
     tableDataCache.push({id:ch.id,name:ch.name,thumb:thumbs[ch.id]||'',rev:rS,views:vS,rpm});
   });
+  
+  console.log(`✅ updateUI processou ${processed} canais, totais: receita=$${tR.toFixed(2)}, views=${tV}`);
 
   const thEl=document.getElementById('th-'+sortCol);
   if(thEl){document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));thEl.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');}
@@ -768,6 +934,7 @@ function updateUI(){
   document.getElementById('vRPM').innerText=tV>0?`$${((tR/tV)*1000).toFixed(2)}`:'$0.00';
   updateMainChart(dD);
   updatePartialCard();
+  console.log('✅ UI renderizada com sucesso');
 }
 
 // DETAIL
@@ -786,20 +953,19 @@ function getPeriod(chId){
 }
 
 async function loadDetail(chId){
-  const rid=CID[chId];
   if(!dd[chId])dd[chId]={period:28,rows:[],metric:'views',chart:null,recent:[],top:[],recentTotal:0};
   const{start,end}=getPeriod(chId);
   const[rr,tr,dr]=await Promise.all([
-    fetch(`/api/recent-videos?channelId=${rid}`).then(r=>r.json()).catch(()=>({ok:false,videos:[],totalResults:0})),
-    fetch(`/api/top-videos?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
-    fetch(`/api/analytics-detail?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
+    fetch(`/api/recent-videos?channelId=${chId}`).then(r=>r.json()).catch(()=>({ok:false,videos:[],totalResults:0})),
+    fetch(`/api/top-videos?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
+    fetch(`/api/analytics-detail?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
   ]);
   const recent=rr.videos||[],top=tr.videos||[];
   const rows=(dr.rows||[]).slice().sort((a,b)=>a[0]>b[0]?1:-1);
   dd[chId]={...dd[chId],rows,recent,top,recentTotal:rr.totalResults||0,recentNext:rr.nextPageToken||null};
   renderDetail(chId);
   if(recent[0]){
-    fetch(`/api/video-metrics?videoId=${recent[0].id}&channelId=${rid}&startDate=${start}&endDate=${end}`)
+    fetch(`/api/video-metrics?videoId=${recent[0].id}&channelId=${chId}&startDate=${start}&endDate=${end}`)
       .then(r=>r.json()).then(d=>{
         const rv=document.getElementById(`frev-${chId}`),rt=document.getElementById(`fret-${chId}`);
         if(rv){rv.textContent=d.revenue!=null?'$'+Number(d.revenue).toFixed(2):'—';rv.className='fstat-v';}
@@ -945,15 +1111,15 @@ async function setPeriod(chId,p){
   dd[chId].period=p;document.getElementById('pd-'+chId).classList.remove('open');
   const btn=document.querySelector(`#dgrid-${chId} .pbtn`);if(btn)btn.textContent={7:'7 Dias',28:'28 Dias',90:'90 Dias'}[p]+' ▾';
   document.querySelectorAll(`#pd-${chId} .popt`).forEach(o=>o.classList.toggle('on',o.textContent.trim().startsWith(String(p))));
-  const rid=CID[chId];const{start,end}=getPeriod(chId);
+  const{start,end}=getPeriod(chId);
 
   // Loading nos blocos de top vídeos e gráfico
   const tg=document.getElementById('tg-'+chId);
   if(tg)tg.innerHTML=LD();
 
   const[tr,dr]=await Promise.all([
-    fetch(`/api/top-videos?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
-    fetch(`/api/analytics-detail?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
+    fetch(`/api/top-videos?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
+    fetch(`/api/analytics-detail?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
   ]);
   const rows=(dr.rows||[]).slice().sort((a,b)=>a[0]>b[0]?1:-1);
   dd[chId].rows=rows;dd[chId].top=tr.videos||[];
@@ -976,10 +1142,9 @@ async function openPopup(type,chId){
   await loadPPage(null);
 }
 async function loadPPage(token){
-  const rid=CID[ppChId];
   document.getElementById('popupBody').innerHTML=LD();
   if(ppType==='recent'){
-    let url=`/api/recent-videos?channelId=${rid}`;if(token)url+=`&pageToken=${encodeURIComponent(token)}`;
+    let url=`/api/recent-videos?channelId=${ppChId}`;if(token)url+=`&pageToken=${encodeURIComponent(token)}`;
     const d=await fetch(url).then(r=>r.json()).catch(()=>({ok:false,videos:[]}));
     ppVids=d.videos||[];ppNext=d.nextPageToken||null;ppTotal=d.totalResults||0;
   }else{ppVids=dd[ppChId]?.top||[];ppNext=null;ppTotal=ppVids.length;}
@@ -1013,7 +1178,7 @@ async function ppage(dir){
   else if(dir==='last'){
     let t=ppNext;
     while(t){
-      const d=await fetch(`/api/recent-videos?channelId=${CID[ppChId]}&pageToken=${encodeURIComponent(t)}`).then(r=>r.json()).catch(()=>({videos:[],nextPageToken:null}));
+      const d=await fetch(`/api/recent-videos?channelId=${ppChId}&pageToken=${encodeURIComponent(t)}`).then(r=>r.json()).catch(()=>({videos:[],nextPageToken:null}));
       ppVids=d.videos||[];ppFilt=ppVids;ppPages.push(t);ppCurTok=t;t=d.nextPageToken||null;ppNext=t;ppPage=ppPages.length-1;
     }
     renderPList();updatePNav();
@@ -1091,7 +1256,7 @@ async function selectVid(idx,el){
     if(compareSection)compareSection.innerHTML=LD();
     const{start,end}=getPeriod(ppChId);
     try{
-      const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${CID[ppChId]}&startDate=${start}&endDate=${end}`);
+      const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${ppChId}&startDate=${start}&endDate=${end}`);
       const d=await r.json();
       if(compareSection)compareSection.innerHTML=`
         <div class="compare-sep"><span>${T().comparandoCom}</span></div>
@@ -1121,7 +1286,7 @@ async function selectVid(idx,el){
   detail.classList.add('open');
   const{start,end}=getPeriod(ppChId);
   try{
-    const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${CID[ppChId]}&startDate=${start}&endDate=${end}`);
+    const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${ppChId}&startDate=${start}&endDate=${end}`);
     const d=await r.json();
     dc.innerHTML=`<div id="mainMetrics">${metricsHTML(v,d,false)}</div><div id="compareSection"></div>`;
   }catch{dc.innerHTML=LD();}
@@ -1162,16 +1327,28 @@ function toggleConexoes(open){
   else{s.classList.remove('open');o.classList.remove('active');document.body.classList.remove('no-scroll');}
 }
 function renderConexoes(){
-  const c=document.getElementById('conexoesContent');c.innerHTML='';
-  const t=T();
-  if(!CHANNELS.length){c.innerHTML=`<div style="color:var(--t3);font-size:0.78rem;text-align:center;padding:20px">${t.semConexoes}</div>`;return;}
-  CHANNELS.forEach(ch=>{
-    const isC=!!accounts[ch.id];
-    const card=document.createElement('div');card.className='side-card';
-    card.onclick=()=>{if(!isC)window.location.href=`/auth/${ch.id}`;};
-    card.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><img src="${thumbs[ch.id]||''}" class="av"><span style="font-size:0.82rem;font-weight:600">${ch.name}</span></div><div class="sball${isC?' on':''}"></div>`;
-    c.appendChild(card);
-  });
+  const c=document.getElementById('conexoesContent');
+  c.innerHTML='';
+  
+  // Listar canais conectados
+  if(CHANNELS.length){
+    CHANNELS.forEach(ch=>{
+      const div=document.createElement('div');
+      div.className='side-card';
+      div.style.cursor='default';
+      div.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><img src="${ch.thumb||''}" style="width:32px;height:32px;border-radius:50%"><span style="font-size:0.82rem;font-weight:600">${ch.name}</span></div><div style="color:var(--accent);font-size:0.7rem;font-weight:600">✓ Conectado</div>`;
+      c.appendChild(div);
+    });
+  }
+  
+  // Apenas UM botão
+  const btn=document.createElement('button');
+  btn.style.cssText='width:100%;margin-top:'+(CHANNELS.length?'8px':'14px')+';padding:11px;border-radius:12px;background:var(--accent);color:#000;border:none;font-weight:700;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px';
+  btn.textContent='+ Vincular Canal';
+  btn.onclick=()=>window.location.href='/auth/new';
+  btn.onmouseover=()=>btn.style.opacity='0.85';
+  btn.onmouseout=()=>btn.style.opacity='1';
+  c.appendChild(btn);
 }
 function renderSidebar(){
   const c=document.getElementById('sidebarContent');
@@ -1182,7 +1359,7 @@ document.getElementById('sidebarOverlay').addEventListener('click',()=>{
   toggleConexoes(false);
 });
 function linkNewChannel(){
-  window.location.href=`/auth/${CHANNELS.length+1}`;
+  toggleConexoes(true);  // Open connections sidebar to select a channel
 }
 
 // MAIN CHART
