@@ -637,7 +637,32 @@ async function login(){
 
 // FIX: Handle OAuth callback — when a new channel is connected, reload everything
 const params=new URLSearchParams(location.search);
-if(params.has('connected')){
+
+// Handler para seleção de canal (quando há múltiplos)
+if(params.has('select-channel')){
+  (async()=>{
+    try{
+      console.log('📋 Múltiplos canais encontrados, mostrando seletor');
+      
+      // Buscar lista de canais do servidor
+      const r = await fetch('/api/pending-channels');
+      const data = await r.json();
+      
+      if(!data.ok || !data.channels || data.channels.length === 0){
+        console.error('❌ Nenhum canal pendente encontrado');
+        window.history.replaceState({},document.title,location.pathname);
+        return;
+      }
+      
+      // Mostrar modal com canais para seleção
+      showChannelSelector(data.channels);
+    }catch(err){
+      console.error('❌ Erro ao carregar canais:', err);
+      window.history.replaceState({},document.title,location.pathname);
+    }
+  })();
+}
+else if(params.has('connected')){
   (async()=>{
     try{
       console.log('🔄 OAuth callback detectado:', params.get('connected'));
@@ -672,6 +697,41 @@ if(params.has('connected')){
 }
 
 async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
+
+function showChannelSelector(channels){
+  const html=`
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:500px;width:90%">
+        <h2 style="margin:0 0 16px 0;font-size:1.4rem">Selecione um canal</h2>
+        <p style="color:var(--t3);margin:0 0 20px 0;font-size:0.9rem">Escolha qual canal você quer conectar</p>
+        <div style="display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto">
+          ${channels.map(ch=>`
+            <button onclick="selectChannel('${ch.id}')" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--s1);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;color:var(--t1)">
+              <img src="${ch.thumb}" style="width:48px;height:48px;border-radius:50%;object-fit:cover">
+              <div style="flex:1;text-align:left">
+                <div style="font-weight:600;font-size:0.95rem">${ch.name}</div>
+                <div style="color:var(--t3);font-size:0.8rem">${ch.subscribers} inscritos</div>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+async function selectChannel(channelId){
+  console.log('✅ Canal selecionado:', channelId);
+  const r=await fetch('/api/select-channel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channelId})});
+  const data=await r.json();
+  if(data.ok){
+    console.log('✅ Canal conectado!');
+    window.location.href='/?connected='+channelId;
+  }else{
+    alert('Erro ao conectar canal: '+data.error);
+  }
+}
 
 async function loadAcc(){
   try{
