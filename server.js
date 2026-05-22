@@ -568,7 +568,7 @@ app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
   if (!analyticsRows.length) return res.json({ ok: true, videos: [] });
 
   // Metadados: qualquer token serve (Data API)
-  const token = await getAnyToken(userId);
+  const token = await getAnyToken(dashboardUserId);
   if (!token) return res.json({ ok: false, videos: [] });
   try {
     const videoIds = analyticsRows.map(r => r[0]).join(',');
@@ -676,7 +676,7 @@ app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   }, dashboardUserId);
 
   // Estatísticas do vídeo: qualquer token serve (Data API)
-  const token = await getAnyToken(userId);
+  const token = await getAnyToken(dashboardUserId);
   let likeCount = 0, commentCount = 0;
   if (token) {
     try {
