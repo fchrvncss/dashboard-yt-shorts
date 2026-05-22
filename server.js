@@ -202,6 +202,7 @@ app.get('/callback', async (req, res) => {
     console.log(`✅ Conta salva: ${channelName} (${channelId}), userId=${userId}`);
 
     // Salvar email na sessão para fins de autenticação
+    req.session.user = true;  // Marca como autenticado (para checkAuth passar)
     req.session.userEmail = userInfo.email;
     await new Promise((resolve, reject) => {
       req.session.save(err => err ? reject(err) : resolve());
