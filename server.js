@@ -375,7 +375,8 @@ async function getValidToken(channelId, userId) {
 // Para chamadas à Data API (thumbnails, metadados): qualquer token serve DO USUÁRIO
 async function getAnyToken(userId) {
   if (!db || !userId) return null;
-  const accounts = await db.collection('accounts').find({ userId }).toArray();
+  // userId agora é dashboardUserId
+  const accounts = await db.collection('accounts').find({ dashboardUserId: userId }).toArray();
   for (const acc of accounts) {
     const token = await getValidToken(acc.channelId, userId);
     if (token) return token;
@@ -387,8 +388,9 @@ async function getAnyToken(userId) {
 // apiCallFn(token) retorna null para "tente a próxima", qualquer outro valor para "sucesso".
 async function tryAllTokens(apiCallFn, userId) {
   if (!db) return null;
-  const accounts = await db.collection('accounts').find({ userId }).toArray();
-  console.log(`🔄 tryAllTokens: tentando ${accounts.length} conta(s) do usuário ${userId}`);
+  // userId agora é o dashboardUserId
+  const accounts = await db.collection('accounts').find({ dashboardUserId: userId }).toArray();
+  console.log(`🔄 tryAllTokens: tentando ${accounts.length} conta(s) do dashboard ${userId}`);
   for (const acc of accounts) {
     console.log(`  ├─ Tentando channelId=${acc.channelId}, name=${acc.channelName}`);
     const token = await getValidToken(acc.channelId, userId);
