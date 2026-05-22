@@ -12,8 +12,12 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const BASE_URL = process.env.BASE_URL;
 const REDIRECT_URI = `${BASE_URL}/callback`;
+const REDIRECT_URI_LOGIN = `${BASE_URL}/callback-login`;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
 const MONGODB_URI = process.env.MONGODB_URI;
+// ADMIN_EMAIL: e-mail Google autorizado a fazer login no dashboard.
+// Configure em: Render → Environment → ADMIN_EMAIL=seu@email.com
+// Também adicione BASE_URL/callback-login nas URIs autorizadas no Google Cloud Console.
 
 // FIX: db começa como null, não undefined — evita crash em rotas antes da conexão
 let db = null;
@@ -76,9 +80,45 @@ app.get('/api/status', (req, res) => {
   res.json({ authenticated: !!req.session.isAuthenticated });
 });
 
+// --- LOGIN COM GOOGLE (autenticação do dashboard) ---
+// Diferente do /auth/:slot (que conecta canais), este fluxo autentica o dono do dashboard.
+app.get('/auth/google-login', (req, res) => {
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI_LOGIN)}&response_type=code&scope=${encodeURIComponent('https://www.googleapis.com/auth/userinfo.email')}&access_type=online&prompt=select_account`;
+  res.redirect(url);
+});
+
+app.get('/callback-login', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.redirect('/?error=login_cancelled');
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code, client_id: CLIENT_ID, client_secret: CLIENT_SECRET,
+        redirect_uri: REDIRECT_URI_LOGIN, grant_type: 'authorization_code'
+      })
+    });
+    const tokens = await tokenRes.json();
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+    const userInfo = await userRes.json();
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) return res.redirect('/?error=admin_email_not_configured');
+    if (userInfo.email === adminEmail) {
+      req.session.isAuthenticated = true;
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+      return res.redirect('/');
+    }
+    return res.redirect('/?error=unauthorized_email');
+  } catch (err) {
+    return res.redirect('/?error=login_failed');
+  }
+});
+
 // --- AUTH GOOGLE ---
-app.get('/auth/:slot', checkAuth, (req, res) => {
-  const slot = req.params.slot;
+app.get('/auth/new', checkAuth, (req, res) => {
   const scopes = [
     'https://www.googleapis.com/auth/youtube.readonly',
     'https://www.googleapis.com/auth/yt-analytics.readonly',
@@ -86,13 +126,13 @@ app.get('/auth/:slot', checkAuth, (req, res) => {
     'https://www.googleapis.com/auth/userinfo.email'
   ].join(' ');
 
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=${slot}`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`;
   res.redirect(url);
 });
 
 app.get('/callback', async (req, res) => {
-  const { code, state: slot } = req.query;
-  // FIX: protege o callback se o banco estiver fora
+  const { code } = req.query;
+  console.log(`🔐 OAuth callback recebido`);
   if (!db) return res.redirect('/?error=db_unavailable');
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -104,35 +144,205 @@ app.get('/callback', async (req, res) => {
       })
     });
     const tokens = await tokenRes.json();
+    console.log(`📝 Tokens recebidos:`, { hasAccessToken: !!tokens.access_token, hasRefreshToken: !!tokens.refresh_token, expiresIn: tokens.expires_in });
 
+    if (!tokens.access_token) {
+      console.error('❌ Nenhum access_token recebido:', tokens);
+      return res.redirect('/?error=no_access_token');
+    }
+
+    // Obter informações do usuário
     const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${tokens.access_token}` }
     });
     const userInfo = await userRes.json();
 
-    await db.collection('accounts').updateOne(
-      { slot },
-      {
-        $set: {
-          email: userInfo.email,
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-          expiresAt: Date.now() + (tokens.expires_in * 1000)
-        }
-      },
-      { upsert: true }
-    );
+    // Obter informações do canal YouTube do usuário
+    const channelRes = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+    const channelData = await channelRes.json();
+    
+    if (!channelData.items || channelData.items.length === 0) {
+      console.error('❌ Nenhum canal encontrado');
+      return res.redirect('/?error=no_channel');
+    }
 
-    res.redirect('/?connected=' + slot);
+    // Usar EMAIL como userId permanente
+    const userId = userInfo.email;
+    
+    // Se há apenas 1 canal, conectar direto
+    if (channelData.items.length === 1) {
+      const channel = channelData.items[0];
+      const channelId = channel.id;
+      const channelName = channel.snippet.title;
+      const channelThumb = channel.snippet.thumbnails?.default?.url || '';
+      const subscriberCount = channel.statistics.subscriberCount || '0';
+
+      console.log(`✅ Canal encontrado: ${channelName} (${channelId})`);
+
+      // Gerar ou usar dashboardUserId existente (persiste entre emails)
+      let dashboardUserId = req.session.dashboardUserId;
+      if (!dashboardUserId) {
+        // Primeira autenticação: gerar ID único
+        dashboardUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        req.session.dashboardUserId = dashboardUserId;
+        console.log(`🆔 Novo usuário da dashboard: ${dashboardUserId}`);
+      }
+
+      const docId = `${dashboardUserId}::${channelId}`;
+      console.log(`🔍 Tentando salvar: docId=${docId}`);
+      
+      const result = await db.collection('accounts').updateOne(
+        { _id: docId },
+        {
+          $set: {
+            channelId,
+            channelName,
+            channelThumb,
+            subscriberCount,
+            email: userInfo.email,
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token || undefined,
+            expiresAt: Date.now() + (tokens.expires_in * 1000),
+            dashboardUserId,  // ID permanente da dashboard
+            oauthEmail: userInfo.email,  // Email específico do OAuth
+            connectedAt: new Date().toISOString()
+          }
+        },
+        { upsert: true }
+      );
+      console.log(`📊 updateOne resultado:`, { matched: result.matchedCount, modified: result.modifiedCount, upserted: result.upsertedId });
+      
+      const allChannels = await db.collection('accounts').find({ dashboardUserId }).toArray();
+      console.log(`✅ Dashboard ${dashboardUserId} agora tem ${allChannels.length} canal(is):`, allChannels.map(c => c.channelName).join(', '));
+
+      // Salvar email na sessão para fins de autenticação
+      req.session.user = true;
+      req.session.userEmail = userInfo.email;
+      req.session.dashboardUserId = dashboardUserId;
+      
+      await new Promise((resolve, reject) => {
+        req.session.save(err => err ? reject(err) : resolve());
+      });
+
+      return res.redirect('/?connected=' + channelId);
+    }
+    
+    // Se há múltiplos canais, salvar na sessão e mostrar seletor
+    console.log(`⚠️ ${channelData.items.length} canal(is) encontrado(s), mostrando seletor`);
+    
+    // Gerar ou usar dashboardUserId existente
+    let dashboardUserId = req.session.dashboardUserId;
+    if (!dashboardUserId) {
+      dashboardUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      req.session.dashboardUserId = dashboardUserId;
+      console.log(`🆔 Novo usuário da dashboard: ${dashboardUserId}`);
+    }
+    
+    // Salvar tokens e canais na sessão temporária
+    req.session.pendingAuth = {
+      dashboardUserId,
+      oauthEmail: userInfo.email,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token || undefined,
+      expiresIn: tokens.expires_in,
+      channels: channelData.items.map(ch => ({
+        id: ch.id,
+        name: ch.snippet.title,
+        thumb: ch.snippet.thumbnails?.default?.url || '',
+        subscribers: ch.statistics.subscriberCount || '0'
+      }))
+    };
+    
+    await new Promise((resolve, reject) => {
+      req.session.save(err => err ? reject(err) : resolve());
+    });
+
+    // Redirecionar para página de seleção
+    res.redirect('/?select-channel=true');
   } catch (err) {
+    console.error('❌ Erro no callback:', err);
     res.redirect('/?error=auth_failed');
   }
 });
 
+// Endpoint para o usuário selecionar qual canal conectar (quando há múltiplos)
+app.post('/api/select-channel', async (req, res) => {
+  const { channelId } = req.body;
+  const pending = req.session.pendingAuth;
+  
+  if (!pending || !channelId) {
+    return res.json({ ok: false, error: 'Dados inválidos' });
+  }
+  
+  try {
+    const dashboardUserId = pending.dashboardUserId;
+    const oauthEmail = pending.oauthEmail;
+    const selectedChannel = pending.channels.find(c => c.id === channelId);
+    
+    if (!selectedChannel) {
+      return res.json({ ok: false, error: 'Canal não encontrado' });
+    }
+    
+    console.log(`✅ Dashboard ${dashboardUserId} selecionou canal: ${selectedChannel.name} (${channelId})`);
+    
+    const docId = `${dashboardUserId}::${channelId}`;
+    
+    // Salvar o canal selecionado no MongoDB
+    const result = await db.collection('accounts').updateOne(
+      { _id: docId },
+      {
+        $set: {
+          channelId,
+          channelName: selectedChannel.name,
+          channelThumb: selectedChannel.thumb,
+          subscriberCount: selectedChannel.subscribers,
+          email: oauthEmail,
+          accessToken: pending.accessToken,
+          refreshToken: pending.refreshToken || undefined,
+          expiresAt: Date.now() + (pending.expiresIn * 1000),
+          dashboardUserId,
+          oauthEmail,
+          connectedAt: new Date().toISOString()
+        }
+      },
+      { upsert: true }
+    );
+    
+    console.log(`📊 updateOne resultado:`, { matched: result.matchedCount, modified: result.modifiedCount, upserted: result.upsertedId });
+    
+    // Marcar como autenticado
+    req.session.user = true;
+    req.session.userEmail = oauthEmail;
+    delete req.session.pendingAuth;  // Limpar dados temporários
+    
+    await new Promise((resolve, reject) => {
+      req.session.save(err => err ? reject(err) : resolve());
+    });
+    
+    res.json({ ok: true, channelId });
+  } catch (err) {
+    console.error('❌ Erro ao selecionar canal:', err);
+    res.json({ ok: false, error: 'Erro ao salvar' });
+  }
+});
+
+// Endpoint para retornar os canais pendentes
+app.get('/api/pending-channels', async (req, res) => {
+  const pending = req.session.pendingAuth;
+  
+  if (!pending || !pending.channels) {
+    return res.json({ ok: false, channels: [] });
+  }
+  
+  res.json({ ok: true, channels: pending.channels });
+});
+
 // --- TOKEN HELPERS ---
-async function getValidToken(slot) {
-  if (!db) return null;
-  const acc = await db.collection('accounts').findOne({ slot });
+async function getValidToken(channelId, userId) {
+  if (!db || !channelId) return null;
+  const acc = await db.collection('accounts').findOne({ channelId, userId });
   if (!acc) return null;
 
   if (acc.accessToken && acc.expiresAt > Date.now() + 300000) {
@@ -150,11 +360,10 @@ async function getValidToken(slot) {
       })
     });
     const data = await res.json();
-    // FIX: verifica se o refresh realmente retornou um token
     if (!data.access_token) return null;
 
     await db.collection('accounts').updateOne(
-      { slot },
+      { channelId, userId },
       { $set: { accessToken: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) } }
     );
     return data.access_token;
@@ -163,44 +372,74 @@ async function getValidToken(slot) {
   }
 }
 
-// Para chamadas à Data API (thumbnails, metadados): qualquer token serve
-async function getAnyToken() {
-  if (!db) return null;
-  const accounts = await db.collection('accounts').find().toArray();
+// Para chamadas à Data API (thumbnails, metadados): qualquer token serve DO USUÁRIO
+async function getAnyToken(userId) {
+  if (!db || !userId) return null;
+  const accounts = await db.collection('accounts').find({ userId }).toArray();
   for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
+    const token = await getValidToken(acc.channelId, userId);
     if (token) return token;
   }
   return null;
 }
 
-// Para Analytics API: cada canal só responde ao token do seu dono.
-// Tenta cada conta até uma retornar dados válidos.
+// Para Analytics API: tenta cada conta do usuário até uma retornar dados válidos.
 // apiCallFn(token) retorna null para "tente a próxima", qualquer outro valor para "sucesso".
-async function tryAllTokens(apiCallFn) {
+async function tryAllTokens(apiCallFn, userId) {
   if (!db) return null;
-  const accounts = await db.collection('accounts').find().toArray();
+  const accounts = await db.collection('accounts').find({ userId }).toArray();
+  console.log(`🔄 tryAllTokens: tentando ${accounts.length} conta(s) do usuário ${userId}`);
   for (const acc of accounts) {
-    const token = await getValidToken(acc.slot);
-    if (!token) continue;
+    console.log(`  ├─ Tentando channelId=${acc.channelId}, name=${acc.channelName}`);
+    const token = await getValidToken(acc.channelId, userId);
+    if (!token) {
+      console.log(`  │  ⚠️ Token inválido/expirado`);
+      continue;
+    }
     try {
       const result = await apiCallFn(token);
-      if (result !== null) return result;
-    } catch (e) {}
+      if (result !== null) {
+        console.log(`  └─ ✅ Sucesso com ${acc.channelName}`);
+        return result;
+      }
+      console.log(`  │  ⚠️ Retornou null`);
+    } catch (e) {
+      console.log(`  │  ❌ Erro: ${e.message}`);
+    }
   }
+  console.log(`❌ Nenhum token funcionou`);
   return null;
 }
 
 // --- API DATA ---
 app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
   try {
-    const docs = await db.collection('accounts').find().toArray();
+    // Obter dashboardUserId da sessão (persiste no MongoDB)
+    let dashboardUserId = req.session.dashboardUserId;
+    
+    if (!dashboardUserId) {
+      console.warn('⚠️ Nenhum dashboardUserId na sessão');
+      return res.json({});
+    }
+    
+    console.log(`📊 Dashboard ${dashboardUserId}: buscando canais...`);
+    
+    // Retornar apenas os canais conectados POR ESTE DASHBOARD USER
+    const docs = await db.collection('accounts').find({ dashboardUserId }).toArray();
+    console.log(`✅ Dashboard ${dashboardUserId}: ${docs.length} canal(is)`, docs.map(d=>({name:d.channelName, id:d.channelId})));
+    
     const accounts = {};
     docs.forEach(doc => {
-      accounts[doc.slot] = { email: doc.email, connected: true };
+      accounts[doc.channelId] = { 
+        name: doc.channelName, 
+        thumb: doc.channelThumb,
+        email: doc.oauthEmail,
+        connected: true 
+      };
     });
     res.json(accounts);
   } catch (e) {
+    console.error('❌ Erro ao buscar accounts:', e);
     res.json({});
   }
 });
@@ -208,7 +447,8 @@ app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
 // FIX: usa getAnyToken, adiciona encodeURIComponent nos IDs, trata thumbnail ausente
 app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
   if (!req.query.ids) return res.json({ ok: false });
-  const token = await getAnyToken();
+  const userId = req.session.userEmail;
+  const token = await getAnyToken(userId);
   if (!token) return res.json({ ok: false });
   try {
     const r = await fetch(
@@ -230,21 +470,39 @@ app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
 // tryAllTokens: a Analytics API exige token do dono do canal
 app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
-  if (!channelId || !startDate || !endDate) return res.json({ ok: false });
+  const userId = req.session.userEmail;  // Email permanente, não sessionID
+  console.log(`📊 /api/analytics: channelId=${channelId}, período=${startDate} até ${endDate}, userId=${userId}`);
+  if (!channelId || !startDate || !endDate) {
+    console.log('⚠️ Parâmetros inválidos');
+    return res.json({ ok: false });
+  }
+
+  // Usar tryAllTokens para encontrar um token que tenha acesso a este canal
   const rows = await tryAllTokens(async (token) => {
     const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=estimatedRevenue,views&dimensions=day&sort=day`;
     const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) return null; // este token não tem acesso, tenta o próximo
+    if (!r.ok) {
+      console.log(`⚠️ Token falhou, tentando próximo (status ${r.status})`);
+      return null;
+    }
     const data = await r.json();
-    if (data.error) return null;
+    if (data.error) {
+      console.log(`⚠️ API retornou erro: ${data.error.message}`);
+      return null;
+    }
+    console.log(`✅ Sucesso! ${data.rows?.length || 0} linhas`);
     return data.rows || [];
-  });
-  if (rows === null) return res.json({ ok: false });
+  }, userId);
+  if (rows === null) {
+    console.log('❌ Nenhum token funcionou');
+    return res.json({ ok: false });
+  }
   return res.json({ ok: true, rows });
 });
 
 app.get('/api/analytics-detail', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
+  const userId = req.session.userEmail;
   if (!channelId || !startDate || !endDate) return res.json({ ok: false });
   const rows = await tryAllTokens(async (token) => {
     const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue&dimensions=day&sort=day`;
@@ -253,13 +511,14 @@ app.get('/api/analytics-detail', checkAuth, checkDB, async (req, res) => {
     const data = await r.json();
     if (data.error) return null;
     return data.rows || [];
-  });
+  }, userId);
   if (rows === null) return res.json({ ok: false });
   return res.json({ ok: true, rows });
 });
 
 app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
+  const userId = req.session.userEmail;
   if (!channelId || !startDate || !endDate) return res.json({ ok: false, videos: [] });
 
   // Analytics: precisa do token do dono do canal
@@ -270,13 +529,13 @@ app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
     const data = await r.json();
     if (data.error) return null;
     return data.rows || [];
-  });
+  }, userId);
 
   if (analyticsRows === null) return res.json({ ok: false, videos: [] });
   if (!analyticsRows.length) return res.json({ ok: true, videos: [] });
 
   // Metadados: qualquer token serve (Data API)
-  const token = await getAnyToken();
+  const token = await getAnyToken(userId);
   if (!token) return res.json({ ok: false, videos: [] });
   try {
     const videoIds = analyticsRows.map(r => r[0]).join(',');
@@ -316,8 +575,9 @@ app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
 // NOVO: vídeos recentes paginados, com estatísticas (views, likes, comentários)
 app.get('/api/recent-videos', checkAuth, checkDB, async (req, res) => {
   const { channelId, pageToken } = req.query;
+  const userId = req.session.userEmail;
   if (!channelId) return res.json({ ok: false, videos: [] });
-  const token = await getAnyToken();
+  const token = await getAnyToken(userId);
   if (!token) return res.json({ ok: false, videos: [] });
   try {
     // Passo 1: lista de vídeos recentes via Search API
@@ -368,6 +628,7 @@ app.get('/api/recent-videos', checkAuth, checkDB, async (req, res) => {
 
 app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   const { videoId, channelId, startDate, endDate } = req.query;
+  const userId = req.session.userEmail;
   if (!videoId || !channelId || !startDate || !endDate) return res.json({ ok: false });
 
   // Analytics do vídeo: precisa do token do dono do canal
@@ -379,10 +640,10 @@ app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
     if (data.error) return null;
     // rows[0] ou array vazio — ambos são "sucesso" (canal respondeu)
     return data.rows || [];
-  });
+  }, userId);
 
   // Estatísticas do vídeo: qualquer token serve (Data API)
-  const token = await getAnyToken();
+  const token = await getAnyToken(userId);
   let likeCount = 0, commentCount = 0;
   if (token) {
     try {
@@ -409,6 +670,22 @@ app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   const likeRate = views > 0 ? ((likeCount / views) * 1000).toFixed(1) : '—';
 
   return res.json({ ok: true, views, revenue, minutes, retention: avgViewPct != null ? avgViewPct.toFixed(1) + '%' : null, likeRate, comments: commentCount });
+});
+
+// DEBUG: Listar todos os canais do usuário
+app.get('/api/debug-channels', checkAuth, checkDB, async (req, res) => {
+  const userId = req.session.userEmail;
+  const allChannels = await db.collection('accounts').find({ userId }).toArray();
+  console.log(`🔍 DEBUG: Usuário ${userId} tem ${allChannels.length} canal(is)`);
+  res.json({
+    userId,
+    totalChannels: allChannels.length,
+    channels: allChannels.map(c => ({
+      channelId: c.channelId,
+      channelName: c.channelName,
+      connectedAt: c.connectedAt
+    }))
+  });
 });
 
 app.listen(PORT, () => console.log(`Server ON: ${PORT}`));
