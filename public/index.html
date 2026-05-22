@@ -676,17 +676,20 @@ async function init(){await loadAcc();await loadThumbs();loadPartials();renderCa
 async function loadAcc(){
   try{
     const r=await fetch('/api/accounts');
-    accounts=await r.json();
-    console.log('📋 /api/accounts retornou:', accounts);
+    const arr=await r.json();
+    console.log('📋 /api/accounts retornou:', arr);
     
     // Atualizar CHANNELS dinamicamente com os canais conectados
-    CHANNELS.length = 0;  // Limpar array
-    Object.entries(accounts).forEach(([channelId, info]) => {
+    CHANNELS.length = 0;
+    thumbs = {};
+    
+    arr.forEach(ch => {
       CHANNELS.push({
-        id: channelId,
-        name: info.name || 'Sem nome',
-        thumb: info.thumb || ''
+        id: ch.channelId,
+        name: ch.channelName || 'Sem nome',
+        thumb: ch.channelThumb || ''
       });
+      thumbs[ch.channelId] = ch.channelThumb || '';
     });
     console.log(`✅ ${CHANNELS.length} canal(is) carregado(s)`, CHANNELS);
     
@@ -889,20 +892,19 @@ function getPeriod(chId){
 }
 
 async function loadDetail(chId){
-  const rid=CID[chId];
   if(!dd[chId])dd[chId]={period:28,rows:[],metric:'views',chart:null,recent:[],top:[],recentTotal:0};
   const{start,end}=getPeriod(chId);
   const[rr,tr,dr]=await Promise.all([
-    fetch(`/api/recent-videos?channelId=${rid}`).then(r=>r.json()).catch(()=>({ok:false,videos:[],totalResults:0})),
-    fetch(`/api/top-videos?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
-    fetch(`/api/analytics-detail?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
+    fetch(`/api/recent-videos?channelId=${chId}`).then(r=>r.json()).catch(()=>({ok:false,videos:[],totalResults:0})),
+    fetch(`/api/top-videos?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
+    fetch(`/api/analytics-detail?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
   ]);
   const recent=rr.videos||[],top=tr.videos||[];
   const rows=(dr.rows||[]).slice().sort((a,b)=>a[0]>b[0]?1:-1);
   dd[chId]={...dd[chId],rows,recent,top,recentTotal:rr.totalResults||0,recentNext:rr.nextPageToken||null};
   renderDetail(chId);
   if(recent[0]){
-    fetch(`/api/video-metrics?videoId=${recent[0].id}&channelId=${rid}&startDate=${start}&endDate=${end}`)
+    fetch(`/api/video-metrics?videoId=${recent[0].id}&channelId=${chId}&startDate=${start}&endDate=${end}`)
       .then(r=>r.json()).then(d=>{
         const rv=document.getElementById(`frev-${chId}`),rt=document.getElementById(`fret-${chId}`);
         if(rv){rv.textContent=d.revenue!=null?'$'+Number(d.revenue).toFixed(2):'—';rv.className='fstat-v';}
@@ -1048,15 +1050,15 @@ async function setPeriod(chId,p){
   dd[chId].period=p;document.getElementById('pd-'+chId).classList.remove('open');
   const btn=document.querySelector(`#dgrid-${chId} .pbtn`);if(btn)btn.textContent={7:'7 Dias',28:'28 Dias',90:'90 Dias'}[p]+' ▾';
   document.querySelectorAll(`#pd-${chId} .popt`).forEach(o=>o.classList.toggle('on',o.textContent.trim().startsWith(String(p))));
-  const rid=CID[chId];const{start,end}=getPeriod(chId);
+  const{start,end}=getPeriod(chId);
 
   // Loading nos blocos de top vídeos e gráfico
   const tg=document.getElementById('tg-'+chId);
   if(tg)tg.innerHTML=LD();
 
   const[tr,dr]=await Promise.all([
-    fetch(`/api/top-videos?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
-    fetch(`/api/analytics-detail?channelId=${rid}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
+    fetch(`/api/top-videos?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]})),
+    fetch(`/api/analytics-detail?channelId=${chId}&startDate=${start}&endDate=${end}`).then(r=>r.json()).catch(()=>({ok:false,rows:[]}))
   ]);
   const rows=(dr.rows||[]).slice().sort((a,b)=>a[0]>b[0]?1:-1);
   dd[chId].rows=rows;dd[chId].top=tr.videos||[];
@@ -1079,10 +1081,9 @@ async function openPopup(type,chId){
   await loadPPage(null);
 }
 async function loadPPage(token){
-  const rid=CID[ppChId];
   document.getElementById('popupBody').innerHTML=LD();
   if(ppType==='recent'){
-    let url=`/api/recent-videos?channelId=${rid}`;if(token)url+=`&pageToken=${encodeURIComponent(token)}`;
+    let url=`/api/recent-videos?channelId=${ppChId}`;if(token)url+=`&pageToken=${encodeURIComponent(token)}`;
     const d=await fetch(url).then(r=>r.json()).catch(()=>({ok:false,videos:[]}));
     ppVids=d.videos||[];ppNext=d.nextPageToken||null;ppTotal=d.totalResults||0;
   }else{ppVids=dd[ppChId]?.top||[];ppNext=null;ppTotal=ppVids.length;}
@@ -1116,7 +1117,7 @@ async function ppage(dir){
   else if(dir==='last'){
     let t=ppNext;
     while(t){
-      const d=await fetch(`/api/recent-videos?channelId=${CID[ppChId]}&pageToken=${encodeURIComponent(t)}`).then(r=>r.json()).catch(()=>({videos:[],nextPageToken:null}));
+      const d=await fetch(`/api/recent-videos?channelId=${ppChId}&pageToken=${encodeURIComponent(t)}`).then(r=>r.json()).catch(()=>({videos:[],nextPageToken:null}));
       ppVids=d.videos||[];ppFilt=ppVids;ppPages.push(t);ppCurTok=t;t=d.nextPageToken||null;ppNext=t;ppPage=ppPages.length-1;
     }
     renderPList();updatePNav();
@@ -1194,7 +1195,7 @@ async function selectVid(idx,el){
     if(compareSection)compareSection.innerHTML=LD();
     const{start,end}=getPeriod(ppChId);
     try{
-      const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${CID[ppChId]}&startDate=${start}&endDate=${end}`);
+      const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${ppChId}&startDate=${start}&endDate=${end}`);
       const d=await r.json();
       if(compareSection)compareSection.innerHTML=`
         <div class="compare-sep"><span>${T().comparandoCom}</span></div>
@@ -1224,7 +1225,7 @@ async function selectVid(idx,el){
   detail.classList.add('open');
   const{start,end}=getPeriod(ppChId);
   try{
-    const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${CID[ppChId]}&startDate=${start}&endDate=${end}`);
+    const r=await fetch(`/api/video-metrics?videoId=${v.id}&channelId=${ppChId}&startDate=${start}&endDate=${end}`);
     const d=await r.json();
     dc.innerHTML=`<div id="mainMetrics">${metricsHTML(v,d,false)}</div><div id="compareSection"></div>`;
   }catch{dc.innerHTML=LD();}
