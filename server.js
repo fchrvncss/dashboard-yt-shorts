@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const MongoStore = require('connect-mongo');
 const fetch = require('node-fetch');
 const path = require('path');
@@ -39,6 +40,8 @@ function checkDB(req, res, next) {
   if (!db) return res.status(503).json({ error: 'Database unavailable' });
   next();
 }
+
+app.use(cookieParser());
 
 // Sessão persistida no MongoDB — sobrevive a restarts do servidor
 app.use(session({
@@ -181,7 +184,16 @@ app.get('/callback', async (req, res) => {
 
       console.log(`✅ Canal encontrado: ${channelName} (${channelId})`);
 
-      const docId = `${userId}::${channelId}`;
+      // Gerar ou usar dashboardUserId existente (persiste entre emails)
+      let dashboardUserId = req.session.dashboardUserId;
+      if (!dashboardUserId) {
+        // Primeira autenticação: gerar ID único
+        dashboardUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        req.session.dashboardUserId = dashboardUserId;
+        console.log(`🆔 Novo usuário da dashboard: ${dashboardUserId}`);
+      }
+
+      const docId = `${dashboardUserId}::${channelId}`;
       console.log(`🔍 Tentando salvar: docId=${docId}`);
       
       const result = await db.collection('accounts').updateOne(
@@ -196,7 +208,8 @@ app.get('/callback', async (req, res) => {
             accessToken: tokens.access_token,
             refreshToken: tokens.refresh_token || undefined,
             expiresAt: Date.now() + (tokens.expires_in * 1000),
-            userId,
+            dashboardUserId,  // ID permanente da dashboard
+            oauthEmail: userInfo.email,  // Email específico do OAuth
             connectedAt: new Date().toISOString()
           }
         },
@@ -204,12 +217,17 @@ app.get('/callback', async (req, res) => {
       );
       console.log(`📊 updateOne resultado:`, { matched: result.matchedCount, modified: result.modifiedCount, upserted: result.upsertedId });
       
-      const allChannels = await db.collection('accounts').find({ userId }).toArray();
-      console.log(`✅ Usuário ${userId} agora tem ${allChannels.length} canal(is):`, allChannels.map(c => c.channelName).join(', '));
+      const allChannels = await db.collection('accounts').find({ dashboardUserId }).toArray();
+      console.log(`✅ Dashboard ${dashboardUserId} agora tem ${allChannels.length} canal(is):`, allChannels.map(c => c.channelName).join(', '));
 
       // Salvar email na sessão para fins de autenticação
       req.session.user = true;
       req.session.userEmail = userInfo.email;
+      req.session.dashboardUserId = dashboardUserId;
+      
+      // Salvar dashboardUserId em cookie permanente (max-age: 1 ano)
+      res.cookie('dashboardUserId', dashboardUserId, { maxAge: 365*24*60*60*1000, httpOnly: false });
+      
       await new Promise((resolve, reject) => {
         req.session.save(err => err ? reject(err) : resolve());
       });
@@ -220,9 +238,18 @@ app.get('/callback', async (req, res) => {
     // Se há múltiplos canais, salvar na sessão e mostrar seletor
     console.log(`⚠️ ${channelData.items.length} canal(is) encontrado(s), mostrando seletor`);
     
+    // Gerar ou usar dashboardUserId existente
+    let dashboardUserId = req.session.dashboardUserId;
+    if (!dashboardUserId) {
+      dashboardUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      req.session.dashboardUserId = dashboardUserId;
+      console.log(`🆔 Novo usuário da dashboard: ${dashboardUserId}`);
+    }
+    
     // Salvar tokens e canais na sessão temporária
     req.session.pendingAuth = {
-      userEmail: userInfo.email,
+      dashboardUserId,
+      oauthEmail: userInfo.email,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || undefined,
       expiresIn: tokens.expires_in,
@@ -256,16 +283,17 @@ app.post('/api/select-channel', async (req, res) => {
   }
   
   try {
-    const userId = pending.userEmail;
+    const dashboardUserId = pending.dashboardUserId;
+    const oauthEmail = pending.oauthEmail;
     const selectedChannel = pending.channels.find(c => c.id === channelId);
     
     if (!selectedChannel) {
       return res.json({ ok: false, error: 'Canal não encontrado' });
     }
     
-    console.log(`✅ Usuário ${userId} selecionou canal: ${selectedChannel.name} (${channelId})`);
+    console.log(`✅ Dashboard ${dashboardUserId} selecionou canal: ${selectedChannel.name} (${channelId})`);
     
-    const docId = `${userId}::${channelId}`;
+    const docId = `${dashboardUserId}::${channelId}`;
     
     // Salvar o canal selecionado no MongoDB
     const result = await db.collection('accounts').updateOne(
@@ -276,11 +304,12 @@ app.post('/api/select-channel', async (req, res) => {
           channelName: selectedChannel.name,
           channelThumb: selectedChannel.thumb,
           subscriberCount: selectedChannel.subscribers,
-          email: userId,
+          email: oauthEmail,
           accessToken: pending.accessToken,
           refreshToken: pending.refreshToken || undefined,
           expiresAt: Date.now() + (pending.expiresIn * 1000),
-          userId,
+          dashboardUserId,
+          oauthEmail,
           connectedAt: new Date().toISOString()
         }
       },
@@ -291,7 +320,7 @@ app.post('/api/select-channel', async (req, res) => {
     
     // Marcar como autenticado
     req.session.user = true;
-    req.session.userEmail = userId;
+    req.session.userEmail = oauthEmail;
     delete req.session.pendingAuth;  // Limpar dados temporários
     
     await new Promise((resolve, reject) => {
@@ -391,24 +420,30 @@ async function tryAllTokens(apiCallFn, userId) {
 // --- API DATA ---
 app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
   try {
-    // Obter userId (email) da sessão
-    const userId = req.session.userEmail;
+    // Tentar obter dashboardUserId da sessão
+    let dashboardUserId = req.session.dashboardUserId;
     
-    if (!userId) {
-      console.warn('⚠️ Nenhum userEmail na sessão');
+    // Se não tiver na sessão, tentar obter do cookie
+    if (!dashboardUserId && req.cookies && req.cookies.dashboardUserId) {
+      dashboardUserId = req.cookies.dashboardUserId;
+      req.session.dashboardUserId = dashboardUserId;
+    }
+    
+    if (!dashboardUserId) {
+      console.warn('⚠️ Nenhum dashboardUserId encontrado');
       return res.json({});
     }
     
-    // Retornar apenas os canais conectados POR ESTE USUÁRIO (baseado no email)
-    const docs = await db.collection('accounts').find({ userId }).toArray();
-    console.log(`📊 Canais do usuário ${userId}: ${docs.length} canal(is)`, docs.map(d=>({name:d.channelName, id:d.channelId})));
+    // Retornar apenas os canais conectados POR ESTE DASHBOARD USER
+    const docs = await db.collection('accounts').find({ dashboardUserId }).toArray();
+    console.log(`📊 Dashboard ${dashboardUserId}: ${docs.length} canal(is)`, docs.map(d=>({name:d.channelName, id:d.channelId})));
     
     const accounts = {};
     docs.forEach(doc => {
       accounts[doc.channelId] = { 
         name: doc.channelName, 
         thumb: doc.channelThumb,
-        email: doc.email,
+        email: doc.oauthEmail,
         connected: true 
       };
     });
