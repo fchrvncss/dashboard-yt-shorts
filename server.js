@@ -444,6 +444,36 @@ app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
   }
 });
 
+// Endpoint para desconectar/deletar um canal
+app.post('/api/disconnect-channel', checkAuth, checkDB, async (req, res) => {
+  const { channelId } = req.body;
+  const dashboardUserId = req.session.dashboardUserId;
+  
+  if (!channelId || !dashboardUserId) {
+    return res.json({ ok: false, error: 'Dados inválidos' });
+  }
+  
+  try {
+    const docId = `${dashboardUserId}::${channelId}`;
+    const result = await db.collection('accounts').deleteOne({ _id: docId });
+    
+    if (result.deletedCount > 0) {
+      console.log(`🗑️ Canal deletado: ${channelId} do usuário ${dashboardUserId}`);
+      
+      // Listar canais restantes
+      const remaining = await db.collection('accounts').find({ dashboardUserId }).toArray();
+      console.log(`📊 Canais restantes: ${remaining.length}`, remaining.map(d=>d.channelName).join(', '));
+      
+      return res.json({ ok: true, message: 'Canal desconectado com sucesso' });
+    } else {
+      return res.json({ ok: false, error: 'Canal não encontrado' });
+    }
+  } catch (err) {
+    console.error('❌ Erro ao desconectar canal:', err);
+    res.json({ ok: false, error: 'Erro ao deletar' });
+  }
+});
+
 // FIX: usa getAnyToken, adiciona encodeURIComponent nos IDs, trata thumbnail ausente
 app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
   if (!req.query.ids) return res.json({ ok: false });
