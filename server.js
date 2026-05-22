@@ -447,8 +447,8 @@ app.get('/api/accounts', checkAuth, checkDB, async (req, res) => {
 // FIX: usa getAnyToken, adiciona encodeURIComponent nos IDs, trata thumbnail ausente
 app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
   if (!req.query.ids) return res.json({ ok: false });
-  const userId = req.session.userEmail;
-  const token = await getAnyToken(userId);
+  const dashboardUserId = req.session.dashboardUserId;
+  const token = await getAnyToken(dashboardUserId);
   if (!token) return res.json({ ok: false });
   try {
     const r = await fetch(
@@ -470,8 +470,8 @@ app.get('/api/channel-thumbs', checkAuth, checkDB, async (req, res) => {
 // tryAllTokens: a Analytics API exige token do dono do canal
 app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
-  const userId = req.session.userEmail;  // Email permanente, não sessionID
-  console.log(`📊 /api/analytics: channelId=${channelId}, período=${startDate} até ${endDate}, userId=${userId}`);
+  const dashboardUserId = req.session.dashboardUserId;
+  console.log(`📊 /api/analytics: channelId=${channelId}, período=${startDate} até ${endDate}, dashboardUserId=${dashboardUserId}`);
   if (!channelId || !startDate || !endDate) {
     console.log('⚠️ Parâmetros inválidos');
     return res.json({ ok: false });
@@ -492,7 +492,7 @@ app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
     }
     console.log(`✅ Sucesso! ${data.rows?.length || 0} linhas`);
     return data.rows || [];
-  }, userId);
+  }, dashboardUserId);
   if (rows === null) {
     console.log('❌ Nenhum token funcionou');
     return res.json({ ok: false });
@@ -502,7 +502,7 @@ app.get('/api/analytics', checkAuth, checkDB, async (req, res) => {
 
 app.get('/api/analytics-detail', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
-  const userId = req.session.userEmail;
+  const dashboardUserId = req.session.dashboardUserId;
   if (!channelId || !startDate || !endDate) return res.json({ ok: false });
   const rows = await tryAllTokens(async (token) => {
     const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDate}&endDate=${endDate}&metrics=views,estimatedMinutesWatched,estimatedRevenue&dimensions=day&sort=day`;
@@ -511,14 +511,14 @@ app.get('/api/analytics-detail', checkAuth, checkDB, async (req, res) => {
     const data = await r.json();
     if (data.error) return null;
     return data.rows || [];
-  }, userId);
+  }, dashboardUserId);
   if (rows === null) return res.json({ ok: false });
   return res.json({ ok: true, rows });
 });
 
 app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
   const { channelId, startDate, endDate } = req.query;
-  const userId = req.session.userEmail;
+  const dashboardUserId = req.session.dashboardUserId;
   if (!channelId || !startDate || !endDate) return res.json({ ok: false, videos: [] });
 
   // Analytics: precisa do token do dono do canal
@@ -529,7 +529,7 @@ app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
     const data = await r.json();
     if (data.error) return null;
     return data.rows || [];
-  }, userId);
+  }, dashboardUserId);
 
   if (analyticsRows === null) return res.json({ ok: false, videos: [] });
   if (!analyticsRows.length) return res.json({ ok: true, videos: [] });
@@ -575,9 +575,9 @@ app.get('/api/top-videos', checkAuth, checkDB, async (req, res) => {
 // NOVO: vídeos recentes paginados, com estatísticas (views, likes, comentários)
 app.get('/api/recent-videos', checkAuth, checkDB, async (req, res) => {
   const { channelId, pageToken } = req.query;
-  const userId = req.session.userEmail;
+  const dashboardUserId = req.session.dashboardUserId;
   if (!channelId) return res.json({ ok: false, videos: [] });
-  const token = await getAnyToken(userId);
+  const token = await getAnyToken(dashboardUserId);
   if (!token) return res.json({ ok: false, videos: [] });
   try {
     // Passo 1: lista de vídeos recentes via Search API
@@ -628,7 +628,7 @@ app.get('/api/recent-videos', checkAuth, checkDB, async (req, res) => {
 
 app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   const { videoId, channelId, startDate, endDate } = req.query;
-  const userId = req.session.userEmail;
+  const dashboardUserId = req.session.dashboardUserId;
   if (!videoId || !channelId || !startDate || !endDate) return res.json({ ok: false });
 
   // Analytics do vídeo: precisa do token do dono do canal
@@ -640,7 +640,7 @@ app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
     if (data.error) return null;
     // rows[0] ou array vazio — ambos são "sucesso" (canal respondeu)
     return data.rows || [];
-  }, userId);
+  }, dashboardUserId);
 
   // Estatísticas do vídeo: qualquer token serve (Data API)
   const token = await getAnyToken(userId);
