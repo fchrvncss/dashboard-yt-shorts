@@ -168,61 +168,152 @@ app.get('/callback', async (req, res) => {
       return res.redirect('/?error=no_channel');
     }
 
-    const channel = channelData.items[0];
-    const channelId = channel.id;
-    const channelName = channel.snippet.title;
-    const channelThumb = channel.snippet.thumbnails?.default?.url || '';
-    const subscriberCount = channel.statistics.subscriberCount || '0';
-
-    console.log(`✅ Canal encontrado: ${channelName} (${channelId})`);
-
-    // Usar EMAIL como userId permanente (não muda entre sessões)
+    // Usar EMAIL como userId permanente
     const userId = userInfo.email;
     
-    // Criar _id explícito que garante: 1 documento por (usuário + canal)
+    // Se há apenas 1 canal, conectar direto
+    if (channelData.items.length === 1) {
+      const channel = channelData.items[0];
+      const channelId = channel.id;
+      const channelName = channel.snippet.title;
+      const channelThumb = channel.snippet.thumbnails?.default?.url || '';
+      const subscriberCount = channel.statistics.subscriberCount || '0';
+
+      console.log(`✅ Canal encontrado: ${channelName} (${channelId})`);
+
+      const docId = `${userId}::${channelId}`;
+      console.log(`🔍 Tentando salvar: docId=${docId}`);
+      
+      const result = await db.collection('accounts').updateOne(
+        { _id: docId },
+        {
+          $set: {
+            channelId,
+            channelName,
+            channelThumb,
+            subscriberCount,
+            email: userInfo.email,
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token || undefined,
+            expiresAt: Date.now() + (tokens.expires_in * 1000),
+            userId,
+            connectedAt: new Date().toISOString()
+          }
+        },
+        { upsert: true }
+      );
+      console.log(`📊 updateOne resultado:`, { matched: result.matchedCount, modified: result.modifiedCount, upserted: result.upsertedId });
+      
+      const allChannels = await db.collection('accounts').find({ userId }).toArray();
+      console.log(`✅ Usuário ${userId} agora tem ${allChannels.length} canal(is):`, allChannels.map(c => c.channelName).join(', '));
+
+      // Salvar email na sessão para fins de autenticação
+      req.session.user = true;
+      req.session.userEmail = userInfo.email;
+      await new Promise((resolve, reject) => {
+        req.session.save(err => err ? reject(err) : resolve());
+      });
+
+      return res.redirect('/?connected=' + channelId);
+    }
+    
+    // Se há múltiplos canais, salvar na sessão e mostrar seletor
+    console.log(`⚠️ ${channelData.items.length} canal(is) encontrado(s), mostrando seletor`);
+    
+    // Salvar tokens e canais na sessão temporária
+    req.session.pendingAuth = {
+      userEmail: userInfo.email,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token || undefined,
+      expiresIn: tokens.expires_in,
+      channels: channelData.items.map(ch => ({
+        id: ch.id,
+        name: ch.snippet.title,
+        thumb: ch.snippet.thumbnails?.default?.url || '',
+        subscribers: ch.statistics.subscriberCount || '0'
+      }))
+    };
+    
+    await new Promise((resolve, reject) => {
+      req.session.save(err => err ? reject(err) : resolve());
+    });
+
+    // Redirecionar para página de seleção
+    res.redirect('/?select-channel=true');
+  } catch (err) {
+    console.error('❌ Erro no callback:', err);
+    res.redirect('/?error=auth_failed');
+  }
+});
+
+// Endpoint para o usuário selecionar qual canal conectar (quando há múltiplos)
+app.post('/api/select-channel', async (req, res) => {
+  const { channelId } = req.body;
+  const pending = req.session.pendingAuth;
+  
+  if (!pending || !channelId) {
+    return res.json({ ok: false, error: 'Dados inválidos' });
+  }
+  
+  try {
+    const userId = pending.userEmail;
+    const selectedChannel = pending.channels.find(c => c.id === channelId);
+    
+    if (!selectedChannel) {
+      return res.json({ ok: false, error: 'Canal não encontrado' });
+    }
+    
+    console.log(`✅ Usuário ${userId} selecionou canal: ${selectedChannel.name} (${channelId})`);
+    
     const docId = `${userId}::${channelId}`;
     
-    // Salvar no MongoDB com _id único
-    console.log(`🔍 Tentando salvar: docId=${docId}`);
-    
+    // Salvar o canal selecionado no MongoDB
     const result = await db.collection('accounts').updateOne(
-      { _id: docId },  // ID explícito = userId::channelId
+      { _id: docId },
       {
         $set: {
           channelId,
-          channelName,
-          channelThumb,
-          subscriberCount,
-          email: userInfo.email,
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token || undefined,
-          expiresAt: Date.now() + (tokens.expires_in * 1000),
-          userId,  // Agora é o EMAIL (permanente)
+          channelName: selectedChannel.name,
+          channelThumb: selectedChannel.thumb,
+          subscriberCount: selectedChannel.subscribers,
+          email: userId,
+          accessToken: pending.accessToken,
+          refreshToken: pending.refreshToken || undefined,
+          expiresAt: Date.now() + (pending.expiresIn * 1000),
+          userId,
           connectedAt: new Date().toISOString()
         }
       },
       { upsert: true }
     );
+    
     console.log(`📊 updateOne resultado:`, { matched: result.matchedCount, modified: result.modifiedCount, upserted: result.upsertedId });
     
-    // Verificar quantos canais esse usuário tem AGORA
-    const allChannels = await db.collection('accounts').find({ userId }).toArray();
-    console.log(`✅ Usuário ${userId} agora tem ${allChannels.length} canal(is):`, allChannels.map(c => c.channelName).join(', '));
+    // Marcar como autenticado
+    req.session.user = true;
+    req.session.userEmail = userId;
+    delete req.session.pendingAuth;  // Limpar dados temporários
     
-    console.log(`✅ Conta salva: ${channelName} (${channelId}), userId=${userId}`);
-
-    // Salvar email na sessão para fins de autenticação
-    req.session.user = true;  // Marca como autenticado (para checkAuth passar)
-    req.session.userEmail = userInfo.email;
     await new Promise((resolve, reject) => {
       req.session.save(err => err ? reject(err) : resolve());
     });
-
-    res.redirect('/?connected=' + channelId);
+    
+    res.json({ ok: true, channelId });
   } catch (err) {
-    console.error('❌ Erro no callback:', err);
-    res.redirect('/?error=auth_failed');
+    console.error('❌ Erro ao selecionar canal:', err);
+    res.json({ ok: false, error: 'Erro ao salvar' });
   }
+});
+
+// Endpoint para retornar os canais pendentes
+app.get('/api/pending-channels', async (req, res) => {
+  const pending = req.session.pendingAuth;
+  
+  if (!pending || !pending.channels) {
+    return res.json({ ok: false, channels: [] });
+  }
+  
+  res.json({ ok: true, channels: pending.channels });
 });
 
 // --- TOKEN HELPERS ---
