@@ -132,9 +132,9 @@ th.sort-desc::after{content:' ↓';color:var(--accent);}
 .pct-item-default{font-size:0.46rem;background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:auto;}
 .pct-item-actions{display:flex;align-items:stretch;width:0;overflow:hidden;transition:width 0.22s var(--ease),border-left 0.22s var(--ease);}
 .pct-item:hover .pct-item-actions{border-left:1px solid var(--border);}
-.pct-item:not(.is-default):hover .pct-item-actions{width:120px;}
-.pct-item.is-default:hover .pct-item-actions{width:70px;}
-.pct-action-btn{padding:0 7px;background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:0.52rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:color 0.12s,background 0.12s;white-space:nowrap;min-height:38px;min-width:30px;}
+.pct-item:not(.is-default):hover .pct-item-actions{width:108px;}
+.pct-item.is-default:hover .pct-item-actions{width:72px;}
+.pct-action-btn{flex:1;padding:0;background:transparent;border:none;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color 0.12s,background 0.12s;min-height:38px;min-width:36px;}
 .pct-action-btn:hover{color:var(--accent);background:rgba(255,77,0,0.08);}
 .pct-action-btn+.pct-action-btn{border-left:1px solid var(--border);}
 .pct-action-btn .ab-icon{font-size:0.68rem;}
@@ -483,7 +483,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
         <div class="drop-menu" id="dropSettings" style="width:200px;right:0;left:auto;padding:8px;">
           <div class="sett-row" id="settLangRow" onclick="toggleSettLang(event)">
             <span class="sett-icon">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h12M9 3v2m4 16l-4-8-4 8m2-3.5h4"/><path d="M15 5l7 14M18.5 12H22"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
             </span>
             <span class="sett-label" id="settLangLabel">Language</span>
             <span class="sett-arrow" id="settLangArrow">▾</span>
@@ -1535,9 +1535,9 @@ function renderPctList(){
           ${isDef?`<span class="pct-item-default">${t.pctPadrao}</span>`:''}
         </div>
         <div class="pct-item-actions">
-          ${!isDef?`<button class="pct-action-btn" onclick="event.stopPropagation();pinPct(${i})"><span class="ab-icon"><svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor"><path d="M9.5 1a.5.5 0 01.5.5v1l1.5 3H13a.5.5 0 010 1h-.5v5.5a.5.5 0 01-1 0V6.5H11L9.5 3.5v-2a.5.5 0 01.5-.5zM8 6.5L6.5 9H4a.5.5 0 000 1h.5v4a.5.5 0 001 0V10H7l1.5-2.5L8 6.5z"/></svg></span><span>${t.pctFixar}</span></button>`:''}
-          <button class="pct-action-btn" onclick="event.stopPropagation();editPct(${i})"><span class="ab-icon"><svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor"><path d="M12.85 2.15a1.5 1.5 0 00-2.12 0L3 9.88V13h3.12l7.73-7.73a1.5 1.5 0 000-2.12zM5.5 12H4v-1.5l6.5-6.5 1.5 1.5L5.5 12z"/></svg></span><span>${t.pctEditar}</span></button>
-          <button class="pct-action-btn" onclick="event.stopPropagation();removePct(${i})"><span class="ab-icon"><svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor"><path d="M5.5 1h5l.5.5V3H14v1H2V3h3V1.5L5.5 1zm1 1v1h3V2h-3zM3 5h10l-.5 9.5a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5L3 5zm2 1v7h1V6H5zm3 0v7h1V6H8zm3 0v7h1V6h-1z"/></svg></span><span>${t.pctRemover}</span></button>
+          ${!isDef?`<button class="pct-action-btn" title="${t.pctFixar}" onclick="event.stopPropagation();pinPct(${i})"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z"/></svg></button>`:''}
+          <button class="pct-action-btn" title="${t.pctEditar}" onclick="event.stopPropagation();editPct(${i})"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+          <button class="pct-action-btn" title="${t.pctRemover}" onclick="event.stopPropagation();removePct(${i})"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
         </div>
       </div>
       <div class="pct-edit-area" id="pct-edit-${i}">
