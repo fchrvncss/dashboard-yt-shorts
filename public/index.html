@@ -23,9 +23,24 @@ html[data-theme='light']{
   --text:#111;--t2:#555;--t3:#999;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+/* Badge laranja com texto adaptável ao tema: escuro=texto escuro, claro=texto branco */
+.accent-badge{background:var(--accent);color:#1a1a1e;padding:1px 5px;border-radius:4px;font-size:0.5rem;font-weight:800;display:inline-block;}
+html[data-theme='light'] .accent-badge{color:#fff;}
 html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;}
 body{padding:24px;}
+#app{padding-left:56px;}
 body.no-scroll{overflow:hidden;}
+/* Sidebar esquerda para futuras adições */
+.left-sidebar{position:fixed;top:0;left:0;height:100vh;width:56px;background:var(--s1);border-right:1px solid var(--border);z-index:600;transition:width 0.28s var(--ease);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;}
+.left-sidebar.expanded{width:210px;box-shadow:4px 0 24px rgba(0,0,0,0.18);}
+.ls-head{display:flex;align-items:center;gap:12px;padding:18px 16px;white-space:nowrap;border-bottom:1px solid var(--border);min-height:62px;}
+.ls-logo-icon{flex-shrink:0;display:flex;}
+.ls-name{font-size:1.25rem;font-weight:800;letter-spacing:-0.5px;opacity:0;transform:translateX(-8px);transition:opacity 0.22s var(--ease),transform 0.22s var(--ease);}
+.left-sidebar.expanded .ls-name{opacity:1;transform:translateX(0);}
+.ls-toggle{position:absolute;top:20px;right:14px;background:none;border:none;color:var(--t3);cursor:pointer;padding:4px;display:flex;opacity:0;transition:opacity 0.2s;}
+.left-sidebar.expanded .ls-toggle{opacity:1;}
+.ls-body{flex:1;padding:10px 0;}
+@media(max-width:640px){#app{padding-left:40px;}.left-sidebar{width:48px;}.left-sidebar.expanded{width:180px;}}
 img{display:block;}
 button{font-family:'Inter',sans-serif;}
 
@@ -278,7 +293,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .pvi-thumb{width:76px;height:43px;border-radius:6px;object-fit:cover;background:#333;flex-shrink:0;transition:width 0.3s,height 0.3s;}
 .popup-list.collapsed .pvi-thumb{width:38px;height:38px;border-radius:7px;}
 .pvi-info{flex:1;min-width:0;}
-.pvi-title{font-size:0.68rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);}
+.pvi-title{font-size:0.68rem;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);}
 .pvi-meta{font-size:0.58rem;color:var(--t3);margin-top:2px;}
 .popup-list.collapsed .pvi-meta{display:none;}
 .popup-detail{width:0;overflow:hidden;transition:width 0.36s var(--ease),opacity 0.3s ease;opacity:0;pointer-events:none;border-left:0px solid var(--border);}
@@ -444,11 +459,19 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 </div>
 
 <div id="app" style="display:none">
-  <header>
-    <div class="logo">
-      <svg width="26" height="26" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="6" fill="none"/><rect x="35" y="32" width="10" height="10" fill="#ff4d00"/><rect x="35" y="45" width="10" height="10" fill="#ff4d00"/><rect x="35" y="58" width="10" height="10" fill="#ff4d00"/><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00"/><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00"/><rect x="61" y="45" width="10" height="10" fill="#ff4d00"/></svg>
-      Automata
+  <div class="left-sidebar" id="leftSidebar" onclick="toggleLeftSidebar()">
+    <div class="ls-head">
+      <span class="ls-logo-icon">
+        <svg width="26" height="26" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="6" fill="none"/><rect x="35" y="32" width="10" height="10" fill="#ff4d00"/><rect x="35" y="45" width="10" height="10" fill="#ff4d00"/><rect x="35" y="58" width="10" height="10" fill="#ff4d00"/><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00"/><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00"/><rect x="61" y="45" width="10" height="10" fill="#ff4d00"/></svg>
+      </span>
+      <span class="ls-name">Automata</span>
+      <button class="ls-toggle" onclick="event.stopPropagation();toggleLeftSidebar()" title="Toggle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
     </div>
+    <div class="ls-body"></div>
+  </div>
+  <header style="justify-content:flex-end">
     <div class="hcontrols">
       <div class="filter-group">
         <div class="clear-x" id="clearX" onclick="resetFilters()">✕<span id="clearXLabel">Limpar</span></div>
@@ -471,6 +494,10 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
           <div class="dopt" id="opt-max" onclick="setMax()">Max</div>
           <div class="dopt" id="opt-custom" onclick="openCustomDate()">Personalizado</div>
         </div>
+      </div>
+      <div class="drop-wrap">
+        <button class="pill" id="btnCurrency" onclick="toggleDrop('dropCurrency')">$ USD ▾</button>
+        <div class="drop-menu" id="dropCurrency" style="width:180px;"></div>
       </div>
       <button class="pill" onclick="toggleConexoes(true)" style="border-color:rgba(255,77,0,0.4)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -515,7 +542,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
       </div>
       <div class="pct-wrap">
         <div class="tcard-half" id="tc-partial" onclick="togglePctDrop(event)">
-          <div class="tcard-l">Receita Parcial <span id="pctBadge" style="background:var(--accent);color:#000;padding:1px 5px;border-radius:4px;font-size:0.5rem;font-weight:800;"></span></div>
+          <div class="tcard-l">Receita Parcial <span id="pctBadge" class="accent-badge"></span></div>
           <div class="tcard-v" id="vPartial" style="font-size:1.6rem;color:var(--t3)">—</div>
           <div class="tcard-sub">Clique para gerenciar</div>
         </div>
@@ -605,6 +632,56 @@ const LOCALE_MAP={pt:'pt-BR',en:'en-US',es:'es-ES',fr:'fr-FR',de:'de-DE',ja:'ja-
 const N=n=>{if(n==null)return'—';n=+n;if(isNaN(n))return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'k';return n.toLocaleString('pt-BR');};
 const D=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'short'});};
 const DL=d=>{if(!d)return'—';return new Date(d).toLocaleDateString(LOCALE_MAP[currentLang]||'pt-BR',{day:'2-digit',month:'long',year:'numeric'});};
+
+// === CONVERSÃO DE MOEDAS ===
+const CURRENCIES={
+  USD:{sym:'$',name:'Dólar (USD)',flag:'🇺🇸'},
+  EUR:{sym:'€',name:'Euro (EUR)',flag:'🇪🇺'},
+  BRL:{sym:'R$',name:'Real (BRL)',flag:'🇧🇷'},
+  GBP:{sym:'£',name:'Libra (GBP)',flag:'🇬🇧'},
+  CHF:{sym:'Fr',name:'Franco (CHF)',flag:'🇨🇭'},
+  JPY:{sym:'¥',name:'Iene (JPY)',flag:'🇯🇵'},
+  CNY:{sym:'元',name:'Yuan (CNY)',flag:'🇨🇳'}
+};
+let currency=localStorage.getItem('automata_currency')||'USD';
+let rates={USD:1};
+async function loadRates(){
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/USD');
+    const d=await r.json();
+    if(d&&d.rates){rates=d.rates;console.log('💱 Taxas de câmbio carregadas');}
+  }catch(e){console.warn('⚠️ Erro ao carregar taxas de câmbio, usando USD:',e);}
+}
+// Converte um valor em USD para a moeda atual e formata com símbolo
+function fmtMoney(usd){
+  if(usd==null||isNaN(usd))usd=0;
+  const rate=rates[currency]||1;
+  const v=usd*rate;
+  const sym=CURRENCIES[currency]?.sym||'$';
+  // JPY e CNY normalmente sem casas decimais
+  const dec=(currency==='JPY')?0:2;
+  return sym+v.toLocaleString(LOCALE_MAP[currentLang]||'en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+async function setCurrency(c){
+  currency=c;
+  localStorage.setItem('automata_currency',c);
+  document.getElementById('dropCurrency')?.classList.remove('open');
+  renderCurrencyBtn();
+  // Re-renderizar tudo que mostra dinheiro
+  updateUI();
+  if(mainChart)mainChart.update();
+}
+function renderCurrencyBtn(){
+  const btn=document.getElementById('btnCurrency');
+  if(btn){const c=CURRENCIES[currency];btn.innerHTML=`${c.flag} ${currency} ▾`;}
+  const drop=document.getElementById('dropCurrency');
+  if(drop){
+    drop.innerHTML=Object.entries(CURRENCIES).map(([code,c])=>
+      `<div class="dopt${code===currency?' sel':''}" onclick="event.stopPropagation();setCurrency('${code}')"><span>${c.flag} ${c.name}</span></div>`
+    ).join('');
+  }
+}
+
 
 async function login(){
   const pwd=document.getElementById('pwInput').value;
@@ -697,7 +774,8 @@ else if(params.has('connected')){
   },500);
 }
 
-async function init(){await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
+function toggleLeftSidebar(){document.getElementById('leftSidebar').classList.toggle('expanded');}
+async function init(){await loadRates();renderCurrencyBtn();await loadAcc();await loadThumbs();loadPartials();renderCanais();renderMonths();renderSidebar();initMainChart();fetchAll();}
 
 function showChannelSelector(channels){
   const tr=T();
@@ -957,9 +1035,9 @@ function updateUI(){
   renderTableSorted();
 
   totalRevenue=tR;
-  document.getElementById('vRev').innerText=`$${tR.toFixed(2)}`;
+  document.getElementById('vRev').innerText=fmtMoney(tR);
   document.getElementById('vViews').innerText=tV.toLocaleString();
-  document.getElementById('vRPM').innerText=tV>0?`$${((tR/tV)*1000).toFixed(2)}`:'$0.00';
+  document.getElementById('vRPM').innerText=tV>0?fmtMoney((tR/tV)*1000):fmtMoney(0);
   updateMainChart(dD);
   updatePartialCard();
   console.log('✅ UI renderizada com sucesso');
@@ -996,7 +1074,7 @@ async function loadDetail(chId){
     fetch(`/api/video-metrics?videoId=${recent[0].id}&channelId=${chId}&startDate=${start}&endDate=${end}`)
       .then(r=>r.json()).then(d=>{
         const rv=document.getElementById(`frev-${chId}`),rt=document.getElementById(`fret-${chId}`);
-        if(rv){rv.textContent=d.revenue!=null?'$'+Number(d.revenue).toFixed(2):'—';rv.className='fstat-v';}
+        if(rv){rv.textContent=d.revenue!=null?fmtMoney(Number(d.revenue)):'—';rv.className='fstat-v';}
         if(rt){rt.textContent=d.retention||'—';rt.className='fstat-v';}
       }).catch(()=>{});
   }
@@ -1094,7 +1172,7 @@ function renderTopList(vids){
           <div class="sstat">${I.eye}<span>${N(v.views)}</span></div>
           <div class="sstat">${I.like}<span>${N(v.likes)}</span></div>
           <div class="sstat">${I.cmt}<span>${N(v.comments)}</span></div>
-          <div class="sstat">${I.dol}<span>$${Number(v.revenue||0).toFixed(2)}</span></div>
+          <div class="sstat">${I.dol}<span>${fmtMoney(Number(v.revenue||0))}</span></div>
         </div>
       </div>
     </div>`).join('');
@@ -1118,7 +1196,7 @@ function buildChart(chId,rows,metric){
         padding:8,displayColors:true,usePointStyle:true,boxWidth:7,boxHeight:7,
         callbacks:{
           labelColor:()=>({borderColor:'#ff4d00',backgroundColor:'#ff4d00',borderWidth:2,borderRadius:4}),
-          label:ctx=>` ${metric==='revenue'?'$'+ctx.raw.toFixed(2):N(ctx.raw)}`
+          label:ctx=>` ${metric==='revenue'?fmtMoney(ctx.raw):N(ctx.raw)}`
         }}},
       scales:{y:{position:'left',grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},border:{display:false},ticks:{color:'#505060',font:{size:9},maxTicksLimit:4,callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v}},
         x:{grid:{display:false},border:{display:false},ticks:{color:'#505060',font:{size:9},maxTicksLimit:7,maxRotation:0}}}}
@@ -1296,7 +1374,7 @@ function metricsHTML(v, d, isCompare=false){
     </div>
     <div class="mgrid">
       <div class="mc"><div class="mc-l">${t.metViews}</div><div class="mc-v">${N(d.views||0)}</div></div>
-      <div class="mc"><div class="mc-l">${t.metReceita}</div><div class="mc-v">$${(d.revenue||0).toFixed(2)}</div></div>
+      <div class="mc"><div class="mc-l">${t.metReceita}</div><div class="mc-v">${fmtMoney(d.revenue||0)}</div></div>
       <div class="mc"><div class="mc-l">${t.metLikes}</div><div class="mc-v">${d.likeRate||'—'}</div><div class="mc-s">${t.metPor1k}</div></div>
       <div class="mc"><div class="mc-l">${t.metComents}</div><div class="mc-v">${N(d.comments||0)}</div></div>
       <div class="mc"><div class="mc-l">${t.metRetencao}</div><div class="mc-v">${d.retention||'—'}</div><div class="mc-s">${t.metPorc}</div></div>
@@ -1480,7 +1558,7 @@ function updatePartialCard(){
   const combined=document.getElementById('tcCombined');
   if(partialPct!=null){
     badge.textContent=partialPct+'%';
-    vEl.textContent='$'+(totalRevenue*(partialPct/100)).toFixed(2);
+    vEl.textContent=fmtMoney(totalRevenue*(partialPct/100));
     vEl.style.fontSize='';vEl.style.color='';
     if(combined)combined.classList.add('has-active');
   } else {
@@ -1618,7 +1696,8 @@ function initMainChart(){
             const label=ctx.datasetIndex===1?`${T().parcial} (${partialPct}%)`:mainMetric==='revenue'?T().metReceita:mainMetric==='views'?T().metViews:'RPM';
             const val=ctx.raw;
             if(mainMetric==='views')return` ${label}: ${N(val)}`;
-            return` ${label}: $${val>=1000?(val/1000).toFixed(1)+'k':val.toFixed(2)}`;
+            const _sym=CURRENCIES[currency]?.sym||'$';const _cv=val*(rates[currency]||1);
+            return` ${label}: ${_sym}${_cv>=1000?(_cv/1000).toFixed(1)+'k':_cv.toFixed(2)}`;
           },
           labelColor:ctx=>ctx.datasetIndex===0?{borderColor:'#ff4d00',backgroundColor:'#ff4d00',borderWidth:2,borderRadius:4}:{borderColor:'rgba(255,77,0,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderRadius:4}
         }
@@ -1628,7 +1707,8 @@ function initMainChart(){
           ticks:{color:'#505060',font:{size:10},maxTicksLimit:5,
             callback:v=>{
               if(mainMetric==='views')return v>=1000?(v/1000).toFixed(0)+'k':v;
-              return v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v;
+              const _s=CURRENCIES[currency]?.sym||'$';const _c=v*(rates[currency]||1);
+              return _c>=1000?_s+(_c/1000).toFixed(0)+'k':_s+_c.toFixed(0);
             }}},
         x:{grid:{display:false},border:{display:false},
           ticks:{color:'#505060',font:{size:10},maxTicksLimit:8,maxRotation:0}}}}
@@ -1877,6 +1957,7 @@ function setLang(l){
   const lEl=document.getElementById('lang-'+l);if(lEl)lEl.classList.add('sel');
   setLang(l);
   renderLangList();
+  renderCurrencyBtn();
   const t2=localStorage.getItem('automata_theme')||'dark';
   setTheme(t2);
 })();
@@ -1908,9 +1989,9 @@ function renderTableSorted(){
   tbody.innerHTML=sorted.map(r=>`
     <tr class="channel-row" onclick="toggleDetail('${r.id}')">
       <td><div class="chan-cell"><img src="${r.thumb||''}" class="chan-av"><span>${r.name}</span></div></td>
-      <td class="rev-cell">$${r.rev.toFixed(2)}</td>
+      <td class="rev-cell">${fmtMoney(r.rev)}</td>
       <td>${r.views.toLocaleString()}</td>
-      <td class="muted-cell">$${r.rpm.toFixed(2)}</td>
+      <td class="muted-cell">${fmtMoney(r.rpm)}</td>
     </tr>
     <tr class="detail-tr" id="dtr-${r.id}">
       <td colspan="4">
