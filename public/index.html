@@ -31,16 +31,19 @@ body{padding:24px;}
 #app{padding-left:68px;}
 body.no-scroll{overflow:hidden;}
 /* Sidebar esquerda para navegação */
-.left-sidebar{position:fixed;top:0;left:0;height:100vh;width:68px;background:var(--s1);border-right:1px solid var(--border);z-index:600;transition:width 0.28s var(--ease),background 0.2s,box-shadow 0.2s;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;}
+.left-sidebar{position:fixed;top:0;left:0;height:100vh;width:68px;background:var(--s1);border-right:1px solid var(--border);z-index:600;transition:width 0.28s var(--ease),background 0.2s,box-shadow 0.2s;overflow:hidden;display:flex;flex-direction:column;}
 .left-sidebar:hover{background:var(--s2);box-shadow:2px 0 16px rgba(0,0,0,0.12);}
 .left-sidebar.expanded{width:236px;box-shadow:4px 0 24px rgba(0,0,0,0.18);}
 .ls-head{display:flex;align-items:center;gap:13px;padding:18px 18px;white-space:nowrap;border-bottom:1px solid var(--border);min-height:64px;}
 .ls-logo-icon{flex-shrink:0;display:flex;}
 .ls-name{font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;opacity:0;transform:translateX(-8px);transition:opacity 0.22s var(--ease),transform 0.22s var(--ease);}
 .left-sidebar.expanded .ls-name{opacity:1;transform:translateX(0);}
-.ls-toggle{position:absolute;top:21px;right:16px;background:none;border:none;color:var(--t3);cursor:pointer;padding:4px;display:flex;opacity:0;transition:opacity 0.2s,color 0.15s;}
-.left-sidebar:hover .ls-toggle{opacity:1;}
-.ls-toggle:hover{color:var(--accent);}
+/* Faixa clicável só na extremidade direita da barra */
+.ls-edge{position:absolute;top:0;right:0;width:16px;height:100%;cursor:pointer;z-index:5;}
+/* Botão de toggle FORA da barra, vazando na borda direita */
+.ls-toggle-ext{position:fixed;top:19px;left:54px;z-index:610;width:30px;height:30px;border-radius:8px;background:var(--s1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:left 0.28s var(--ease),color 0.15s,border-color 0.15s,background 0.15s;}
+.ls-toggle-ext:hover{color:var(--accent);border-color:var(--accent);background:var(--s2);}
+.left-sidebar.expanded~.ls-toggle-ext{left:222px;}
 .ls-body{flex:1;padding:12px 0;}
 .ls-item{display:flex;align-items:center;gap:14px;padding:12px 22px;white-space:nowrap;cursor:pointer;color:var(--t2);transition:background 0.15s,color 0.15s;border-left:3px solid transparent;}
 .ls-item:hover{background:var(--accent-dim);color:var(--text);}
@@ -50,7 +53,7 @@ body.no-scroll{overflow:hidden;}
 .left-sidebar.expanded .ls-item-label{opacity:1;transform:translateX(0);}
 .ls-item-soon{font-size:0.6rem;background:var(--border2);color:var(--t3);padding:1px 6px;border-radius:5px;margin-left:auto;opacity:0;transition:opacity 0.22s;}
 .left-sidebar.expanded .ls-item-soon{opacity:1;}
-@media(max-width:640px){#app{padding-left:50px;}.left-sidebar{width:50px;}.left-sidebar.expanded{width:200px;}}
+@media(max-width:640px){#app{padding-left:50px;}.left-sidebar{width:50px;}.left-sidebar.expanded{width:200px;}.ls-toggle-ext{left:38px;width:26px;height:26px;}.left-sidebar.expanded~.ls-toggle-ext{left:186px;}}
 img{display:block;}
 button{font-family:'Inter',sans-serif;}
 
@@ -469,30 +472,32 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 </div>
 
 <div id="app" style="display:none">
-  <div class="left-sidebar" id="leftSidebar" onclick="toggleLeftSidebar()">
+  <div class="left-sidebar" id="leftSidebar">
     <div class="ls-head">
       <span class="ls-logo-icon">
         <svg width="26" height="26" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="6" fill="none"/><rect x="35" y="32" width="10" height="10" fill="#ff4d00"/><rect x="35" y="45" width="10" height="10" fill="#ff4d00"/><rect x="35" y="58" width="10" height="10" fill="#ff4d00"/><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00"/><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00"/><rect x="61" y="45" width="10" height="10" fill="#ff4d00"/></svg>
       </span>
       <span class="ls-name">Automata</span>
-      <button class="ls-toggle" onclick="event.stopPropagation();toggleLeftSidebar()" title="Toggle">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
     </div>
     <div class="ls-body">
-      <div class="ls-item active" id="nav-dashboard" onclick="event.stopPropagation();navTo('dashboard')">
+      <div class="ls-item active" id="nav-dashboard" onclick="navTo('dashboard')">
         <span class="ls-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
         <span class="ls-item-label">Dashboard de Canais</span>
       </div>
-      <div class="ls-item" id="nav-soon" onclick="event.stopPropagation();navTo('soon')">
+      <div class="ls-item" id="nav-soon" onclick="navTo('soon')">
         <span class="ls-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
         <span class="ls-item-label">Em breve</span>
         <span class="ls-item-soon">SOON</span>
       </div>
     </div>
+    <div class="ls-edge" onclick="toggleLeftSidebar()" title="Expandir/recolher"></div>
   </div>
+  <button class="ls-toggle-ext" id="lsToggleExt" onclick="toggleLeftSidebar()" title="Toggle sidebar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
   <div id="section-dashboard">
-  <header style="justify-content:flex-end">
+  <header style="justify-content:space-between">
+    <div class="page-title" id="pageTitle" style="font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;padding-left:8px;">Dashboard de Canais</div>
     <div class="hcontrols">
       <div class="filter-group">
         <div class="clear-x" id="clearX" onclick="resetFilters()">✕<span id="clearXLabel">Limpar</span></div>
@@ -711,7 +716,7 @@ async function setCurrency(c){
 function renderCurrencyBtn(){
   // Atualizar o label da moeda atual nas configurações
   const label=document.getElementById('settCurrencyLabel');
-  if(label){const c=CURRENCIES[currency];label.textContent=`${T().moeda} · ${c.flag} ${currency}`;}
+  if(label){label.textContent=`${T().moeda} · ${currency}`;}
   // Popular a lista de moedas
   const list=document.getElementById('settCurrencyList');
   if(list){
@@ -719,7 +724,7 @@ function renderCurrencyBtn(){
     const ordered=[currency,...codes.filter(c=>c!==currency)];
     list.innerHTML=ordered.map(code=>{
       const c=CURRENCIES[code];
-      return `<div class="sett-lang-opt${code===currency?' sel':''}" onclick="setCurrency('${code}');event.stopPropagation()"><span>${c.flag}</span><span>${c.name}</span></div>`;
+      return `<div class="sett-lang-opt${code===currency?' sel':''}" onclick="setCurrency('${code}');event.stopPropagation()"><span>${c.name}</span></div>`;
     }).join('');
   }
 }
@@ -1863,7 +1868,7 @@ function renderLangList(){
   ];
   list.innerHTML=ordered.map(l=>`
     <div class="sett-lang-opt${l.code===currentLang?' sel':''}" id="lang-${l.code}" onclick="setLang('${l.code}');event.stopPropagation()">
-      <span>${l.flag}</span><span>${l.label}</span>
+      <span>${l.label}</span>
     </div>`).join('');
 }
 
@@ -2013,6 +2018,7 @@ function setLang(l){
   // Itens de navegação da sidebar
   const navD=document.querySelector('#nav-dashboard .ls-item-label');if(navD)navD.textContent=t.navDashboard;
   const navS=document.querySelector('#nav-soon .ls-item-label');if(navS)navS.textContent=t.navSoon;
+  const pgT=document.getElementById('pageTitle');if(pgT)pgT.textContent=document.getElementById('nav-soon')?.classList.contains('active')?t.navSoon:t.navDashboard;
   // Label da moeda nas configurações
   if(document.getElementById('settCurrencyLabel'))renderCurrencyBtn();
 }
