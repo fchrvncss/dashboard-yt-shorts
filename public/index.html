@@ -28,8 +28,8 @@ html[data-theme='light']{
 html[data-theme='light'] .accent-badge{color:#fff;}
 html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;}
 body{padding:24px;}
-#app{padding-left:108px;transition:padding-left 0.28s var(--ease);}
-#app.sidebar-open{padding-left:276px;}
+#app{padding-left:68px;transition:padding-left 0.28s var(--ease);}
+#app.sidebar-open{padding-left:236px;}
 body.no-scroll{overflow:hidden;}
 /* Sidebar esquerda para navegação */
 .left-sidebar{position:fixed;top:0;left:0;height:100vh;width:68px;background:var(--s1);border-right:1px solid var(--border);z-index:600;transition:width 0.28s var(--ease),background 0.2s,box-shadow 0.2s;overflow:hidden;display:flex;flex-direction:column;}
@@ -37,15 +37,17 @@ body.no-scroll{overflow:hidden;}
 .left-sidebar.expanded{width:236px;box-shadow:4px 0 24px rgba(0,0,0,0.18);}
 .ls-head{display:flex;align-items:center;gap:13px;padding:26px 18px 22px;white-space:nowrap;border-bottom:1px solid var(--border);}
 .left-sidebar.expanded .ls-head{padding:26px 18px 22px;}
-.ls-logo-icon{flex-shrink:0;display:flex;}
+/* Logo que vira o botão toggle ao passar o mouse */
+.ls-logo-toggle{position:relative;width:32px;height:32px;flex-shrink:0;cursor:pointer;}
+.ll-logo,.ll-toggle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transition:opacity 0.28s var(--ease),transform 0.28s var(--ease);}
+.ll-logo{opacity:1;transform:scale(1) rotate(0deg);}
+.ll-toggle{opacity:0;transform:scale(0.6) rotate(-90deg);}
+.ls-logo-toggle:hover .ll-logo{opacity:0;transform:scale(0.6) rotate(90deg);}
+.ls-logo-toggle:hover .ll-toggle{opacity:1;transform:scale(1) rotate(0deg);}
 .ls-name{font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;opacity:0;transform:translateX(-8px);transition:opacity 0.22s var(--ease),transform 0.22s var(--ease);}
 .left-sidebar.expanded .ls-name{opacity:1;transform:translateX(0);}
 /* Faixa clicável só na extremidade direita da barra */
 .ls-edge{position:absolute;top:0;right:0;width:16px;height:100%;cursor:pointer;z-index:5;}
-/* Botão de toggle FORA da barra, na borda direita externa */
-.ls-toggle-ext{position:fixed;top:29px;left:72px;z-index:610;width:26px;height:26px;border-radius:7px;background:var(--s1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:left 0.28s var(--ease),color 0.15s,border-color 0.15s,background 0.15s;}
-.ls-toggle-ext:hover{color:var(--accent);border-color:var(--accent);background:var(--s2);}
-.left-sidebar.expanded~.ls-toggle-ext{left:240px;}
 .ls-body{flex:1;padding:12px 0;}
 .ls-item{display:flex;align-items:center;gap:14px;padding:12px 22px;white-space:nowrap;cursor:pointer;color:var(--t2);transition:background 0.15s,color 0.15s;border-left:3px solid transparent;}
 .ls-item:hover{background:var(--accent-dim);color:var(--text);}
@@ -55,7 +57,7 @@ body.no-scroll{overflow:hidden;}
 .left-sidebar.expanded .ls-item-label{opacity:1;transform:translateX(0);}
 .ls-item-soon{font-size:0.6rem;background:var(--border2);color:var(--t3);padding:1px 6px;border-radius:5px;margin-left:auto;opacity:0;transition:opacity 0.22s;}
 .left-sidebar.expanded .ls-item-soon{opacity:1;}
-@media(max-width:640px){#app{padding-left:86px;}#app.sidebar-open{padding-left:236px;}.left-sidebar{width:50px;}.left-sidebar.expanded{width:200px;}.ls-toggle-ext{left:54px;top:15px;width:26px;height:26px;}.left-sidebar.expanded~.ls-toggle-ext{left:204px;}}
+@media(max-width:640px){#app{padding-left:50px;}#app.sidebar-open{padding-left:200px;}.left-sidebar{width:50px;}.left-sidebar.expanded{width:200px;}}
 img{display:block;}
 button{font-family:'Inter',sans-serif;}
 
@@ -476,8 +478,13 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 <div id="app" style="display:none">
   <div class="left-sidebar" id="leftSidebar">
     <div class="ls-head">
-      <span class="ls-logo-icon">
-        <svg width="32" height="32" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="6" fill="none"/><rect x="35" y="32" width="10" height="10" fill="#ff4d00"/><rect x="35" y="45" width="10" height="10" fill="#ff4d00"/><rect x="35" y="58" width="10" height="10" fill="#ff4d00"/><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00"/><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00"/><rect x="61" y="45" width="10" height="10" fill="#ff4d00"/></svg>
+      <span class="ls-logo-toggle" onclick="toggleLeftSidebar()" title="Abrir/recolher menu">
+        <span class="ll-logo">
+          <svg width="32" height="32" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" stroke="#ff4d00" stroke-width="6" fill="none"/><rect x="35" y="32" width="10" height="10" fill="#ff4d00"/><rect x="35" y="45" width="10" height="10" fill="#ff4d00"/><rect x="35" y="58" width="10" height="10" fill="#ff4d00"/><rect x="48" y="38.5" width="10" height="10" fill="#ff4d00"/><rect x="48" y="51.5" width="10" height="10" fill="#ff4d00"/><rect x="61" y="45" width="10" height="10" fill="#ff4d00"/></svg>
+        </span>
+        <span class="ll-toggle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </span>
       </span>
       <span class="ls-name">Automata</span>
     </div>
@@ -494,9 +501,6 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
     </div>
     <div class="ls-edge" onclick="toggleLeftSidebar()" title="Expandir/recolher"></div>
   </div>
-  <button class="ls-toggle-ext" id="lsToggleExt" onclick="toggleLeftSidebar()" title="Toggle sidebar">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-  </button>
   <div id="section-dashboard">
   <header style="justify-content:space-between">
     <div class="page-title" id="pageTitle" style="font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;padding-left:8px;">Dashboard</div>
