@@ -28,22 +28,24 @@ html[data-theme='light']{
 html[data-theme='light'] .accent-badge{color:#fff;}
 html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden;}
 body{padding:24px;}
-#app{padding-left:68px;}
+#app{padding-left:108px;transition:padding-left 0.28s var(--ease);}
+#app.sidebar-open{padding-left:276px;}
 body.no-scroll{overflow:hidden;}
 /* Sidebar esquerda para navegação */
 .left-sidebar{position:fixed;top:0;left:0;height:100vh;width:68px;background:var(--s1);border-right:1px solid var(--border);z-index:600;transition:width 0.28s var(--ease),background 0.2s,box-shadow 0.2s;overflow:hidden;display:flex;flex-direction:column;}
 .left-sidebar:hover{background:var(--s2);box-shadow:2px 0 16px rgba(0,0,0,0.12);}
 .left-sidebar.expanded{width:236px;box-shadow:4px 0 24px rgba(0,0,0,0.18);}
-.ls-head{display:flex;align-items:center;gap:13px;padding:18px 18px;white-space:nowrap;border-bottom:1px solid var(--border);min-height:64px;}
+.ls-head{display:flex;align-items:center;justify-content:center;gap:13px;padding:18px 14px;white-space:nowrap;border-bottom:1px solid var(--border);min-height:64px;}
+.left-sidebar.expanded .ls-head{justify-content:flex-start;padding:18px 18px;}
 .ls-logo-icon{flex-shrink:0;display:flex;}
 .ls-name{font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;opacity:0;transform:translateX(-8px);transition:opacity 0.22s var(--ease),transform 0.22s var(--ease);}
 .left-sidebar.expanded .ls-name{opacity:1;transform:translateX(0);}
 /* Faixa clicável só na extremidade direita da barra */
 .ls-edge{position:absolute;top:0;right:0;width:16px;height:100%;cursor:pointer;z-index:5;}
-/* Botão de toggle FORA da barra, vazando na borda direita */
-.ls-toggle-ext{position:fixed;top:19px;left:54px;z-index:610;width:30px;height:30px;border-radius:8px;background:var(--s1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:left 0.28s var(--ease),color 0.15s,border-color 0.15s,background 0.15s;}
+/* Botão de toggle FORA da barra, na borda direita externa */
+.ls-toggle-ext{position:fixed;top:19px;left:72px;z-index:610;width:30px;height:30px;border-radius:8px;background:var(--s1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:left 0.28s var(--ease),color 0.15s,border-color 0.15s,background 0.15s;}
 .ls-toggle-ext:hover{color:var(--accent);border-color:var(--accent);background:var(--s2);}
-.left-sidebar.expanded~.ls-toggle-ext{left:222px;}
+.left-sidebar.expanded~.ls-toggle-ext{left:240px;}
 .ls-body{flex:1;padding:12px 0;}
 .ls-item{display:flex;align-items:center;gap:14px;padding:12px 22px;white-space:nowrap;cursor:pointer;color:var(--t2);transition:background 0.15s,color 0.15s;border-left:3px solid transparent;}
 .ls-item:hover{background:var(--accent-dim);color:var(--text);}
@@ -53,7 +55,7 @@ body.no-scroll{overflow:hidden;}
 .left-sidebar.expanded .ls-item-label{opacity:1;transform:translateX(0);}
 .ls-item-soon{font-size:0.6rem;background:var(--border2);color:var(--t3);padding:1px 6px;border-radius:5px;margin-left:auto;opacity:0;transition:opacity 0.22s;}
 .left-sidebar.expanded .ls-item-soon{opacity:1;}
-@media(max-width:640px){#app{padding-left:50px;}.left-sidebar{width:50px;}.left-sidebar.expanded{width:200px;}.ls-toggle-ext{left:38px;width:26px;height:26px;}.left-sidebar.expanded~.ls-toggle-ext{left:186px;}}
+@media(max-width:640px){#app{padding-left:86px;}#app.sidebar-open{padding-left:236px;}.left-sidebar{width:50px;}.left-sidebar.expanded{width:200px;}.ls-toggle-ext{left:54px;width:26px;height:26px;}.left-sidebar.expanded~.ls-toggle-ext{left:204px;}}
 img{display:block;}
 button{font-family:'Inter',sans-serif;}
 
@@ -497,7 +499,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
   </button>
   <div id="section-dashboard">
   <header style="justify-content:space-between">
-    <div class="page-title" id="pageTitle" style="font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;padding-left:8px;">Dashboard de Canais</div>
+    <div class="page-title" id="pageTitle" style="font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;padding-left:8px;">Dashboard</div>
     <div class="hcontrols">
       <div class="filter-group">
         <div class="clear-x" id="clearX" onclick="resetFilters()">✕<span id="clearXLabel">Limpar</span></div>
@@ -830,7 +832,7 @@ else if(params.has('connected')){
   },500);
 }
 
-function toggleLeftSidebar(){document.getElementById('leftSidebar').classList.toggle('expanded');}
+function toggleLeftSidebar(){const sb=document.getElementById('leftSidebar');sb.classList.toggle('expanded');document.getElementById('app').classList.toggle('sidebar-open',sb.classList.contains('expanded'));}
 function navTo(section){
   // Alternar seções
   document.getElementById('section-dashboard').style.display=(section==='dashboard')?'':'none';
@@ -2018,7 +2020,7 @@ function setLang(l){
   // Itens de navegação da sidebar
   const navD=document.querySelector('#nav-dashboard .ls-item-label');if(navD)navD.textContent=t.navDashboard;
   const navS=document.querySelector('#nav-soon .ls-item-label');if(navS)navS.textContent=t.navSoon;
-  const pgT=document.getElementById('pageTitle');if(pgT)pgT.textContent=document.getElementById('nav-soon')?.classList.contains('active')?t.navSoon:t.navDashboard;
+  const pgT=document.getElementById('pageTitle');if(pgT)pgT.textContent=document.getElementById('nav-soon')?.classList.contains('active')?t.navSoon:'Dashboard';
   // Label da moeda nas configurações
   if(document.getElementById('settCurrencyLabel'))renderCurrencyBtn();
 }
