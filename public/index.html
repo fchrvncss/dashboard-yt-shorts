@@ -592,6 +592,7 @@ let accounts={},results={},thumbs={},activePeriod=28,mainChart=null,cache={};
 let sel=new Set(CHANNELS.map(c=>c.id));
 let openId=null,dd={};
 let ppChId='',ppType='',ppVids=[],ppFilt=[],ppPage=0,ppPages=[null],ppCurTok=null,ppNext=null,ppTotal=0,ppSearch=false;
+let ppAllTop=[],ppTopFiltered=[];const PP_PAGE_SIZE=20;
 
 const I={
   cal:`<svg viewBox="0 0 16 16"><path d="M4 1v1H2a1 1 0 00-1 1v11a1 1 0 001 1h12a1 1 0 001-1V3a1 1 0 00-1-1h-2V1h-1v1H5V1H4zm-2 4h12v8H2V5z"/></svg>`,
@@ -1156,7 +1157,7 @@ async function setPeriod(chId,p){
 
 // POPUP
 async function openPopup(type,chId){
-  ppType=type;ppChId=chId;ppPage=0;ppPages=[null];ppSearch=false;ppVids=[];ppFilt=[];ppCurTok=null;ppNext=null;ppActiveIdx=null;
+  ppType=type;ppChId=chId;ppPage=0;ppPages=[null];ppSearch=false;ppVids=[];ppFilt=[];ppCurTok=null;ppNext=null;ppActiveIdx=null;ppAllTop=[];ppTopFiltered=[];
   document.getElementById('popupSearch').value='';
   document.getElementById('popupTtl').textContent=type==='recent'?T().ultimosVideos:T().melhorPerf;
   document.getElementById('popupSearch').placeholder=T().buscarVideo;
@@ -1174,16 +1175,31 @@ async function loadPPage(token){
     let url=`/api/recent-videos?channelId=${ppChId}`;if(token)url+=`&pageToken=${encodeURIComponent(token)}`;
     const d=await fetch(url).then(r=>r.json()).catch(()=>({ok:false,videos:[]}));
     ppVids=d.videos||[];ppNext=d.nextPageToken||null;ppTotal=d.totalResults||0;
+    ppFilt=ppVids;
   }else{
-    // top: buscar TODOS os vídeos do canal ordenados por views
-    const d=await fetch(`/api/all-videos?channelId=${ppChId}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]}));
-    ppVids=d.videos||[];ppNext=null;ppTotal=ppVids.length;
+    // top: buscar TODOS os vídeos por views uma única vez, depois paginar no cliente
+    if(!ppAllTop.length){
+      const d=await fetch(`/api/all-videos?channelId=${ppChId}`).then(r=>r.json()).catch(()=>({ok:false,videos:[]}));
+      ppAllTop=d.videos||[];
+    }
+    ppTopFiltered=ppAllTop;
+    ppTotal=ppTopFiltered.length;
+    ppFilt=ppTopFiltered.slice(ppPage*PP_PAGE_SIZE,(ppPage+1)*PP_PAGE_SIZE);
   }
-  ppFilt=ppVids;renderPList();updatePNav();
+  renderPList();updatePNav();
 }
 function filterPopup(){
   const q=document.getElementById('popupSearch').value.toLowerCase().trim();
-  ppSearch=!!q;ppFilt=q?ppVids.filter(v=>(v.title||'').toLowerCase().includes(q)):ppVids;
+  ppSearch=!!q;
+  if(ppType==='top'){
+    // top: filtrar todos os vídeos e re-paginar
+    ppTopFiltered=q?ppAllTop.filter(v=>(v.title||'').toLowerCase().includes(q)):ppAllTop;
+    ppPage=0;
+    ppTotal=ppTopFiltered.length;
+    ppFilt=ppTopFiltered.slice(0,PP_PAGE_SIZE);
+  }else{
+    ppFilt=q?ppVids.filter(v=>(v.title||'').toLowerCase().includes(q)):ppVids;
+  }
   renderPList();updatePNav();
 }
 function renderPList(){
@@ -1200,8 +1216,19 @@ function renderPList(){
     </div>`).join('');
 }
 async function ppage(dir){
+  if(ppType==='top'){
+    // Paginação client-side (sobre ppTopFiltered)
+    const totalPages=Math.max(1,Math.ceil(ppTopFiltered.length/PP_PAGE_SIZE));
+    if(dir==='first')ppPage=0;
+    else if(dir==='prev'&&ppPage>0)ppPage--;
+    else if(dir==='next'&&ppPage<totalPages-1)ppPage++;
+    else if(dir==='last')ppPage=totalPages-1;
+    ppFilt=ppTopFiltered.slice(ppPage*PP_PAGE_SIZE,(ppPage+1)*PP_PAGE_SIZE);
+    document.getElementById('popupBody').scrollTop=0;
+    renderPList();updatePNav();
+    return;
+  }
   if(ppSearch)return;
-  if(ppType==='top')return;
   const idx=ppPages.indexOf(ppCurTok);
   if(dir==='first'){ppCurTok=null;ppPage=0;await loadPPage(null);}
   else if(dir==='prev'&&idx>0){ppCurTok=ppPages[idx-1];ppPage=idx-1;await loadPPage(ppCurTok);}
@@ -1217,9 +1244,20 @@ async function ppage(dir){
 }
 function updatePNav(){
   document.getElementById('popupCnt').textContent=ppTotal>0?`~${ppTotal} ${T().videosCountLabel}`:'';
+  let hp,hn,pageNum;
+  if(ppType==='top'){
+    const totalPages=Math.max(1,Math.ceil(ppTopFiltered.length/PP_PAGE_SIZE));
+    hp=ppPage>0;hn=ppPage<totalPages-1;pageNum=ppPage+1;
+    const info=`${T().pageLabel} ${pageNum}`;
+    ['pnI','pnIB'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=info;});
+    ['pnF','pnP','pnFB','pnPB'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hp;});
+    ['pnN','pnNB','pnL','pnLB'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hn;});
+    document.getElementById('pnavT').style.opacity=(hp||hn)?'1':'0.35';
+    return;
+  }
   const info=ppNext||ppPage>0?`${T().pageLabel} ${ppPage+1}`:'';
   ['pnI','pnIB'].forEach(id=>document.getElementById(id).textContent=info);
-  const hp=ppPage>0,hn=!!ppNext&&ppType==='recent';
+  hp=ppPage>0,hn=!!ppNext&&ppType==='recent';
   ['pnF','pnP','pnFB','pnPB'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hp;});
   ['pnN','pnNB','pnL','pnLB'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!hn;});
   document.getElementById('pnavT').style.opacity=ppType==='recent'&&(hn||ppPage>0)?'1':'0.35';
