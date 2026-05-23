@@ -207,7 +207,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .sli-title{font-size:0.67rem;font-weight:400;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-bottom:5px;}
 .sli-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
 .sstat{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.sstat svg{width:14px;height:14px;}
+.sstat svg{width:11px;height:11px;fill:var(--t3);}
 .sstat span{font-size:0.6rem;color:var(--t3);white-space:nowrap;}
 
 /* expand-btn */
@@ -230,7 +230,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 .tli-title{font-size:0.67rem;font-weight:400;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);margin-bottom:5px;}
 .tli-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
 .tli-stats .sstat{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.tli-stats .sstat svg{width:14px;height:14px;}
+.tli-stats .sstat svg{width:11px;height:11px;fill:var(--t3);}
 .tli-stats .sstat span{font-size:0.6rem;color:var(--t3);white-space:nowrap;}
 
 /* ── CHART BLOCK ── */
@@ -564,7 +564,7 @@ td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;ver
 <!-- SIDEBAR CONEXÕES -->
 <div class="sidebar" id="sidebarConexoes">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-    <span style="font-size:0.72rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700">Conexões</span>
+    <span id="conexoesPanelTitle" style="font-size:0.72rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700">Conexões</span>
     <button class="pill" onclick="toggleConexoes(false)" style="border-color:var(--accent);color:var(--accent);padding:0 10px;height:28px;font-size:0.72rem">✕</button>
   </div>
   <div id="conexoesContent"></div>
@@ -594,11 +594,11 @@ let openId=null,dd={};
 let ppChId='',ppType='',ppVids=[],ppFilt=[],ppPage=0,ppPages=[null],ppCurTok=null,ppNext=null,ppTotal=0,ppSearch=false;
 
 const I={
-  cal:`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
-  eye:`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>`,
-  like:`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>`,
-  cmt:`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>`,
-  dol:`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`
+  cal:`<svg viewBox="0 0 16 16"><path d="M4 1v1H2a1 1 0 00-1 1v11a1 1 0 001 1h12a1 1 0 001-1V3a1 1 0 00-1-1h-2V1h-1v1H5V1H4zm-2 4h12v8H2V5z"/></svg>`,
+  eye:`<svg viewBox="0 0 16 16"><path d="M8 3C4 3 1 8 1 8s3 5 7 5 7-5 7-5-3-5-7-5zm0 8a3 3 0 110-6 3 3 0 010 6z"/></svg>`,
+  like:`<svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>`,
+  cmt:`<svg viewBox="0 0 16 16"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H5l-3 3V3a1 1 0 011-1z"/></svg>`,
+  dol:`<svg viewBox="0 0 16 16"><path d="M8 1v1.5C5.5 2.8 4 4 4 5.5c0 2 2 3 4 3.5 1.5.4 2 1 2 1.5 0 .8-1 1.5-2 1.5-1.5 0-2.5-.7-2.5-1.5H4c0 1.5 1.5 2.7 4 3V15h1v-1.5c2.5-.3 4-1.5 4-3s-1.5-2.7-4-3.2C7.5 6.9 7 6.3 7 5.5c0-.8.8-1.5 2-1.5s2 .7 2 1.5h1.5C12.5 4 11 2.8 9 2.5V1H8z"/></svg>`
 };
 const LOCALE_MAP={pt:'pt-BR',en:'en-US',es:'es-ES',fr:'fr-FR',de:'de-DE',ja:'ja-JP',ko:'ko-KR'};
 const N=n=>{if(n==null)return'—';n=+n;if(isNaN(n))return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'k';return n.toLocaleString('pt-BR');};
@@ -847,17 +847,23 @@ async function disconnectChannel(channelId){
     alert(T().errDisconnect);
   }
 }
+function monthName(monthIdx){
+  const localeMap={pt:'pt-BR',en:'en-US',es:'es-ES',fr:'fr-FR',de:'de-DE',ja:'ja-JP',ko:'ko-KR',zh:'zh-CN'};
+  const locale=localeMap[currentLang]||'en-US';
+  const d=new Date(2000,monthIdx,1);
+  let s=d.toLocaleDateString(locale,{month:'short'});
+  return s.charAt(0).toUpperCase()+s.slice(1).replace('.','');
+}
 function renderMonths(){
-  const mn=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   const c=document.getElementById('monthOpts');c.innerHTML='';
   const now=new Date();
   for(let i=0;i<3;i++){
     const m=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const o=document.createElement('div');o.className='dopt';o.id='month-'+m.getMonth();o.innerText=mn[m.getMonth()];
+    const o=document.createElement('div');o.className='dopt';o.id='month-'+m.getMonth();o.innerText=monthName(m.getMonth());
     o.onclick=()=>{
       const f=new Date(m.getFullYear(),m.getMonth(),1).toISOString().split('T')[0];
       const l=new Date(m.getFullYear(),m.getMonth()+1,0).toISOString().split('T')[0];
-      activePeriod='custom';hlPeriod('month-'+m.getMonth());fetchAll(f,l);document.getElementById('btnPeriod').innerText=mn[m.getMonth()]+' ▾';
+      activePeriod='custom';hlPeriod('month-'+m.getMonth());fetchAll(f,l);document.getElementById('btnPeriod').innerText=monthName(m.getMonth())+' ▾';
     };
     c.appendChild(o);
   }
@@ -1660,6 +1666,7 @@ const ALL_LANGS=[
   {code:'de',flag:'🇩🇪',label:'Deutsch'},
   {code:'ja',flag:'🇯🇵',label:'日本語'},
   {code:'ko',flag:'🇰🇷',label:'한국어'},
+  {code:'zh',flag:'🇨🇳',label:'中文'},
 ];
 
 function renderLangList(){
@@ -1737,7 +1744,13 @@ const LANGS={
     metViews:'조회수',metReceita:'수익',metLikes:'좋아요율',metComents:'댓글',metRetencao:'시청 유지율',metMin:'시청 분수',metPor1k:'1,000조회당',metPorc:'% 시청',abrir:'열기 ↗',voltar:'← 뒤로',comparar:'⇄ 비교',
     pctTitle:'부분 수익',pctAdd:'+ 새 부분',pctCancel:'취소',pctConfirm:'추가',pctEmpty:'추가된 항목 없음',pctPadrao:'기본값',pctFixar:'고정',pctEditar:'편집',pctRemover:'삭제',
     conexoesTitle:'연결',semConexoes:'연결된 채널 없음',buscarVideo:'동영상 검색...',
-    authWelcome:'다시 오신 것을 환영합니다',authSub:'계속하려면 로그인하세요',authGoogle:'Google로 계속',authApple:'Apple로 계속',authOr:'또는',authPassword:'비밀번호',authKeep:'로그인 유지',authEnter:'로그인',authHint:'제한된 접근 — 자격 증명 필요',videosTitle:'동영상',selectChannelTitle:'채널 선택',selectChannelSub:'연결할 채널을 선택하세요',inscritos:'구독자',errConnect:'채널 연결 오류',errDisconnect:'연결 해제 오류',confirmDisconnect:'연결 해제',connected:'연결됨',semNome:'이름 없음',dataLabel:'날짜',likesLabel:'좋아요'}
+    authWelcome:'다시 오신 것을 환영합니다',authSub:'계속하려면 로그인하세요',authGoogle:'Google로 계속',authApple:'Apple로 계속',authOr:'또는',authPassword:'비밀번호',authKeep:'로그인 유지',authEnter:'로그인',authHint:'제한된 접근 — 자격 증명 필요',videosTitle:'동영상',selectChannelTitle:'채널 선택',selectChannelSub:'연결할 채널을 선택하세요',inscritos:'구독자',errConnect:'채널 연결 오류',errDisconnect:'연결 해제 오류',confirmDisconnect:'연결 해제',connected:'연결됨',semNome:'이름 없음',dataLabel:'날짜',likesLabel:'좋아요'},
+  zh:{filterCanais:'筛选频道',conexoes:'连接',receita:'总收入',parcial:'部分收入',views:'总观看次数',rpm:'平均RPM',canal:'频道',receita2:'收入',aplicar:'应用',vincular:'关联频道',gerir:'点击管理',lastDay:'最后一天',last7:'最近7天',last28:'最近28天',last90:'最近90天',idioma:'语言',themeDark:'深色',themeLight:'浅色',tema:'主题',menu:'菜单',emBreve:'即将推出',periodo:'28天',limpar:'清除',logoutLabel:'退出登录',selectCompare:'选择要比较的视频',comparandoCom:'正在比较',periodMax:'最大',periodCustom:'自定义',periodDays:'天',periodMonths:'月',calTitle:'自定义范围',calFrom:'从',calTo:'至',calApply:'应用',calCancel:'取消',
+    ultimosVideos:'最新视频',melhorPerf:'最佳表现',desempenho:'表现',verTodos:'查看全部',viewsBtn:'观看',minutesBtn:'分钟',receitaBtn:'收入',semVideos:'没有视频',semDados:'没有数据',carregando:'加载中...',carregandoMet:'正在加载指标...',
+    metViews:'观看',metReceita:'收入',metLikes:'点赞率',metComents:'评论',metRetencao:'留存率',metMin:'观看分钟',metPor1k:'每1,000次观看',metPorc:'% 已观看',abrir:'打开 ↗',voltar:'← 返回',comparar:'⇄ 比较',
+    pctTitle:'部分收入',pctAdd:'+ 新建部分',pctCancel:'取消',pctConfirm:'添加',pctEmpty:'未添加部分',pctPadrao:'默认',pctFixar:'固定',pctEditar:'编辑',pctRemover:'删除',
+    conexoesTitle:'连接',semConexoes:'未关联频道',buscarVideo:'搜索视频...',
+    authWelcome:'欢迎回来',authSub:'登录以继续',authGoogle:'使用Google继续',authApple:'使用Apple继续',authOr:'或',authPassword:'密码',authKeep:'保持登录',authEnter:'登录',authHint:'受限访问 — 需要凭据',videosTitle:'视频',selectChannelTitle:'选择频道',selectChannelSub:'选择要连接的频道',inscritos:'订阅者',errConnect:'连接频道时出错',errDisconnect:'断开连接时出错',confirmDisconnect:'断开连接',connected:'已连接',semNome:'无名称',dataLabel:'日期',likesLabel:'点赞'}
 };
 let currentLang='pt';
 function setLang(l){
@@ -1807,6 +1820,10 @@ function setLang(l){
   const elH=document.getElementById('authHint');if(elH)elH.textContent=t.authHint;
   // Popup de vídeos
   const popTtl=document.getElementById('popupTtl');if(popTtl)popTtl.textContent=t.videosTitle;
+  // Título do painel de conexões
+  const conexPanel=document.getElementById('conexoesPanelTitle');if(conexPanel)conexPanel.textContent=t.conexoesTitle;
+  // Atualizar nomes dos meses
+  if(document.getElementById('monthOpts'))renderMonths();
 }
 (()=>{
   const l=localStorage.getItem('automata_lang')||'en';
