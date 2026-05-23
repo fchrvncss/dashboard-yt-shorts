@@ -659,6 +659,79 @@ app.get('/api/recent-videos', checkAuth, checkDB, async (req, res) => {
   }
 });
 
+// NOVO: TODOS os vídeos do canal, ordenados por views (maior → menor)
+// Usa a playlist de uploads (eficiente em quota) e pagina por todos os vídeos
+app.get('/api/all-videos', checkAuth, checkDB, async (req, res) => {
+  const { channelId } = req.query;
+  const dashboardUserId = req.session.dashboardUserId;
+  if (!channelId) return res.json({ ok: false, videos: [] });
+  const token = await getAnyToken(dashboardUserId);
+  if (!token) return res.json({ ok: false, videos: [] });
+  try {
+    // Passo 1: obter a playlist de uploads do canal
+    const chRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${encodeURIComponent(channelId)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const chData = await chRes.json();
+    const uploadsPlaylist = chData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylist) return res.json({ ok: false, videos: [] });
+
+    // Passo 2: paginar por TODOS os vídeos da playlist (50 por página)
+    const videoMeta = {};
+    const allVideoIds = [];
+    let pageToken = null, pages = 0;
+    do {
+      let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylist}&maxResults=50`;
+      if (pageToken) url += `&pageToken=${encodeURIComponent(pageToken)}`;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) break;
+      const data = await r.json();
+      (data.items || []).forEach(item => {
+        const vid = item.contentDetails?.videoId;
+        if (!vid) return;
+        allVideoIds.push(vid);
+        videoMeta[vid] = {
+          id: vid,
+          title: item.snippet.title,
+          thumb: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '',
+          publishedAt: item.contentDetails.videoPublishedAt || item.snippet.publishedAt,
+          views: 0, likes: 0, comments: 0
+        };
+      });
+      pageToken = data.nextPageToken || null;
+      pages++;
+    } while (pageToken && pages < 60);  // limite: 60 páginas = 3000 vídeos
+
+    // Passo 3: buscar estatísticas (views) em lotes de 50
+    for (let i = 0; i < allVideoIds.length; i += 50) {
+      const batch = allVideoIds.slice(i, i + 50).join(',');
+      const sr = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${encodeURIComponent(batch)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!sr.ok) continue;
+      const sd = await sr.json();
+      (sd.items || []).forEach(v => {
+        if (videoMeta[v.id]) {
+          videoMeta[v.id].views = parseInt(v.statistics.viewCount || 0);
+          videoMeta[v.id].likes = parseInt(v.statistics.likeCount || 0);
+          videoMeta[v.id].comments = parseInt(v.statistics.commentCount || 0);
+        }
+      });
+    }
+
+    // Passo 4: ordenar por views (maior → menor)
+    const videos = Object.values(videoMeta).sort((a, b) => (b.views || 0) - (a.views || 0));
+    console.log(`📹 all-videos: ${videos.length} vídeos do canal ${channelId}`);
+
+    return res.json({ ok: true, videos, totalResults: videos.length });
+  } catch (e) {
+    console.error('❌ Erro all-videos:', e);
+    return res.json({ ok: false, videos: [] });
+  }
+});
+
 app.get('/api/video-metrics', checkAuth, checkDB, async (req, res) => {
   const { videoId, channelId, startDate, endDate } = req.query;
   const dashboardUserId = req.session.dashboardUserId;
